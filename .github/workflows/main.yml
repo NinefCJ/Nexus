@@ -25,6 +25,11 @@ jobs:
         with:
           gradle-version: 8.4
 
+      - name: Remove Aliyun mirror for CI
+        working-directory: Nexus-Android
+        run: |
+          sed -i '/maven.aliyun.com/d' settings.gradle.kts
+
       - name: Generate Gradle Wrapper
         working-directory: Nexus-Android
         run: gradle wrapper --gradle-version 8.4
