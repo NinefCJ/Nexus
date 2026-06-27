@@ -11,7 +11,8 @@ class CommandCompletionEnhancer(
     private val addonBlocks: List<Block> = emptyList(),
     private val addonItems: List<Item> = emptyList(),
     private val addonSounds: List<SoundEffect> = emptyList(),
-    private val addonParticles: List<Particle> = emptyList()
+    private val addonParticles: List<Particle> = emptyList(),
+    private val addonFirst: Boolean = false
 ) {
 
     data class EnhancedSuggestion(
@@ -103,7 +104,8 @@ class CommandCompletionEnhancer(
             )
         }
 
-        return addonBlockSuggestions + vanillaSuggestions
+        return if (addonFirst) addonBlockSuggestions + vanillaSuggestions
+               else vanillaSuggestions + addonBlockSuggestions
     }
 
     private fun getItemSuggestions(query: String): List<EnhancedSuggestion> {
@@ -135,7 +137,8 @@ class CommandCompletionEnhancer(
             )
         }
 
-        return addonItemSuggestions + vanillaSuggestions
+        return if (addonFirst) addonItemSuggestions + vanillaSuggestions
+               else vanillaSuggestions + addonItemSuggestions
     }
 
     private fun getSoundSuggestions(query: String): List<EnhancedSuggestion> {
@@ -167,7 +170,8 @@ class CommandCompletionEnhancer(
             )
         }
 
-        return addonSoundSuggestions + vanillaSuggestions
+        return if (addonFirst) addonSoundSuggestions + vanillaSuggestions
+               else vanillaSuggestions + addonSoundSuggestions
     }
 
     private fun getParticleSuggestions(query: String): List<EnhancedSuggestion> {
@@ -199,7 +203,8 @@ class CommandCompletionEnhancer(
             )
         }
 
-        return addonParticleSuggestions + vanillaSuggestions
+        return if (addonFirst) addonParticleSuggestions + vanillaSuggestions
+               else vanillaSuggestions + addonParticleSuggestions
     }
 
     companion object {

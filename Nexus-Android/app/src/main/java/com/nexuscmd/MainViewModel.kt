@@ -52,7 +52,8 @@ data class MainUiState(
     // Addons
     val installedAddons: List<AddonPack> = emptyList(),
     val addonCommands: List<SavedCommand> = emptyList(),
-    val addonTemplates: List<SavedCommand> = emptyList()
+    val addonTemplates: List<SavedCommand> = emptyList(),
+    val addonCompletionsFirst: Boolean = false
 )
 
 data class CommandLibraryItem(
@@ -89,6 +90,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val enabledAddons = addons.filter { it.enabled }
             val addonCommands = enabledAddons.flatMap { it.customCommands }
             val addonTemplates = enabledAddons.flatMap { it.customTemplates }
+            val addonFirst = settingsManager.addonCompletionsFirst
 
             // Build quick commands from addons
             val addonQuickCommands = addonCommands.map { cmd ->
@@ -112,7 +114,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 currentTheme = theme,
                 installedAddons = addons,
                 addonCommands = addonCommands,
-                addonTemplates = addonTemplates
+                addonTemplates = addonTemplates,
+                addonCompletionsFirst = addonFirst
             )
         }
     }
@@ -242,6 +245,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun setTheme(theme: AppTheme) {
         settingsManager.currentTheme = theme
         _uiState.value = _uiState.value.copy(currentTheme = theme)
+    }
+
+    fun setAddonCompletionsFirst(enabled: Boolean) {
+        settingsManager.addonCompletionsFirst = enabled
+        _uiState.value = _uiState.value.copy(addonCompletionsFirst = enabled)
     }
 
     fun clearAllData() {

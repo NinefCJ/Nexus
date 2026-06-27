@@ -36,6 +36,10 @@ class SettingsManager(context: Context) {
         get() = prefs.getInt(KEY_LAST_VERSION, 0)
         set(value) = prefs.edit().putInt(KEY_LAST_VERSION, value).apply()
 
+    var addonCompletionsFirst: Boolean
+        get() = prefs.getBoolean(KEY_ADDON_FIRST, false)
+        set(value) = prefs.edit().putBoolean(KEY_ADDON_FIRST, value).apply()
+
     fun clearAllData() {
         prefs.edit().clear().apply()
     }
@@ -46,5 +50,6 @@ class SettingsManager(context: Context) {
         private const val KEY_DARK_THEME = "dark_theme"
         private const val KEY_SHOW_FW_TIP = "show_fw_tip"
         private const val KEY_LAST_VERSION = "last_version"
+        private const val KEY_ADDON_FIRST = "addon_completions_first"
     }
 }

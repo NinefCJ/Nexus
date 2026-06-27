@@ -1964,6 +1964,16 @@ fun SettingsTab(
             )
         }
 
+        item {
+            SettingToggleItem(
+                icon = Icons.Default.SwapVert,
+                title = "拓展包补全优先",
+                description = "开启后拓展包内容显示在原版之前",
+                checked = viewModel.uiState.value.addonCompletionsFirst,
+                onCheckedChange = { viewModel.setAddonCompletionsFirst(it) }
+            )
+        }
+
         // Data section
         item {
             Spacer(modifier = Modifier.height(8.dp))
