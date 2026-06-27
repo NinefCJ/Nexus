@@ -1,4 +1,5 @@
 #include "completion.hpp"
+#include "types.hpp"
 #include <algorithm>
 
 namespace mcmd {
@@ -27,7 +28,7 @@ std::vector<CompletionItem> Completion::getCompletions(
     // Check if we're completing a command name
     if (tokens.empty() || (tokens.size() == 1 && tokens[0].type == TokenType::Command)) {
         std::string cmd_name = partial_input;
-        if (cmd_name.starts_with("/")) {
+        if (starts_with(cmd_name, "/")) {
             cmd_name = cmd_name.substr(1);
         }
         return getCommandCompletions(cmd_name, "");
@@ -59,7 +60,7 @@ std::vector<CompletionItem> Completion::getCommandCompletions(
     }
 
     // If partial_param starts with @, provide selector completions
-    if (partial_param.starts_with("@")) {
+    if (starts_with(partial_param, "@")) {
         auto selector_completions = getSelectorCompletions(partial_param);
         results.insert(results.end(), selector_completions.begin(), selector_completions.end());
     }
@@ -71,7 +72,7 @@ std::vector<CompletionItem> Completion::getSelectorCompletions(const std::string
     std::vector<CompletionItem> results;
 
     for (const auto& selector : SELECTORS) {
-        if (selector.starts_with(partial)) {
+        if (starts_with(selector, partial)) {
             results.push_back({
                 selector,
                 "Target selector",
@@ -88,7 +89,7 @@ std::vector<CompletionItem> Completion::getCoordinateCompletions(const std::stri
     std::vector<CompletionItem> results;
 
     for (const auto& prefix : COORDINATE_PREFIXES) {
-        if (prefix.starts_with(partial)) {
+        if (starts_with(prefix, partial)) {
             results.push_back({
                 prefix,
                 "Coordinate",
