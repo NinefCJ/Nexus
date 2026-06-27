@@ -79,7 +79,7 @@ class TemplateGenerator {
         ),
         CommandTemplate("clear_items", "清除物品", "物品",
             "清除玩家指定物品",
-            "/clear <selector> <item> <amount>",
+            "/clear <selector> <item> 0 <amount>",
             listOf(
                 TemplateParameter("selector", ParamType.SELECTOR, "@p", emptyList(), "目标玩家"),
                 TemplateParameter("item", ParamType.ITEM_ID, "diamond", emptyList(), "物品ID"),
@@ -221,12 +221,20 @@ class TemplateGenerator {
 
         // ============ 方块模板 (基岩版) ============
         CommandTemplate("setblock", "放置方块", "方块",
-            "在指定位置放置方块(基岩版)",
-            "/setblock <coords> <block> <data> replace",
+            "在指定位置放置方块(新版基岩版使用方块状态，不再使用tileData)",
+            "/setblock <coords> <block> replace",
             listOf(
                 TemplateParameter("coords", ParamType.COORDINATE, "~ ~ ~", emptyList(), "放置位置"),
-                TemplateParameter("block", ParamType.BLOCK_ID, "stone", emptyList(), "方块类型"),
-                TemplateParameter("data", ParamType.NUMBER, "0", emptyList(), "方块数据值")
+                TemplateParameter("block", ParamType.BLOCK_ID, "stone", emptyList(), "方块类型")
+            )
+        ),
+        CommandTemplate("setblock_states", "放置方块(方块状态)", "方块",
+            "使用基岩版方块状态放置方块",
+            "/setblock <coords> <block> <states> replace",
+            listOf(
+                TemplateParameter("coords", ParamType.COORDINATE, "~ ~ ~", emptyList(), "放置位置"),
+                TemplateParameter("block", ParamType.BLOCK_ID, "chest", emptyList(), "方块类型"),
+                TemplateParameter("states", ParamType.STRING, "[\"facing_direction\"=2]", emptyList(), "方块状态")
             )
         ),
         CommandTemplate("fill_basic", "填充区域", "方块",
@@ -239,15 +247,24 @@ class TemplateGenerator {
             )
         ),
         CommandTemplate("fill_replace", "替换方块", "方块",
-            "替换区域内的特定方块(基岩版)",
-            "/fill <from> <to> <block> <data> replace <target> <targetData>",
+            "替换区域内的特定方块(新版基岩版使用方块状态)",
+            "/fill <from> <to> <block> replace <target>",
             listOf(
                 TemplateParameter("from", ParamType.COORDINATE, "~ ~ ~", emptyList(), "起点"),
                 TemplateParameter("to", ParamType.COORDINATE, "~5 ~5 ~5", emptyList(), "终点"),
                 TemplateParameter("block", ParamType.BLOCK_ID, "stone", emptyList(), "新方块"),
-                TemplateParameter("data", ParamType.NUMBER, "0", emptyList(), "新方块数据"),
-                TemplateParameter("target", ParamType.BLOCK_ID, "dirt", emptyList(), "要替换的方块"),
-                TemplateParameter("targetData", ParamType.NUMBER, "0", emptyList(), "目标方块数据")
+                TemplateParameter("target", ParamType.BLOCK_ID, "dirt", emptyList(), "要替换的方块")
+            )
+        ),
+        CommandTemplate("fill_replace_states", "替换方块(方块状态)", "方块",
+            "使用方块状态进行替换",
+            "/fill <from> <to> <block> <states> replace <target>",
+            listOf(
+                TemplateParameter("from", ParamType.COORDINATE, "~ ~ ~", emptyList(), "起点"),
+                TemplateParameter("to", ParamType.COORDINATE, "~5 ~5 ~5", emptyList(), "终点"),
+                TemplateParameter("block", ParamType.BLOCK_ID, "sandstone", emptyList(), "新方块"),
+                TemplateParameter("states", ParamType.STRING, "[\"sand_stone_type\"=\"heiroglyphs\"]", emptyList(), "新方块状态"),
+                TemplateParameter("target", ParamType.BLOCK_ID, "netherrack", emptyList(), "要替换的方块")
             )
         ),
         CommandTemplate("clone", "复制区域", "方块",
@@ -322,7 +339,7 @@ class TemplateGenerator {
         ),
         CommandTemplate("locate", "查找结构", "世界",
             "查找最近的结构(基岩版)",
-            "/locate <structure>",
+            "/locate structure <structure>",
             listOf(
                 TemplateParameter("structure", ParamType.SELECT, "village",
                     listOf("village", "stronghold", "monument", "mansion", "fortress", "endcity", "ruins", "shipwreck", "buried_treasure", "pillageroutpost", "ancient_city"), "结构类型")
@@ -342,23 +359,20 @@ class TemplateGenerator {
 
         // ============ 执行模板 (基岩版) ============
         CommandTemplate("execute_run", "执行命令", "执行",
-            "在指定位置执行命令(基岩版语法)",
-            "/execute <selector> <coords> run <command>",
+            "以指定实体身份并在其位置执行命令(新版基岩版链式语法)",
+            "/execute as <selector> at <selector> run <command>",
             listOf(
                 TemplateParameter("selector", ParamType.SELECTOR, "@p", emptyList(), "执行者"),
-                TemplateParameter("coords", ParamType.COORDINATE, "~ ~ ~", emptyList(), "执行位置"),
                 TemplateParameter("command", ParamType.STRING, "/say Hello", emptyList(), "要执行的命令")
             )
         ),
         CommandTemplate("execute_detect", "检测执行", "执行",
-            "检测方块后执行命令(基岩版语法)",
-            "/execute <selector> <coords> detect <detectPos> <block> <data> <command>",
+            "检测方块后执行命令(新版基岩版if block语法)",
+            "/execute as <selector> at <selector> if block <detectPos> <block> run <command>",
             listOf(
                 TemplateParameter("selector", ParamType.SELECTOR, "@s", emptyList(), "执行者"),
-                TemplateParameter("coords", ParamType.COORDINATE, "~ ~ ~", emptyList(), "执行位置"),
                 TemplateParameter("detectPos", ParamType.COORDINATE, "~ ~-1 ~", emptyList(), "检测位置"),
                 TemplateParameter("block", ParamType.BLOCK_ID, "grass", emptyList(), "检测方块"),
-                TemplateParameter("data", ParamType.NUMBER, "0", emptyList(), "方块数据"),
                 TemplateParameter("command", ParamType.STRING, "/say Standing on grass", emptyList(), "要执行的命令")
             )
         ),
@@ -373,11 +387,9 @@ class TemplateGenerator {
         // ============ 记分板模板 (基岩版) ============
         CommandTemplate("scoreboard_create", "创建记分项", "记分板",
             "创建一个新的记分板",
-            "/scoreboard objectives add <name> <criteria> <displayName>",
+            "/scoreboard objectives add <name> dummy <displayName>",
             listOf(
                 TemplateParameter("name", ParamType.STRING, "points", emptyList(), "记分板名称"),
-                TemplateParameter("criteria", ParamType.SELECT, "dummy",
-                    listOf("dummy", "deathCount", "playerKillCount", "totalKillCount"), "判断标准"),
                 TemplateParameter("displayName", ParamType.STRING, "Points", emptyList(), "显示名称")
             )
         ),
@@ -461,12 +473,10 @@ class TemplateGenerator {
         // ============ 声音粒子 (基岩版) ============
         CommandTemplate("playsound_basic", "播放声音", "声音粒子",
             "向玩家播放声音",
-            "/playsound <sound> <source> <selector>",
+            "/playsound <sound> <selector>",
             listOf(
                 TemplateParameter("sound", ParamType.SELECT, "random.orb",
                     listOf("random.orb", "random.levelup", "block.note.chime", "ambient.weather.thunder", "block.anvil.use", "mob.enderdragon.growl"), "声音ID"),
-                TemplateParameter("source", ParamType.SELECT, "master",
-                    listOf("master", "music", "record", "weather", "block", "hostile", "neutral", "player", "ambient", "voice"), "声音来源"),
                 TemplateParameter("selector", ParamType.SELECTOR, "@p", emptyList(), "目标玩家")
             )
         ),
