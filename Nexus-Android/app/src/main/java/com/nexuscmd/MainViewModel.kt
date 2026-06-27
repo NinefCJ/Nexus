@@ -17,7 +17,10 @@ import com.nexuscmd.data.AppTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
@@ -74,6 +77,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val settingsManager = SettingsManager(application)
     private val addonManager = AddonManager.getInstance(application)
 
+    private var completionJob: Job? = null
+
+    companion object {
+        private const val COMPLETION_DEBOUNCE_MS = 150L
+    }
+
     init {
         loadInitialData()
     }
@@ -121,18 +130,33 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun onCommandTextChanged(newText: String) {
-        viewModelScope.launch {
-            val cursorPos = newText.length
+        _uiState.value = _uiState.value.copy(
+            commandText = newText,
+            cursorPosition = newText.length
+        )
+
+        completionJob?.cancel()
+        completionJob = viewModelScope.launch {
+            kotlinx.coroutines.delay(COMPLETION_DEBOUNCE_MS)
+
             val isFavorite = if (newText.isNotBlank()) {
                 commandRepository.isFavorite(newText)
             } else false
 
             _uiState.value = _uiState.value.copy(
-                commandText = newText,
-                cursorPosition = cursorPos,
                 isCurrentCommandFavorite = isFavorite
             )
 
+            if (newText.isBlank() || !newText.startsWith("/")) {
+                _uiState.value = _uiState.value.copy(
+                    completions = emptyList(),
+                    validation = null,
+                    currentCommandInfo = null
+                )
+                return@launch
+            }
+
+            val cursorPos = newText.length
             val completionsJson = helper.getCompletions(newText, cursorPos)
             val completions = parseCompletions(completionsJson)
 

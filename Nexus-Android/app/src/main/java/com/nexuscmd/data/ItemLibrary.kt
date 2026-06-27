@@ -12,6 +12,8 @@ object ItemLibrary {
         "全部", "工具", "武器", "盔甲", "食物", "材料", "药水", "刷怪蛋", "运输", "杂项"
     )
 
+    private var filterCache: Pair<String, List<Item>>? = null
+
     val items: List<Item> = buildList {
         // 工具
         add(Item("wooden_pickaxe", "木镐", "工具"))
@@ -386,13 +388,22 @@ object ItemLibrary {
 
     fun filter(query: String, category: String? = null): List<Item> {
         val lowerQuery = query.lowercase()
-        return items.filter { item ->
+        val cacheKey = "$lowerQuery|${category ?: "null"}"
+
+        filterCache?.let { cache ->
+            if (cache.first == cacheKey) return cache.second
+        }
+
+        val result = items.filter { item ->
             val matchesQuery = item.id.contains(lowerQuery) ||
                     item.name.contains(lowerQuery) ||
                     item.description.contains(lowerQuery)
             val matchesCategory = category == null || category == "全部" || item.category == category
             matchesQuery && matchesCategory
         }
+
+        filterCache = cacheKey to result
+        return result
     }
 
     fun getById(id: String): Item? {

@@ -19,6 +19,8 @@ object SoundEffectLibrary {
         "重生锚", "锻造台", "脚步", "红石", "界面", "使用", "其他"
     )
 
+    private var filterCache: Pair<String, List<SoundEffect>>? = null
+
     val effects = listOf(
         SoundEffect("ambient.basalt_deltas.additions", "玄武岩三角洲附加", "环境", "玄武岩三角洲的循环附加环境音效"),
         SoundEffect("ambient.basalt_deltas.loop", "玄武岩三角洲循环", "环境", "玄武岩三角洲的循环环境音效"),
@@ -953,7 +955,13 @@ object SoundEffectLibrary {
 
     fun filter(query: String, category: String?): List<SoundEffect> {
         val normalizedQuery = query.trim().lowercase()
-        return effects.filter { effect ->
+        val cacheKey = "$normalizedQuery|${category ?: "null"}"
+
+        filterCache?.let { cache ->
+            if (cache.first == cacheKey) return cache.second
+        }
+
+        val result = effects.filter { effect ->
             val matchesCategory = category == null || category == "全部" || effect.category == category
             val matchesQuery = normalizedQuery.isEmpty() ||
                 effect.id.contains(normalizedQuery, ignoreCase = true) ||
@@ -961,5 +969,8 @@ object SoundEffectLibrary {
                 effect.description.contains(normalizedQuery, ignoreCase = true)
             matchesCategory && matchesQuery
         }
+
+        filterCache = cacheKey to result
+        return result
     }
 }

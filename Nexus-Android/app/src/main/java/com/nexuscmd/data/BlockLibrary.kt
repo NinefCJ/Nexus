@@ -12,6 +12,8 @@ object BlockLibrary {
         "全部", "自然", "矿石", "木头", "木板", "建筑", "彩色方块", "红石", "功能", "植物", "农作物", "地狱", "末地", "深板岩", "铜", "雪冰"
     )
 
+    private var filterCache: Pair<String, List<Block>>? = null
+
     val blocks: List<Block> = buildList {
         // 自然
         add(Block("stone", "石头", "自然"))
@@ -384,11 +386,20 @@ object BlockLibrary {
 
     fun filter(query: String, category: String? = null): List<Block> {
         val lowerQuery = query.lowercase()
-        return blocks.filter {
+        val cacheKey = "$lowerQuery|${category ?: "null"}"
+        
+        filterCache?.let { cache ->
+            if (cache.first == cacheKey) return cache.second
+        }
+
+        val result = blocks.filter {
             val matchesQuery = it.id.lowercase().contains(lowerQuery) || it.name.lowercase().contains(lowerQuery)
             val matchesCategory = category == null || category == "全部" || it.category == category
             matchesQuery && matchesCategory
         }
+
+        filterCache = cacheKey to result
+        return result
     }
 
     fun getById(id: String): Block? {

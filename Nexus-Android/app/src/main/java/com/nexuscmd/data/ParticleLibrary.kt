@@ -17,6 +17,8 @@ object ParticleLibrary {
         "全部", "环境", "生物", "方块", "物品", "药水", "特效", "音符", "其他"
     )
 
+    private var filterCache: Pair<String, List<Particle>>? = null
+
     val particles = listOf(
         // 环境粒子
         Particle("ambient_agent_shadow", "环境代理人阴影", "环境", "环境代理人的阴影粒子"),
@@ -1100,7 +1102,13 @@ object ParticleLibrary {
 
     fun filter(query: String, category: String?): List<Particle> {
         val normalizedQuery = query.trim().lowercase()
-        return particles.filter { particle ->
+        val cacheKey = "$normalizedQuery|${category ?: "null"}"
+
+        filterCache?.let { cache ->
+            if (cache.first == cacheKey) return cache.second
+        }
+
+        val result = particles.filter { particle ->
             val matchesCategory = category == null || category == "全部" || particle.category == category
             val matchesQuery = normalizedQuery.isEmpty() ||
                 particle.id.contains(normalizedQuery, ignoreCase = true) ||
@@ -1108,6 +1116,9 @@ object ParticleLibrary {
                 particle.description.contains(normalizedQuery, ignoreCase = true)
             matchesCategory && matchesQuery
         }
+
+        filterCache = cacheKey to result
+        return result
     }
 
     fun getById(id: String): Particle? {
