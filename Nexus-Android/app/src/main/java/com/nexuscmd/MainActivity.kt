@@ -114,6 +114,7 @@ fun MainScreen(
     val uiState by viewModel.uiState.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) }
     var showAddonPage by remember { mutableStateOf(false) }
+    var showCommandChainPage by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     // Handle snackbar messages
@@ -213,7 +214,8 @@ fun MainScreen(
                         viewModel = viewModel,
                         onRequestPermission = onRequestFloatingPermission,
                         onStartFloating = onStartFloating,
-                        onOpenAddons = { showAddonPage = true }
+                        onOpenAddons = { showAddonPage = true },
+                        onOpenCommandChains = { showCommandChainPage = true }
                     )
                 }
             }
@@ -223,6 +225,13 @@ fun MainScreen(
     if (showAddonPage) {
         AddonManagerPage(
             onClose = { showAddonPage = false },
+            viewModel = viewModel
+        )
+    }
+
+    if (showCommandChainPage) {
+        CommandChainManagerPage(
+            onClose = { showCommandChainPage = false },
             viewModel = viewModel
         )
     }
@@ -1822,7 +1831,8 @@ fun SettingsTab(
     viewModel: MainViewModel,
     onRequestPermission: () -> Unit,
     onStartFloating: () -> Unit,
-    onOpenAddons: () -> Unit
+    onOpenAddons: () -> Unit,
+    onOpenCommandChains: () -> Unit
 ) {
     var showClearDataDialog by remember { mutableStateOf(false) }
 
@@ -1971,6 +1981,27 @@ fun SettingsTab(
                 description = "开启后拓展包内容显示在原版之前",
                 checked = viewModel.uiState.value.addonCompletionsFirst,
                 onCheckedChange = { viewModel.setAddonCompletionsFirst(it) }
+            )
+        }
+
+        // Command chains section
+        item {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "命令链",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+        }
+
+        item {
+            SettingItem(
+                icon = Icons.Default.Link,
+                title = "命令方块链",
+                description = "管理和编辑命令方块链",
+                onClick = onOpenCommandChains
             )
         }
 
@@ -3304,6 +3335,968 @@ fun ImportAddonDialog(
                 }
             ) {
                 Text("导入")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("取消")
+            }
+        }
+    )
+}
+
+@Composable
+fun EmptyState(
+    icon: ImageVector,
+    title: String,
+    description: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = description,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CommandChainManagerPage(
+    onClose: () -> Unit,
+    viewModel: MainViewModel
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    var searchQuery by remember { mutableStateOf("") }
+    var showEditor by remember { mutableStateOf(false) }
+    var editingChain by remember { mutableStateOf<com.nexuscmd.data.CommandChain?>(null) }
+    var selectedChain by remember { mutableStateOf<com.nexuscmd.data.CommandChain?>(null) }
+
+    val filteredChains = remember(uiState.commandChains, searchQuery) {
+        if (searchQuery.isBlank()) uiState.commandChains
+        else viewModel.searchCommandChains(searchQuery)
+    }
+
+    if (showEditor) {
+        CommandChainEditorPage(
+            chain = editingChain,
+            onBack = {
+                showEditor = false
+                editingChain = null
+            },
+            onSave = { chain ->
+                if (editingChain == null) {
+                    viewModel.addCommandChain(chain)
+                } else {
+                    viewModel.updateCommandChain(chain)
+                }
+                showEditor = false
+                editingChain = null
+            }
+        )
+        return
+    }
+
+    if (selectedChain != null) {
+        CommandChainDetailPage(
+            chain = selectedChain!!,
+            onBack = { selectedChain = null },
+            onEdit = {
+                editingChain = it
+                showEditor = true
+                selectedChain = null
+            },
+            onDelete = { chainId ->
+                viewModel.deleteCommandChain(chainId)
+                selectedChain = null
+            },
+            onUseCommand = { command ->
+                viewModel.onCommandTextChanged(command)
+                viewModel.addToHistory(command)
+            }
+        )
+        return
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("命令方块链", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = onClose) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { showEditor = true }) {
+                        Icon(Icons.Default.AddCircle, contentDescription = "新建命令链")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            Surface(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                shape = RoundedCornerShape(28.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    TextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        placeholder = { Text("搜索命令链...", style = MaterialTheme.typography.bodyMedium) },
+                        modifier = Modifier.weight(1f),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent
+                        ),
+                        singleLine = true,
+                        textStyle = MaterialTheme.typography.bodyMedium
+                    )
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(
+                                imageVector = Icons.Default.Clear,
+                                contentDescription = "清除",
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                StatCard(
+                    label = "命令链",
+                    value = "${uiState.commandChains.size}",
+                    icon = Icons.Default.Link,
+                    gradientColors = listOf(
+                        MaterialTheme.colorScheme.primary,
+                        MaterialTheme.colorScheme.tertiary
+                    ),
+                    modifier = Modifier.weight(1f)
+                )
+                StatCard(
+                    label = "总步骤",
+                    value = "${uiState.commandChains.sumOf { it.steps.size }}",
+                    icon = Icons.Default.FormatListNumbered,
+                    gradientColors = listOf(
+                        Color(0xFF4CAF50),
+                        Color(0xFF2E7D32)
+                    ),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (filteredChains.isEmpty()) {
+                EmptyState(
+                    icon = Icons.Default.LinkOff,
+                    title = "暂无命令链",
+                    description = "点击右上角按钮创建命令链",
+                    modifier = Modifier.weight(1f)
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(filteredChains) { chain ->
+                        CommandChainCard(
+                            chain = chain,
+                            onClick = { selectedChain = chain }
+                        )
+                    }
+                    item { Spacer(modifier = Modifier.height(16.dp)) }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun CommandChainCard(
+    chain: com.nexuscmd.data.CommandChain,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Card(
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                ),
+                modifier = Modifier.size(56.dp)
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Link,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = chain.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = chain.description.ifEmpty { "暂无描述" },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    AddonBadge(
+                        text = "${chain.steps.size} 步骤",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    AddonBadge(
+                        text = chain.category,
+                        tint = Color(0xFFEF6C00)
+                    )
+                }
+            }
+
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CommandChainDetailPage(
+    chain: com.nexuscmd.data.CommandChain,
+    onBack: () -> Unit,
+    onEdit: (com.nexuscmd.data.CommandChain) -> Unit,
+    onDelete: (String) -> Unit,
+    onUseCommand: (String) -> Unit
+) {
+    val clipboardManager = LocalClipboardManager.current
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("命令链详情", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { onEdit(chain) }) {
+                        Icon(Icons.Default.Edit, contentDescription = "编辑")
+                    }
+                    IconButton(onClick = { showDeleteDialog = true }) {
+                        Icon(Icons.Default.Delete, contentDescription = "删除")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            )
+        }
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            item {
+                Card(
+                    shape = RoundedCornerShape(20.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Card(
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                                ),
+                                modifier = Modifier.size(72.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Link,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(36.dp)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = chain.name,
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = chain.category,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = chain.description.ifEmpty { "暂无描述" },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            item {
+                Text(
+                    text = "命令步骤",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            items(chain.steps) { step ->
+                CommandChainStepItem(
+                    step = step,
+                    index = chain.steps.indexOf(step),
+                    onCopy = {
+                        clipboardManager.setText(AnnotatedString(step.command))
+                    },
+                    onUse = {
+                        onUseCommand(step.command)
+                    }
+                )
+            }
+        }
+    }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("删除命令链") },
+            text = { Text("确定要删除「${chain.name}」吗？此操作不可恢复。") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDelete(chain.id)
+                        showDeleteDialog = false
+                    }
+                ) {
+                    Text("删除", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("取消")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun CommandChainStepItem(
+    step: com.nexuscmd.data.CommandChainStep,
+    index: Int,
+    onCopy: () -> Unit,
+    onUse: () -> Unit
+) {
+    Card(
+        shape = RoundedCornerShape(14.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "${index + 1}",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                Spacer(modifier = Modifier.width(10.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = step.name.ifEmpty { "步骤 ${index + 1}" },
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    if (step.delay > 0) {
+                        Text(
+                            text = "延迟 ${step.delay} tick",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+            Card(
+                shape = RoundedCornerShape(10.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                )
+            ) {
+                SyntaxHighlightedText(
+                    text = step.command,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(10.dp)
+                )
+            }
+            if (step.note.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "备注: ${step.note}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = onCopy,
+                    modifier = Modifier.height(32.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
+                ) {
+                    Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("复制", style = MaterialTheme.typography.bodySmall)
+                }
+                Button(
+                    onClick = onUse,
+                    modifier = Modifier.height(32.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
+                ) {
+                    Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("使用", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CommandChainEditorPage(
+    chain: com.nexuscmd.data.CommandChain?,
+    onBack: () -> Unit,
+    onSave: (com.nexuscmd.data.CommandChain) -> Unit
+) {
+    var name by remember { mutableStateOf(chain?.name ?: "") }
+    var description by remember { mutableStateOf(chain?.description ?: "") }
+    var category by remember { mutableStateOf(chain?.category ?: "未分类") }
+    var steps by remember { mutableStateOf(chain?.steps?.toMutableList() ?: mutableListOf()) }
+    var showStepEditor by remember { mutableStateOf(false) }
+    var editingStep by remember { mutableStateOf<Pair<Int, com.nexuscmd.data.CommandChainStep>?>(null) }
+    var showSaveError by remember { mutableStateOf(false) }
+
+    val categories = listOf("未分类", "红石", "传送", "效果", "建筑", "小游戏", "其他")
+
+    if (showSaveError) {
+        LaunchedEffect(Unit) {
+            kotlinx.coroutines.delay(3000)
+            showSaveError = false
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        if (chain == null) "新建命令链" else "编辑命令链",
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = {
+                        if (name.isBlank() || steps.isEmpty()) {
+                            showSaveError = true
+                        } else {
+                            val newChain = com.nexuscmd.data.CommandChain(
+                                id = chain?.id ?: "",
+                                name = name,
+                                description = description,
+                                steps = steps,
+                                category = category
+                            )
+                            onSave(newChain)
+                        }
+                    }) {
+                        Icon(Icons.Default.Check, contentDescription = "保存")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                item {
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = "基本信息",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            OutlinedTextField(
+                                value = name,
+                                onValueChange = { name = it },
+                                label = { Text("名称") },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                                shape = RoundedCornerShape(12.dp),
+                                isError = showSaveError && name.isBlank()
+                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            OutlinedTextField(
+                                value = description,
+                                onValueChange = { description = it },
+                                label = { Text("描述") },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Text(
+                                text = "分类",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                categories.take(4).forEach { cat ->
+                                    FilterChip(
+                                        selected = category == cat,
+                                        onClick = { category = cat },
+                                        label = { Text(cat, style = MaterialTheme.typography.bodySmall) }
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                categories.drop(4).forEach { cat ->
+                                    FilterChip(
+                                        selected = category == cat,
+                                        onClick = { category = cat },
+                                        label = { Text(cat, style = MaterialTheme.typography.bodySmall) }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "命令步骤",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        TextButton(onClick = {
+                            editingStep = null
+                            showStepEditor = true
+                        }) {
+                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("添加步骤")
+                        }
+                    }
+                }
+
+                if (steps.isEmpty()) {
+                    item {
+                        EmptyState(
+                            icon = Icons.Default.FormatListNumbered,
+                            title = "暂无步骤",
+                            description = "点击上方按钮添加命令步骤"
+                        )
+                    }
+                } else {
+                    items(steps.size) { index ->
+                        val step = steps[index]
+                        EditableStepItem(
+                            step = step,
+                            index = index,
+                            canMoveUp = index > 0,
+                            canMoveDown = index < steps.size - 1,
+                            onEdit = {
+                                editingStep = index to step
+                                showStepEditor = true
+                            },
+                            onDelete = {
+                                steps = steps.toMutableList().also { it.removeAt(index) }
+                            },
+                            onMoveUp = {
+                                if (index > 0) {
+                                    steps = steps.toMutableList().also {
+                                        val temp = it[index]
+                                        it[index] = it[index - 1]
+                                        it[index - 1] = temp
+                                    }
+                                }
+                            },
+                            onMoveDown = {
+                                if (index < steps.size - 1) {
+                                    steps = steps.toMutableList().also {
+                                        val temp = it[index]
+                                        it[index] = it[index + 1]
+                                        it[index + 1] = temp
+                                    }
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    if (showStepEditor) {
+        StepEditorDialog(
+            step = editingStep?.second,
+            index = editingStep?.first,
+            onDismiss = {
+                showStepEditor = false
+                editingStep = null
+            },
+            onSave = { newStep ->
+                steps = steps.toMutableList().also { list ->
+                    if (editingStep != null) {
+                        list[editingStep!!.first] = newStep
+                    } else {
+                        list.add(newStep)
+                    }
+                }
+                showStepEditor = false
+                editingStep = null
+            }
+        )
+    }
+}
+
+@Composable
+fun EditableStepItem(
+    step: com.nexuscmd.data.CommandChainStep,
+    index: Int,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit
+) {
+    Card(
+        shape = RoundedCornerShape(14.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "${index + 1}",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                Spacer(modifier = Modifier.width(10.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = step.name.ifEmpty { "步骤 ${index + 1}" },
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    if (step.delay > 0) {
+                        Text(
+                            text = "延迟 ${step.delay} tick",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                IconButton(onClick = onMoveUp, enabled = canMoveUp) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowUpward,
+                        contentDescription = "上移",
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                IconButton(onClick = onMoveDown, enabled = canMoveDown) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowDownward,
+                        contentDescription = "下移",
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                IconButton(onClick = onEdit) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "编辑",
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "删除",
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Card(
+                shape = RoundedCornerShape(8.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                )
+            ) {
+                Text(
+                    text = step.command,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier.padding(10.dp),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun StepEditorDialog(
+    step: com.nexuscmd.data.CommandChainStep?,
+    index: Int?,
+    onDismiss: () -> Unit,
+    onSave: (com.nexuscmd.data.CommandChainStep) -> Unit
+) {
+    var stepName by remember { mutableStateOf(step?.name ?: "") }
+    var command by remember { mutableStateOf(step?.command ?: "") }
+    var delay by remember { mutableStateOf(step?.delay?.toString() ?: "0") }
+    var note by remember { mutableStateOf(step?.note ?: "") }
+    var showError by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(if (step == null) "添加步骤" else "编辑步骤") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = stepName,
+                    onValueChange = { stepName = it },
+                    label = { Text("步骤名称（可选）") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                OutlinedTextField(
+                    value = command,
+                    onValueChange = {
+                        command = it
+                        showError = false
+                    },
+                    label = { Text("命令") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    isError = showError
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                OutlinedTextField(
+                    value = delay,
+                    onValueChange = { delay = it.filter { c -> c.isDigit() } },
+                    label = { Text("延迟（tick）") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                OutlinedTextField(
+                    value = note,
+                    onValueChange = { note = it },
+                    label = { Text("备注（可选）") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
+                )
+                if (showError) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "请输入命令内容",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (command.isBlank()) {
+                        showError = true
+                    } else {
+                        val newStep = com.nexuscmd.data.CommandChainStep(
+                            id = step?.id ?: "step_${System.currentTimeMillis()}_${(0..9999).random()}",
+                            command = command,
+                            name = stepName,
+                            delay = delay.toIntOrNull() ?: 0,
+                            note = note
+                        )
+                        onSave(newStep)
+                    }
+                }
+            ) {
+                Text("保存")
             }
         },
         dismissButton = {

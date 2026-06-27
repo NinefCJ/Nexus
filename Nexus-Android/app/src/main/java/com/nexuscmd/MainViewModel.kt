@@ -8,6 +8,9 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.nexuscmd.data.AddonManager
 import com.nexuscmd.data.AddonPack
+import com.nexuscmd.data.CommandChainRepository
+import com.nexuscmd.data.CommandChain
+import com.nexuscmd.data.CommandChainStep
 import com.nexuscmd.data.CommandRepository
 import com.nexuscmd.data.HistoryItem
 import com.nexuscmd.data.HistoryManager
@@ -56,7 +59,10 @@ data class MainUiState(
     val installedAddons: List<AddonPack> = emptyList(),
     val addonCommands: List<SavedCommand> = emptyList(),
     val addonTemplates: List<SavedCommand> = emptyList(),
-    val addonCompletionsFirst: Boolean = false
+    val addonCompletionsFirst: Boolean = false,
+
+    // Command Chains
+    val commandChains: List<CommandChain> = emptyList()
 )
 
 data class CommandLibraryItem(
@@ -76,6 +82,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val historyManager = HistoryManager(application)
     private val settingsManager = SettingsManager(application)
     private val addonManager = AddonManager.getInstance(application)
+    private val commandChainRepository = CommandChainRepository(application)
 
     private var completionJob: Job? = null
 
@@ -101,6 +108,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val addonTemplates = enabledAddons.flatMap { it.customTemplates }
             val addonFirst = settingsManager.addonCompletionsFirst
 
+            // Load command chains
+            val chains = commandChainRepository.getAllChains()
+
             // Build quick commands from addons
             val addonQuickCommands = addonCommands.map { cmd ->
                 Triple(cmd.command, cmd.name, Icons.Default.Extension)
@@ -124,7 +134,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 installedAddons = addons,
                 addonCommands = addonCommands,
                 addonTemplates = addonTemplates,
-                addonCompletionsFirst = addonFirst
+                addonCompletionsFirst = addonFirst,
+                commandChains = chains
             )
         }
     }
@@ -341,6 +352,39 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun getAddonTemplates(): List<SavedCommand> {
         return _uiState.value.addonTemplates
+    }
+
+    fun addCommandChain(chain: CommandChain) {
+        viewModelScope.launch {
+            commandChainRepository.addChain(chain)
+            refreshCommandChains()
+        }
+    }
+
+    fun updateCommandChain(chain: CommandChain) {
+        viewModelScope.launch {
+            commandChainRepository.updateChain(chain)
+            refreshCommandChains()
+        }
+    }
+
+    fun deleteCommandChain(chainId: String) {
+        viewModelScope.launch {
+            commandChainRepository.deleteChain(chainId)
+            refreshCommandChains()
+            _uiState.value = _uiState.value.copy(
+                snackbarMessage = "已删除命令链"
+            )
+        }
+    }
+
+    fun searchCommandChains(query: String): List<CommandChain> {
+        return commandChainRepository.searchChains(query)
+    }
+
+    private fun refreshCommandChains() {
+        val chains = commandChainRepository.getAllChains()
+        _uiState.value = _uiState.value.copy(commandChains = chains)
     }
 
     private fun refreshFavorites() {
