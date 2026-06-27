@@ -1,0 +1,80 @@
+name: Build Nexus Debug APK
+
+# 触发条件：推送代码到 main 分支，或手动在手机上触发
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    # 使用 ubuntu-20.04 以获得最佳的 Action 插件兼容性
+    runs-on: ubuntu-20.04
+    
+    # 关键：解决 Node.js 20/24 升级导致的 OpenSSL 相关报错
+    env:
+      NODE_OPTIONS: --openssl-legacy-provider
+
+    # 关键：指定所有命令在 Nexus-Android 子目录下执行
+    defaults:
+      run:
+        working-directory: Nexus-Android
+
+    steps:
+      # 1. 拉取代码
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. 设置 JDK 17 (适配 AGP 8.x)
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      # 3. 设置 Android SDK 和 NDK 环境
+      # 由于你的 build.gradle.kts 没有写 ndkVersion，这里会自动安装默认版本
+      - name: Setup Android Environment
+        uses: android-actions/setup-android@v3
+
+      # 4. 安装特定的 CMake 版本 (根据你 build.gradle.kts 中的 3.22.1)
+      - name: Install CMake
+        run: sdkmanager "cmake;3.22.1"
+
+      # 5. 缓存 Gradle 依赖 (加速后续构建)
+      # 已升级至最新版 v4.2.0 以修复 Node.js 兼容性问题
+      - name: Cache Gradle packages
+        uses: actions/cache@v4.2.0
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            Nexus-Android/.gradle
+          key: gradle-${{ hashFiles('Nexus-Android/**/*.gradle*', 'Nexus-Android/gradle/libs.versions.toml') }}
+          restore-keys: |
+            gradle-
+
+      # 6. 赋予 gradlew 执行权限 (Linux Runner 必须)
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      # 7. 核心构建命令：编译 Debug 包
+      # 不手动指定 ANDROID_NDK_HOME，让 Gradle 自动探测
+      - name: Build with Gradle
+        run: ./gradlew :app:assembleDebug --stacktrace
+
+      # 8. 上传产物到 GitHub Actions 页面
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Nexus-Debug-APK
+          path: Nexus-Android/app/build/outputs/apk/debug/app-debug.apk
+
+      # 9. 清理旧缓存（防止下次构建因缓存损坏而失败）
+      - name: Cleanup old caches
+        if: always() # 无论构建成功与否都执行清理
+        run: |
+          echo "Cleaning up old caches..."
+          gh cache list --limit 100 --json id --jq '.[].id' | xargs -I {} gh cache delete {} || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
