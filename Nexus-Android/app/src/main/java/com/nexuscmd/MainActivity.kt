@@ -155,7 +155,7 @@ fun MainScreen(
         ) {
             // Tab selector
             NavigationBar {
-                listOf("编辑器", "命令库", "历史", "设置").forEachIndexed { index, title ->
+                listOf("编辑器", "模板", "命令库", "历史", "设置").forEachIndexed { index, title ->
                     NavigationBarItem(
                         selected = selectedTab == index,
                         onClick = { selectedTab = index },
@@ -163,8 +163,9 @@ fun MainScreen(
                             Icon(
                                 imageVector = when (index) {
                                     0 -> Icons.Default.Edit
-                                    1 -> Icons.Default.LibraryBooks
-                                    2 -> Icons.Default.History
+                                    1 -> Icons.Default.AutoFixHigh
+                                    2 -> Icons.Default.LibraryBooks
+                                    3 -> Icons.Default.History
                                     else -> Icons.Default.Settings
                                 },
                                 contentDescription = title
@@ -179,9 +180,10 @@ fun MainScreen(
             Box(modifier = Modifier.weight(1f)) {
                 when (selectedTab) {
                     0 -> EditorTab(viewModel, uiState)
-                    1 -> CommandLibraryTab(viewModel, uiState)
-                    2 -> HistoryTab(viewModel, uiState)
-                    3 -> SettingsTab(
+                    1 -> TemplateGeneratorTab(viewModel)
+                    2 -> CommandLibraryTab(viewModel, uiState)
+                    3 -> HistoryTab(viewModel, uiState)
+                    4 -> SettingsTab(
                         viewModel = viewModel,
                         onRequestPermission = onRequestFloatingPermission,
                         onStartFloating = onStartFloating
@@ -1199,6 +1201,388 @@ fun SettingToggleItem(
                 checked = checked,
                 onCheckedChange = onCheckedChange
             )
+        }
+    }
+}
+
+// ============ Template Generator Tab ============
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TemplateGeneratorTab(viewModel: MainViewModel) {
+    val templateGenerator = remember { com.nexuscmd.data.TemplateGenerator() }
+    val templates = remember { templateGenerator.getTemplates() }
+    val categories = remember { templateGenerator.getCategories() }
+
+    var selectedCategory by remember { mutableStateOf<String?>(null) }
+    var selectedTemplate by remember { mutableStateOf<com.nexuscmd.data.CommandTemplate?>(null) }
+    var parameterValues by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+    var generatedCommand by remember { mutableStateOf("") }
+
+    val clipboardManager = LocalClipboardManager.current
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        if (selectedTemplate == null) {
+            // Template list view
+            LazyColumn(
+                modifier = Modifier.fillMaxSize().padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                item {
+                    Text(
+                        text = "模板生成器",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "选择模板快速生成命令",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+
+                // Category chips
+                item {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.wrapContentWidth()
+                    ) {
+                        FilterChip(
+                            selected = selectedCategory == null,
+                            onClick = { selectedCategory = null },
+                            label = { Text("全部") }
+                        )
+                        categories.forEach { category ->
+                            FilterChip(
+                                selected = selectedCategory == category,
+                                onClick = { selectedCategory = category },
+                                label = { Text(category) }
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
+                val displayedTemplates = if (selectedCategory != null) {
+                    templates.filter { it.category == selectedCategory }
+                } else {
+                    templates
+                }
+
+                items(displayedTemplates) { template ->
+                    TemplateCard(
+                        template = template,
+                        onClick = {
+                            selectedTemplate = template
+                            parameterValues = template.parameters.associate { it.name to it.defaultValue }
+                            generatedCommand = templateGenerator.generateCommand(template, parameterValues)
+                        }
+                    )
+                }
+            }
+        } else {
+            // Template editor view
+            TemplateEditor(
+                template = selectedTemplate!!,
+                parameterValues = parameterValues,
+                generatedCommand = generatedCommand,
+                onParameterChange = { name, value ->
+                    parameterValues = parameterValues + (name to value)
+                    generatedCommand = templateGenerator.generateCommand(selectedTemplate!!, parameterValues)
+                },
+                onCopy = {
+                    clipboardManager.setText(AnnotatedString(generatedCommand))
+                    viewModel.addToHistory(generatedCommand)
+                },
+                onUseInEditor = {
+                    viewModel.onCommandTextChanged(generatedCommand)
+                },
+                onBack = { selectedTemplate = null }
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TemplateCard(
+    template: com.nexuscmd.data.CommandTemplate,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.AutoFixHigh,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = template.name,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = template.category,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = template.description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = template.template,
+                style = MaterialTheme.typography.bodySmall,
+                fontFamily = FontFamily.Monospace,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TemplateEditor(
+    template: com.nexuscmd.data.CommandTemplate,
+    parameterValues: Map<String, String>,
+    generatedCommand: String,
+    onParameterChange: (String, String) -> Unit,
+    onCopy: () -> Unit,
+    onUseInEditor: () -> Unit,
+    onBack: () -> Unit
+) {
+    val clipboardManager = LocalClipboardManager.current
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        // Header
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "返回")
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = template.name,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = template.description,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Parameters
+        Text(
+            text = "参数设置",
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+
+        LazyColumn(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            items(template.parameters.size) { index ->
+                val param = template.parameters[index]
+                val currentValue = parameterValues[param.name] ?: param.defaultValue
+
+                ParameterInputField(
+                    parameter = param,
+                    value = currentValue,
+                    onValueChange = { onParameterChange(param.name, it) }
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Generated command preview
+        Text(
+            text = "生成的命令",
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+            )
+        ) {
+            Row(
+                modifier = Modifier.padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = generatedCommand,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier.weight(1f),
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis
+                )
+                IconButton(onClick = {
+                    clipboardManager.setText(AnnotatedString(generatedCommand))
+                }) {
+                    Icon(Icons.Default.ContentCopy, contentDescription = "复制")
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Action buttons
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            OutlinedButton(
+                onClick = onCopy,
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(Icons.Default.ContentCopy, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("复制")
+            }
+            Button(
+                onClick = onUseInEditor,
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(Icons.Default.Edit, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("使用")
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ParameterInputField(
+    parameter: com.nexuscmd.data.TemplateParameter,
+    value: String,
+    onValueChange: (String) -> Unit
+) {
+    Column {
+        Text(
+            text = parameter.name,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium
+        )
+        Text(
+            text = parameter.description,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+
+        when (parameter.type) {
+            com.nexuscmd.data.ParamType.SELECT -> {
+                var expanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = it }
+                ) {
+                    OutlinedTextField(
+                        value = value,
+                        onValueChange = {},
+                        readOnly = true,
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth(),
+                        singleLine = true
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        parameter.options.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option) },
+                                onClick = {
+                                    onValueChange(option)
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+            com.nexuscmd.data.ParamType.BOOLEAN -> {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = value == "true",
+                        onClick = { onValueChange("true") },
+                        label = { Text("true") }
+                    )
+                    FilterChip(
+                        selected = value == "false",
+                        onClick = { onValueChange("false") },
+                        label = { Text("false") }
+                    )
+                }
+            }
+            com.nexuscmd.data.ParamType.SELECTOR -> {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf("@p", "@a", "@e", "@s", "@r").forEach { selector ->
+                        FilterChip(
+                            selected = value == selector,
+                            onClick = { onValueChange(selector) },
+                            label = { Text(selector) }
+                        )
+                    }
+                }
+            }
+            else -> {
+                OutlinedTextField(
+                    value = value,
+                    onValueChange = onValueChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    placeholder = { Text(parameter.defaultValue) }
+                )
+            }
         }
     }
 }
