@@ -18,6 +18,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -66,7 +67,7 @@ class MainActivity : ComponentActivity() {
         CommandHelper.Registry.getInstance().initialize("")
 
         setContent {
-            MCCommandHelperTheme(darkTheme = viewModel.uiState.value.isDarkTheme) {
+            MCCommandHelperTheme(theme = viewModel.uiState.value.currentTheme) {
                 MainScreen(
                     viewModel = viewModel,
                     onRequestFloatingPermission = { requestFloatingWindowPermission() },
@@ -265,6 +266,22 @@ fun EditorTab(viewModel: MainViewModel, uiState: MainUiState) {
         // Quick commands
         item {
             Text(
+                text = "快速插入",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            QuickInsertToolbar(
+                onInsert = { text ->
+                    val current = viewModel.uiState.value.commandText
+                    viewModel.onCommandTextChanged(current + text)
+                }
+            )
+        }
+
+        item {
+            Text(
                 text = "快速命令",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
@@ -302,6 +319,57 @@ fun EditorTab(viewModel: MainViewModel, uiState: MainUiState) {
                     command = fav,
                     onClick = { viewModel.onCommandTextChanged(fav.command) },
                     onDelete = { viewModel.removeFromFavorites(fav.id) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun QuickInsertToolbar(onInsert: (String) -> Unit) {
+    val items = listOf(
+        "@s" to "自己",
+        "@p" to "最近",
+        "@a" to "全部",
+        "@e" to "实体",
+        "@r" to "随机",
+        "~ ~ ~" to "位置",
+        " " to "空格"
+    )
+    
+    val secondaryItems = listOf(
+        "[" to "[",
+        "]" to "]",
+        "{" to "{",
+        "}" to "}",
+        "=" to "=",
+        "," to ",",
+        "\"" to "\""
+    )
+
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            items(items) { (text, label) ->
+                AssistChip(
+                    onClick = { onInsert(text) },
+                    label = { Text(label, style = MaterialTheme.typography.bodySmall) },
+                    leadingIcon = {
+                        Text(
+                            text = text.take(3),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontFamily = FontFamily.Monospace,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                )
+            }
+        }
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            items(secondaryItems) { (text, label) ->
+                AssistChip(
+                    onClick = { onInsert(text) },
+                    label = { Text(label, style = MaterialTheme.typography.bodySmall) },
+                    modifier = Modifier.height(32.dp)
                 )
             }
         }
@@ -1795,13 +1863,41 @@ fun SettingsTab(
         }
 
         item {
-            SettingToggleItem(
-                icon = Icons.Default.DarkMode,
-                title = "深色主题",
-                description = "使用深色配色方案",
-                checked = viewModel.uiState.value.isDarkTheme,
-                onCheckedChange = { viewModel.setDarkTheme(it) }
+            SettingItem(
+                icon = Icons.Default.Palette,
+                title = "主题",
+                description = viewModel.uiState.value.currentTheme.displayName,
+                onClick = {}
             )
+        }
+
+        item {
+            var expanded by remember { mutableStateOf(false) }
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text(
+                        text = "选择主题",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(com.nexuscmd.data.AppTheme.values()) { theme ->
+                            val isSelected = viewModel.uiState.value.currentTheme == theme
+                            ThemePreviewCard(
+                                theme = theme,
+                                isSelected = isSelected,
+                                onClick = { viewModel.setTheme(theme) }
+                            )
+                        }
+                    }
+                }
+            }
         }
 
         // Floating window section
@@ -1883,6 +1979,109 @@ fun SettingsTab(
                 title = "源代码",
                 description = "GitHub: NinefCJ/Nexus",
                 onClick = {}
+            )
+        }
+    }
+}
+
+@Composable
+fun ThemePreviewCard(
+    theme: com.nexuscmd.data.AppTheme,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val colors = when (theme) {
+        com.nexuscmd.data.AppTheme.FOLLOW_SYSTEM ->
+            listOf(
+                androidx.compose.ui.graphics.Color(0xFF4A90D9),
+                androidx.compose.ui.graphics.Color(0xFF1A1A2E),
+                androidx.compose.ui.graphics.Color(0xFFF5F7FA)
+            )
+        com.nexuscmd.data.AppTheme.LIGHT ->
+            listOf(
+                androidx.compose.ui.graphics.Color(0xFF4A90D9),
+                androidx.compose.ui.graphics.Color(0xFFFFFFFF),
+                androidx.compose.ui.graphics.Color(0xFFF5F7FA)
+            )
+        com.nexuscmd.data.AppTheme.DARK ->
+            listOf(
+                androidx.compose.ui.graphics.Color(0xFF5C9CE6),
+                androidx.compose.ui.graphics.Color(0xFF1E1E1E),
+                androidx.compose.ui.graphics.Color(0xFF121212)
+            )
+        com.nexuscmd.data.AppTheme.MIDNIGHT ->
+            listOf(
+                androidx.compose.ui.graphics.Color(0xFF7C8CF3),
+                androidx.compose.ui.graphics.Color(0xFF1E293B),
+                androidx.compose.ui.graphics.Color(0xFF0F172A)
+            )
+        com.nexuscmd.data.AppTheme.AMOLED ->
+            listOf(
+                androidx.compose.ui.graphics.Color(0xFF818CF8),
+                androidx.compose.ui.graphics.Color(0xFF0A0A0A),
+                androidx.compose.ui.graphics.Color(0xFF000000)
+            )
+        com.nexuscmd.data.AppTheme.GREEN ->
+            listOf(
+                androidx.compose.ui.graphics.Color(0xFF4CAF50),
+                androidx.compose.ui.graphics.Color(0xFFE8F5E9),
+                androidx.compose.ui.graphics.Color(0xFFF8FAF5)
+            )
+        com.nexuscmd.data.AppTheme.OCEAN ->
+            listOf(
+                androidx.compose.ui.graphics.Color(0xFF0288D1),
+                androidx.compose.ui.graphics.Color(0xFFE1F5FE),
+                androidx.compose.ui.graphics.Color(0xFFF1F8FC)
+            )
+        com.nexuscmd.data.AppTheme.WARM ->
+            listOf(
+                androidx.compose.ui.graphics.Color(0xFFE65100),
+                androidx.compose.ui.graphics.Color(0xFFFFE0B2),
+                androidx.compose.ui.graphics.Color(0xFFFBF5F0)
+            )
+    }
+
+    Card(
+        onClick = onClick,
+        shape = RoundedCornerShape(12.dp),
+        border = if (isSelected)
+            androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+        else null,
+        modifier = androidx.compose.ui.Modifier.width(72.dp)
+    ) {
+        Column(
+            modifier = androidx.compose.ui.Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+        ) {
+            androidx.compose.foundation.Box(
+                modifier = androidx.compose.ui.Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(colors[2])
+            ) {
+                androidx.compose.foundation.Box(
+                    modifier = androidx.compose.ui.Modifier
+                        .fillMaxWidth()
+                        .height(12.dp)
+                        .background(colors[0])
+                )
+                androidx.compose.foundation.Box(
+                    modifier = androidx.compose.ui.Modifier
+                        .align(androidx.compose.ui.Alignment.BottomStart)
+                        .padding(start = 6.dp, bottom = 6.dp)
+                        .size(8.dp)
+                        .clip(androidx.compose.foundation.shape.CircleShape)
+                        .background(colors[1])
+                )
+            }
+            androidx.compose.foundation.layout.Spacer(modifier = androidx.compose.ui.Modifier.height(4.dp))
+            Text(
+                text = theme.displayName,
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
             )
         }
     }

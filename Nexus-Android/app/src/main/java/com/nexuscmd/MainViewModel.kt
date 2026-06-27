@@ -11,6 +11,7 @@ import com.nexuscmd.data.HistoryItem
 import com.nexuscmd.data.HistoryManager
 import com.nexuscmd.data.SavedCommand
 import com.nexuscmd.data.SettingsManager
+import com.nexuscmd.data.AppTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -41,6 +42,7 @@ data class MainUiState(
 
     // Settings
     val isDarkTheme: Boolean = false,
+    val currentTheme: AppTheme = AppTheme.FOLLOW_SYSTEM,
 
     // Snackbar
     val snackbarMessage: String? = null
@@ -72,7 +74,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val favorites = commandRepository.getFavoriteCommands()
             val history = historyManager.getHistory()
             val allCommands = getBuiltInCommands()
-            val isDark = settingsManager.isDarkTheme
+            val theme = settingsManager.currentTheme
 
             _uiState.value = _uiState.value.copy(
                 quickCommands = listOf(
@@ -88,7 +90,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 favoriteCommands = favorites,
                 historyItems = history,
                 allCommands = allCommands,
-                isDarkTheme = isDark
+                currentTheme = theme
             )
         }
     }
@@ -215,9 +217,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun setDarkTheme(isDark: Boolean) {
-        settingsManager.isDarkTheme = isDark
-        _uiState.value = _uiState.value.copy(isDarkTheme = isDark)
+    fun setTheme(theme: AppTheme) {
+        settingsManager.currentTheme = theme
+        _uiState.value = _uiState.value.copy(currentTheme = theme)
     }
 
     fun clearAllData() {
