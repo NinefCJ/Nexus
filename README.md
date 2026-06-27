@@ -1,14 +1,14 @@
-# MCCommandHelper
+# Nexus
 
 Minecraft命令助手 - 仿照CHelper开发的跨平台命令辅助工具
 
 ## 项目结构
 
 ```
-MCCommandHelper/
-├── MCCommandHelper-Core/      # C++ 内核 (独立子模块)
-├── MCCommandHelper-Android/  # Android 应用
-└── resourcepack/             # JSON命令定义
+Nexus/
+├── Nexus-Core/      # C++ 内核 (独立子模块)
+├── Nexus-Android/  # Android 应用
+└── resourcepack/   # JSON命令定义
 ```
 
 ## 核心功能
@@ -17,6 +17,7 @@ MCCommandHelper/
 - 语法高亮：命令结构用不同颜色区分
 - 错误检测：实时检测命令语法错误
 - 命令库：收藏常用命令
+- 悬浮窗：游戏中也能实时使用命令助手
 
 ## 技术栈
 
@@ -42,13 +43,20 @@ cd Nexus-Android
 ./gradlew assembleDebug
 ```
 
+## 已完成功能
+
+- [x] C++ 内核: Tokenizer, Parser, Completion引擎
+- [x] Android 应用: Jetpack Compose 现代化UI
+- [x] 悬浮窗服务: 支持游戏中实时命令补全
+- [x] Material3 主题系统 (深色/浅色)
+- [x] 底部导航栏 (编辑器/命令库/历史/设置)
+- [x] 快速命令面板
+- [x] 命令语法验证
+
 ## 开发计划
 
-- [x] 项目结构初始化
-- [x] C++ 内核基础实现 (Tokenizer, Parser)
-- [x] 命令补全引擎
-- [x] Android 项目初始化
-- [ ] Android JNI集成
-- [ ] 完整UI开发
-- [ ] 命令库功能
-- [ ] 语法转换功能
+- [ ] 命令库收藏功能
+- [ ] 历史记录保存
+- [ ] 语法高亮增强
+- [ ] 更多MC命令支持
+- [ ] 语法转换功能 (旧→新)
