@@ -1,0 +1,32 @@
+# Build outputs
+*.o
+*.a
+*.so
+*.dylib
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.cmake
+
+# GoogleTest
+gtest/
+
+# Android
+app/build/
+app/.cxx/
+build/
+.gradle/
+*.apk
+*.aab
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Misc
+*.log
+.DS_Store

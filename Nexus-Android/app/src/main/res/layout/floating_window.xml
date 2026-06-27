@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@+id/collapsed_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:padding="8dp"
+        android:background="@drawable/floating_collapsed_bg">
+
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@android:drawable/ic_menu_edit"
+            android:contentDescription="MC命令助手"
+            android:padding="4dp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/expanded_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/floating_expanded_bg"
+        android:padding="12dp"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:marginBottom="8dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="MC命令助手"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <ImageButton
+                android:id="@+id/btn_minimize"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:src="@android:drawable/ic_menu_minimize"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="最小化"
+                android:padding="4dp" />
+
+            <ImageButton
+                android:id="@+id/btn_close"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:src="@android:drawable/ic_menu_close_clear_cancel"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="关闭"
+                android:padding="4dp" />
+        </LinearLayout>
+
+        <EditText
+            android:id="@+id/command_input"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="/give @p diamond_sword 1"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#808080"
+            android:textSize="14sp"
+            android:background="@drawable/floating_input_bg"
+            android:padding="10dp"
+            android:minHeight="40dp"
+            android:inputType="textMultiLine"
+            android:maxLines="3"
+            android:imeOptions="flagNoExtractUi" />
+
+        <TextView
+            android:id="@+id/status_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="输入命令..."
+            android:textColor="#808080"
+            android:textSize="12sp"
+            android:marginTop="4dp"
+            android:marginBottom="4dp" />
+
+        <LinearLayout
+            android:id="@+id/completions_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>
