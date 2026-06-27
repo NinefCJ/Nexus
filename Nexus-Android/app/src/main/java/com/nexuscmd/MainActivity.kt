@@ -628,7 +628,7 @@ fun FavoriteCommandItem(
 fun CommandLibraryTab(viewModel: MainViewModel, uiState: MainUiState) {
     val filteredCommands = viewModel.getFilteredCommands()
     var selectedCategory by remember { mutableStateOf<String?>(null) }
-    val categories = listOf("全部", "物品", "实体", "传送", "方块", "世界", "游戏模式", "记分板", "执行", "玩家互动", "声音粒子", "管理员", "服务器", "进阶", "帮助", "速查")
+    val categories = listOf("全部", "物品", "实体", "传送", "方块", "世界", "游戏模式", "记分板", "执行", "玩家互动", "声音粒子", "管理员", "服务器", "基岩版独有", "帮助", "速查")
 
     val displayedCommands = if (selectedCategory == null || selectedCategory == "全部") {
         filteredCommands

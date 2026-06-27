@@ -315,124 +315,114 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun getBuiltInCommands(): List<CommandLibraryItem> = listOf(
-        // ============ 物品类 ============
-        CommandLibraryItem("give", "给予玩家物品", "/give <targets> <item> [count]", "物品", Icons.Default.CardGiftcard),
-        CommandLibraryItem("clear", "清除物品", "/clear [targets] [item] [maxCount]", "物品", Icons.Default.Delete),
-        CommandLibraryItem("item", "物品栏操作", "/item replace <target> <slot> with <item>", "物品", Icons.Default.Inventory2),
-        CommandLibraryItem("enchant", "附魔物品", "/enchant <targets> <enchantment> [level]", "物品", Icons.Default.AutoAwesome),
-        CommandLibraryItem("loot", "战利品表", "/loot spawn <targetPos> loot <lootTable>", "物品", Icons.Default.Inventory),
+        // ============ 物品类 (基岩版) ============
+        CommandLibraryItem("give", "给予玩家物品", "/give <player> <item> [amount] [data] [components]", "物品", Icons.Default.CardGiftcard),
+        CommandLibraryItem("clear", "清除物品", "/clear [player] [item] [maxCount]", "物品", Icons.Default.Delete),
+        CommandLibraryItem("replaceitem", "替换物品栏物品", "/replaceitem block <pos> slot.container <slot> <item> [amount] [data] [components]", "物品", Icons.Default.Inventory2),
+        CommandLibraryItem("enchant", "附魔物品", "/enchant <player> <enchantmentId> [level]", "物品", Icons.Default.AutoAwesome),
 
-        // ============ 实体类 ============
-        CommandLibraryItem("summon", "生成实体", "/summon <entity> [pos] [nbt]", "实体", Icons.Default.Widgets),
-        CommandLibraryItem("kill", "删除实体", "/kill [targets]", "实体", Icons.Default.Gradient),
-        CommandLibraryItem("effect", "药水效果", "/effect <give|clear> <targets> [effect] [seconds] [amplifier]", "实体", Icons.Default.Speed),
-        CommandLibraryItem("damage", "造成伤害", "/damage <target> <amount> [cause]", "实体", Icons.Default.HeartBroken),
-        CommandLibraryItem("ride", "骑乘实体", "/ride <target> mount <vehicle>", "实体", Icons.Default.Directions),
-        CommandLibraryItem("data", "实体数据", "/data get entity <target>", "实体", Icons.Default.Dataset),
+        // ============ 实体类 (基岩版) ============
+        CommandLibraryItem("summon", "生成实体", "/summon <entityType> [spawnPos] [spawnEvent] [nameTag]", "实体", Icons.Default.Widgets),
+        CommandLibraryItem("kill", "删除实体", "/kill [target]", "实体", Icons.Default.Gradient),
+        CommandLibraryItem("effect", "药水效果(基岩版)", "/effect <player> <effect> [seconds] [amplifier] [true]", "实体", Icons.Default.Speed),
+        CommandLibraryItem("effect-clear", "清除效果", "/effect <player> clear", "实体", Icons.Default.CleaningServices),
+        CommandLibraryItem("damage", "造成伤害", "/damage <target> <amount> [cause] [damager]", "实体", Icons.Default.HeartBroken),
+        CommandLibraryItem("ride", "骑乘实体", "/ride <riders> <ride|evict>", "实体", Icons.Default.Directions),
 
-        // ============ 传送类 ============
-        CommandLibraryItem("tp", "传送玩家", "/tp [targets] <destination>", "传送", Icons.Default.SwapHoriz),
-        CommandLibraryItem("teleport", "传送(完整)", "/teleport <targets> <location> [yRot] [xRot]", "传送", Icons.Default.NearMe),
-        CommandLibraryItem("spawnpoint", "设置出生点", "/spawnpoint [targets] [pos]", "传送", Icons.Default.Home),
-        CommandLibraryItem("setworldspawn", "设置世界出生点", "/setworldspawn [pos] [angle]", "传送", Icons.Default.Public),
+        // ============ 传送类 (基岩版) ============
+        CommandLibraryItem("tp", "传送玩家", "/tp <victim> <destination>", "传送", Icons.Default.SwapHoriz),
+        CommandLibraryItem("tp-coords", "传送到坐标", "/tp <player> <x> <y> <z> [yRot] [xRot]", "传送", Icons.Default.LocationOn),
+        CommandLibraryItem("tp-facing", "传送朝向", "/tp <player> <x> <y> <z> facing <lookAt>", "传送", Icons.Default.NearMe),
+        CommandLibraryItem("teleport", "传送(完整)", "/teleport <target> <destination>", "传送", Icons.Default.NearMe),
+        CommandLibraryItem("spawnpoint", "设置出生点", "/spawnpoint [player] [x] [y] [z]", "传送", Icons.Default.Home),
+        CommandLibraryItem("setworldspawn", "设置世界出生点", "/setworldspawn [x] [y] [z]", "传送", Icons.Default.Public),
 
-        // ============ 方块类 ============
-        CommandLibraryItem("setblock", "放置方块", "/setblock <pos> <block> [destroy|keep|replace]", "方块", Icons.Default.Create),
-        CommandLibraryItem("fill", "填充区域", "/fill <from> <to> <block> [replace|destroy|hollow|outline|keep]", "方块", Icons.Default.Map),
-        CommandLibraryItem("clone", "复制区域", "/clone <begin> <end> <destination>", "方块", Icons.Default.ContentCopy),
-        CommandLibraryItem("fillbiome", "改变生物群系", "/fillbiome <from> <to> <biome>", "方块", Icons.Default.Nature),
+        // ============ 方块类 (基岩版) ============
+        CommandLibraryItem("setblock", "放置方块", "/setblock <pos> <block> [tileData] [destroy|keep|replace]", "方块", Icons.Default.Create),
+        CommandLibraryItem("fill", "填充区域", "/fill <from> <to> <block> [tileData] [destroy|hollow|keep|outline|replace]", "方块", Icons.Default.Map),
+        CommandLibraryItem("fill-replace", "填充替换", "/fill <from> <to> <block> <tileData> replace <replaceBlock> <replaceData>", "方块", Icons.Default.Map),
+        CommandLibraryItem("clone", "复制区域", "/clone <begin> <end> <destination> [maskMode] [cloneMode]", "方块", Icons.Default.ContentCopy),
 
-        // ============ 世界类 ============
+        // ============ 世界类 (基岩版) ============
         CommandLibraryItem("time", "时间设置", "/time <set|add|query> <value>", "世界", Icons.Default.Schedule),
+        CommandLibraryItem("time-set", "设置时间", "/time set <day|night|noon|midnight|sunrise|sunset|value>", "世界", Icons.Default.Schedule),
         CommandLibraryItem("weather", "天气设置", "/weather <clear|rain|thunder> [duration]", "世界", Icons.Default.WbSunny),
-        CommandLibraryItem("worldborder", "世界边界", "/worldborder <set|add|center|damage|warning|get>", "世界", Icons.Default.BorderAll),
         CommandLibraryItem("difficulty", "难度设置", "/difficulty <peaceful|easy|normal|hard>", "世界", Icons.Default.Shield),
         CommandLibraryItem("gamerule", "游戏规则", "/gamerule <rule> [value]", "世界", Icons.Default.Tune),
         CommandLibraryItem("gamerule-keepInventory", "死亡不掉落", "/gamerule keepInventory true", "世界", Icons.Default.Lock),
         CommandLibraryItem("gamerule-mobGriefing", "禁用生物破坏", "/gamerule mobGriefing false", "世界", Icons.Default.Block),
-        CommandLibraryItem("defaultgamemode", "默认游戏模式", "/defaultgamemode <survival|creative|adventure|spectator>", "世界", Icons.Default.SportsEsports),
-        CommandLibraryItem("tick", "游戏速度", "/tick <rate|freeze|step|sprint|query>", "世界", Icons.Default.Speed),
-        CommandLibraryItem("locate", "查找结构", "/locate structure <structure>", "世界", Icons.Default.Search),
+        CommandLibraryItem("defaultgamemode", "默认游戏模式", "/defaultgamemode <survival|creative|adventure>", "世界", Icons.Default.SportsEsports),
+        CommandLibraryItem("locate", "查找结构(基岩版)", "/locate <structure>", "世界", Icons.Default.Search),
+        CommandLibraryItem("tickingarea", "常加载区域", "/tickingarea add <from> <to> [name]", "世界", Icons.Default.AreaChart),
 
-        // ============ 游戏模式 ============
-        CommandLibraryItem("gamemode", "游戏模式", "/gamemode <survival|creative|adventure|spectator> [targets]", "游戏模式", Icons.Default.VideogameAsset),
+        // ============ 游戏模式 (基岩版) ============
+        CommandLibraryItem("gamemode", "游戏模式", "/gamemode <survival|creative|adventure|spectator> [player]", "游戏模式", Icons.Default.VideogameAsset),
         CommandLibraryItem("gamemode-creative", "切换创造", "/gamemode creative", "游戏模式", Icons.Default.Palette),
         CommandLibraryItem("gamemode-survival", "切换生存", "/gamemode survival", "游戏模式", Icons.Default.SelfImprovement),
 
-        // ============ 记分板 ============
-        CommandLibraryItem("scoreboard", "记分板", "/scoreboard <objectives|players|teams|displays>", "记分板", Icons.Default.Leaderboard),
+        // ============ 记分板 (基岩版) ============
+        CommandLibraryItem("scoreboard", "记分板", "/scoreboard <objectives|players>", "记分板", Icons.Default.Leaderboard),
         CommandLibraryItem("scoreboard-objectives", "创建记分项", "/scoreboard objectives add <name> <criteria> [displayName]", "记分板", Icons.Default.AddTask),
-        CommandLibraryItem("scoreboard-players", "设置分数", "/scoreboard players set <targets> <objective> <score>", "记分板", Icons.Default.Edit),
-        CommandLibraryItem("scoreboard-setdisplay", "设置显示位置", "/scoreboard objectives setdisplay <list|sidebar|belowName> [objective]", "记分板", Icons.Default.Visibility),
-        CommandLibraryItem("team", "队伍管理", "/team add <team>", "记分板", Icons.Default.Groups),
-        CommandLibraryItem("tag", "标签管理", "/tag <targets> add <name>", "记分板", Icons.Default.Label),
+        CommandLibraryItem("scoreboard-players", "设置分数", "/scoreboard players <add|remove|set|reset> <player> <objective> <score>", "记分板", Icons.Default.Edit),
+        CommandLibraryItem("scoreboard-setdisplay", "设置显示", "/scoreboard objectives setdisplay <list|sidebar|belowname> [objective]", "记分板", Icons.Default.Visibility),
+        CommandLibraryItem("tag", "标签管理(基岩版)", "/tag <target> <add|remove|list> <name>", "记分板", Icons.Default.Label),
 
-        // ============ 执行命令 ============
-        CommandLibraryItem("execute", "执行命令", "/execute <subcommand> run <command>", "执行", Icons.Default.Terminal),
-        CommandLibraryItem("execute-as", "以实体身份执行", "/execute as <targets> run <command>", "执行", Icons.Default.Person),
-        CommandLibraryItem("execute-at", "在位置执行", "/execute at <targets> run <command>", "执行", Icons.Default.LocationOn),
-        CommandLibraryItem("execute-if-entity", "检测实体条件", "/execute if entity <targets> run <command>", "执行", Icons.Default.Check),
-        CommandLibraryItem("execute-if-block", "检测方块条件", "/execute if block <pos> <block> run <command>", "执行", Icons.Default.GridOn),
-        CommandLibraryItem("execute-positioned", "移动位置执行", "/execute positioned <pos> run <command>", "执行", Icons.Default.SwipeRight),
-        CommandLibraryItem("execute-in", "切换维度执行", "/execute in <dimension> run <command>", "执行", Icons.Default.Layers),
-        CommandLibraryItem("function", "执行函数", "/function <functionName>", "执行", Icons.Default.Functions),
+        // ============ 执行命令 (基岩版) ============
+        CommandLibraryItem("execute", "执行命令(基岩版)", "/execute <target> <pos> <detect|run> <command>", "执行", Icons.Default.Terminal),
+        CommandLibraryItem("execute-run", "执行命令", "/execute <target> <pos> run <command>", "执行", Icons.Default.PlayArrow),
+        CommandLibraryItem("execute-detect", "检测执行", "/execute <target> <pos> detect <pos> <block> <data> <command>", "执行", Icons.Default.Check),
+        CommandLibraryItem("function", "执行函数", "/function <name>", "执行", Icons.Default.Functions),
 
-        // ============ 玩家互动 ============
+        // ============ 玩家互动 (基岩版) ============
         CommandLibraryItem("msg", "发送私信", "/msg <target> <message>", "玩家互动", Icons.Default.Message),
         CommandLibraryItem("tell", "发送私信", "/tell <target> <message>", "玩家互动", Icons.Default.Chat),
         CommandLibraryItem("w", "发送私信(短)", "/w <target> <message>", "玩家互动", Icons.Default.Forum),
         CommandLibraryItem("me", "动作消息", "/me <action>", "玩家互动", Icons.Default.Face),
         CommandLibraryItem("say", "广播消息", "/say <message>", "玩家互动", Icons.Default.Campaign),
-        CommandLibraryItem("tellraw", "原始JSON消息", "/tellraw <targets> <rawjson>", "玩家互动", Icons.Default.RssFeed),
-        CommandLibraryItem("title", "标题显示", "/title <targets> title <title>", "玩家互动", Icons.Default.FormatSize),
-        CommandLibraryItem("xp", "经验值", "/xp <add|set|query> <targets> <amount>", "玩家互动", Icons.Default.AutoGraph),
+        CommandLibraryItem("titleraw", "标题显示(JSON)", "/titleraw <player> <clear|reset|title|subtitle|actionbar> <rawtext>", "玩家互动", Icons.Default.FormatSize),
+        CommandLibraryItem("tellraw", "原始JSON消息", "/tellraw <player> <rawtext>", "玩家互动", Icons.Default.RssFeed),
+        CommandLibraryItem("xp", "经验值(基岩版)", "/xp <amount> [player]", "玩家互动", Icons.Default.AutoGraph),
+        CommandLibraryItem("xp-level", "经验等级", "/xp <amount>L [player]", "玩家互动", Icons.Default.Graph),
         CommandLibraryItem("seed", "世界种子", "/seed", "玩家互动", Icons.Default.Eco),
 
-        // ============ 声音粒子 ============
-        CommandLibraryItem("playsound", "播放声音", "/playsound <sound> <source> <targets> [pos] [volume] [pitch]", "声音粒子", Icons.Default.VolumeUp),
-        CommandLibraryItem("stopsound", "停止声音", "/stopsound <targets> [source] [sound]", "声音粒子", Icons.Default.VolumeOff),
-        CommandLibraryItem("particle", "生成粒子", "/particle <name> <pos> [delta] [speed] [count]", "声音粒子", Icons.Default.AutoFixHigh),
+        // ============ 声音粒子 (基岩版) ============
+        CommandLibraryItem("playsound", "播放声音", "/playsound <sound> <source> <player> [pos] [volume] [pitch] [minVolume]", "声音粒子", Icons.Default.VolumeUp),
+        CommandLibraryItem("stopsound", "停止声音", "/stopsound <player> [source] [sound]", "声音粒子", Icons.Default.VolumeOff),
+        CommandLibraryItem("particle", "生成粒子", "/particle <effect> <pos>", "声音粒子", Icons.Default.AutoFixHigh),
 
-        // ============ 管理员 ============
-        CommandLibraryItem("op", "给予管理权限", "/op <targets>", "管理员", Icons.Default.AdminPanelSettings),
-        CommandLibraryItem("deop", "移除管理权限", "/deop <targets>", "管理员", Icons.Default.PersonRemove),
-        CommandLibraryItem("ban", "封禁玩家", "/ban <targets> [reason]", "管理员", Icons.Default.Block),
-        CommandLibraryItem("pardon", "解封玩家", "/pardon <targets>", "管理员", Icons.Default.PersonAdd),
-        CommandLibraryItem("ban-ip", "封禁IP", "/ban-ip <target> [reason]", "管理员", Icons.Default.Gavel),
-        CommandLibraryItem("pardon-ip", "解封IP", "/pardon-ip <target>", "管理员", Icons.Default.Refresh),
-        CommandLibraryItem("kick", "踢出玩家", "/kick <targets> [reason]", "管理员", Icons.Default.ExitToApp),
-        CommandLibraryItem("whitelist", "白名单", "/whitelist <add|remove|list|on|off|reload> [player]", "管理员", Icons.Default.VerifiedUser),
+        // ============ 管理员 (基岩版) ============
+        CommandLibraryItem("op", "给予管理权限", "/op <player>", "管理员", Icons.Default.AdminPanelSettings),
+        CommandLibraryItem("deop", "移除管理权限", "/deop <player>", "管理员", Icons.Default.PersonRemove),
+        CommandLibraryItem("kick", "踢出玩家", "/kick <player> [reason]", "管理员", Icons.Default.ExitToApp),
         CommandLibraryItem("list", "列出玩家", "/list", "管理员", Icons.Default.People),
+        CommandLibraryItem("allowlist", "白名单(基岩版)", "/allowlist <add|remove|list|on|off> [player]", "管理员", Icons.Default.VerifiedUser),
+        CommandLibraryItem("setmaxplayers", "设置最大玩家数", "/setmaxplayers <max>", "管理员", Icons.Default.GroupAdd),
 
-        // ============ 服务器 ============
+        // ============ 服务器 (基岩版) ============
         CommandLibraryItem("stop", "停止服务器", "/stop", "服务器", Icons.Default.Power),
-        CommandLibraryItem("reload", "重载数据包", "/reload", "服务器", Icons.Default.Refresh),
-        CommandLibraryItem("save-all", "保存世界", "/save-all", "服务器", Icons.Default.Save),
-        CommandLibraryItem("save-off", "关闭自动保存", "/save-off", "服务器", Icons.Default.Pause),
-        CommandLibraryItem("save-on", "开启自动保存", "/save-on", "服务器", Icons.Default.PlayArrow),
+        CommandLibraryItem("save", "保存世界", "/save <on|off|query|all|flush>", "服务器", Icons.Default.Save),
 
-        // ============ 进阶命令 ============
-        CommandLibraryItem("advancement", "进度管理", "/advancement grant <targets> everything", "进阶", Icons.Default.WorkspacePremium),
-        CommandLibraryItem("recipe", "配方管理", "/recipe give <targets> <recipe>", "进阶", Icons.Default.MenuBook),
-        CommandLibraryItem("spectate", "旁观实体", "/spectate [target] [player]", "进阶", Icons.Default.Visibility),
-        CommandLibraryItem("bossbar", "Boss条管理", "/bossbar add <id> <name>", "进阶", Icons.Default.SignalCellularAlt),
-        CommandLibraryItem("attribute", "属性修改", "/attribute <target> <attribute> base set <value>", "进阶", Icons.Default.TrendingUp),
-        CommandLibraryItem("schedule", "调度函数", "/schedule function <function> <time>", "进阶", Icons.Default.Schedule),
-        CommandLibraryItem("structure", "结构生成", "/place template <template> <pos>", "进阶", Icons.Default.Apartment),
+        // ============ 基岩版独特命令 ============
+        CommandLibraryItem("camerashake", "摄像机震动", "/camerashake <players> <add|stop> [intensity] [duration] [shakeType]", "基岩版独有", Icons.Default.CameraAlt),
+        CommandLibraryItem("dialogue", "NPC对话", "/dialogue <targets> change <npc>", "基岩版独有", Icons.Default.RecordVoiceOver),
+        CommandLibraryItem("playanimation", "播放动画", "/playanimation <entity> <animation> [state]", "基岩版独有", Icons.Default.Movie),
+        CommandLibraryItem("structure", "结构保存加载", "/structure <save|load|delete> <name> [pos]", "基岩版独有", Icons.Default.Apartment),
+        CommandLibraryItem("scriptevent", "脚本事件", "/scriptevent <messageId> <message>", "基岩版独有", Icons.Default.Code),
 
         // ============ 调试工具 ============
-        CommandLibraryItem("help", "命令帮助", "/help [command]", "帮助", Icons.Default.Help),
-        CommandLibraryItem("debug", "调试模式", "/debug <start|stop|report>", "帮助", Icons.Default.BugReport),
-        CommandLibraryItem("datapack", "数据包管理", "/datapack list", "帮助", Icons.Default.Folder),
+        CommandLibraryItem("help", "命令帮助", "/help [page|command]", "帮助", Icons.Default.Help),
+        CommandLibraryItem("testfor", "检测实体", "/testfor <target>", "帮助", Icons.Default.Check),
+        CommandLibraryItem("testforblock", "检测方块", "/testforblock <pos> <block> [data]", "帮助", Icons.Default.GridOn),
 
-        // ============ 常用速查 ============
+        // ============ 常用速查 (基岩版) ============
         CommandLibraryItem("速查-死亡不掉落", "开启死亡不掉落", "/gamerule keepInventory true", "速查", Icons.Default.Lock),
         CommandLibraryItem("速查-禁用生物破坏", "禁用爬行者破坏", "/gamerule mobGriefing false", "速查", Icons.Default.Block),
         CommandLibraryItem("速查-白天", "设置为白天", "/time set day", "速查", Icons.Default.LightMode),
         CommandLibraryItem("速查-晴天", "设置为晴天", "/weather clear", "速查", Icons.Default.WbSunny),
         CommandLibraryItem("速查-创造模式", "切换创造模式", "/gamemode creative", "速查", Icons.Default.Palette),
         CommandLibraryItem("速查-生存模式", "切换生存模式", "/gamemode survival", "速查", Icons.Default.SelfImprovement),
-        CommandLibraryItem("速查-传送到出生地", "传送到出生点", "/spawnpoint @s", "速查", Icons.Default.Home),
-        CommandLibraryItem("速查-给予一组钻石", "给自己64个钻石", "/give @s diamond 64", "速查", Icons.Default.Diamond),
+        CommandLibraryItem("速查-给予钻石", "给自己64个钻石", "/give @s diamond 64", "速查", Icons.Default.Diamond),
+        CommandLibraryItem("速查-隐身效果", "获得隐身效果", "/effect @s invisibility 600 1 true", "速查", Icons.Default.VisibilityOff),
+        CommandLibraryItem("速查-常加载区域", "添加常加载", "/tickingarea add ~ ~ ~ ~10 ~10 ~10", "速查", Icons.Default.AreaChart),
     )
 }
