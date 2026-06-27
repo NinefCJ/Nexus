@@ -77,41 +77,6 @@ class AddonManager(private val context: Context) {
             )
         )
         installedAddons.add(exampleAddon)
-
-        val redstoneAddon = AddonPack(
-            id = "redstone_toolkit",
-            name = "红石工具包",
-            description = "实用的红石相关命令和模板集合",
-            version = "1.2.0",
-            author = "RedstoneMaster",
-            enabled = false,
-            customCommands = listOf(
-                SavedCommand(
-                    id = "rs:clock",
-                    command = "/setblock ~ ~-1 ~ redstone_block 0 destroy",
-                    name = "红石时钟",
-                    description = "快速生成红石脉冲",
-                    category = "红石"
-                ),
-                SavedCommand(
-                    id = "rs:lamp_array",
-                    command = "/fill ~ ~ ~ ~9 ~ ~ redstone_lamp",
-                    name = "红石灯阵",
-                    description = "生成一排红石灯",
-                    category = "红石"
-                )
-            ),
-            customTemplates = listOf(
-                SavedCommand(
-                    id = "rs:piston_door",
-                    command = "/fill ~ ~ ~ ~2 ~2 ~1 piston",
-                    name = "活塞门",
-                    description = "基础活塞门结构",
-                    category = "红石"
-                )
-            )
-        )
-        installedAddons.add(redstoneAddon)
     }
 
     fun loadAddons(): List<AddonPack> {
