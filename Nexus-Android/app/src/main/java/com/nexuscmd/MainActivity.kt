@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
@@ -50,6 +51,8 @@ import com.nexuscmd.data.BlockLibrary
 import com.nexuscmd.data.Block
 import com.nexuscmd.data.ItemLibrary
 import com.nexuscmd.data.Item
+import com.nexuscmd.data.AddonPack
+import com.nexuscmd.data.AddonManager
 import com.nexuscmd.ui.components.SyntaxHighlightEditor
 import com.nexuscmd.ui.theme.MCCommandHelperTheme
 import com.nexuscmd.ui.theme.SyntaxCommand
@@ -110,6 +113,7 @@ fun MainScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) }
+    var showAddonPage by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     // Handle snackbar messages
@@ -208,11 +212,19 @@ fun MainScreen(
                     8 -> SettingsTab(
                         viewModel = viewModel,
                         onRequestPermission = onRequestFloatingPermission,
-                        onStartFloating = onStartFloating
+                        onStartFloating = onStartFloating,
+                        onOpenAddons = { showAddonPage = true }
                     )
                 }
             }
         }
+    }
+
+    if (showAddonPage) {
+        AddonManagerPage(
+            onClose = { showAddonPage = false },
+            viewModel = viewModel
+        )
     }
 }
 
@@ -1809,7 +1821,8 @@ fun HistoryItemCard(
 fun SettingsTab(
     viewModel: MainViewModel,
     onRequestPermission: () -> Unit,
-    onStartFloating: () -> Unit
+    onStartFloating: () -> Unit,
+    onOpenAddons: () -> Unit
 ) {
     var showClearDataDialog by remember { mutableStateOf(false) }
 
@@ -1927,6 +1940,27 @@ fun SettingsTab(
                 title = "开启悬浮窗",
                 description = "在游戏中也能使用命令助手",
                 onClick = onStartFloating
+            )
+        }
+
+        // Addons section
+        item {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "拓展包",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+        }
+
+        item {
+            SettingItem(
+                icon = Icons.Default.Extension,
+                title = "拓展包管理",
+                description = "安装、管理自定义拓展包",
+                onClick = onOpenAddons
             )
         }
 
@@ -2582,4 +2616,690 @@ fun ParameterInputField(
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddonManagerPage(
+    onClose: () -> Unit,
+    viewModel: MainViewModel
+) {
+    val context = LocalContext.current
+    var searchQuery by remember { mutableStateOf("") }
+    var selectedAddon by remember { mutableStateOf<AddonPack?>(null) }
+    var showImportDialog by remember { mutableStateOf(false) }
+    val addonManager = remember { AddonManager.getInstance(context) }
+    var addons by remember { mutableStateOf(addonManager.loadAddons()) }
+
+    fun refreshAddons() {
+        addons = addonManager.loadAddons()
+    }
+
+    val filteredAddons = remember(addons, searchQuery) {
+        if (searchQuery.isBlank()) addons
+        else addons.filter {
+            it.name.contains(searchQuery, ignoreCase = true) ||
+            it.description.contains(searchQuery, ignoreCase = true) ||
+            it.author.contains(searchQuery, ignoreCase = true)
+        }
+    }
+
+    if (selectedAddon != null) {
+        AddonDetailPage(
+            addon = selectedAddon!!,
+            onBack = { selectedAddon = null },
+            onToggleEnabled = { addonId, enabled ->
+                if (enabled) addonManager.enableAddon(addonId)
+                else addonManager.disableAddon(addonId)
+                refreshAddons()
+                selectedAddon = addonManager.loadAddons().find { it.id == addonId }
+            },
+            onUninstall = { addonId ->
+                addonManager.uninstallAddon(addonId)
+                refreshAddons()
+                selectedAddon = null
+            }
+        )
+        return
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("拓展包管理", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = onClose) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { showImportDialog = true }) {
+                        Icon(Icons.Default.AddCircle, contentDescription = "导入拓展包")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            // Search bar
+            Surface(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                shape = RoundedCornerShape(28.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    TextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        placeholder = { Text("搜索拓展包...", style = MaterialTheme.typography.bodyMedium) },
+                        modifier = Modifier.weight(1f),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent
+                        ),
+                        singleLine = true,
+                        textStyle = MaterialTheme.typography.bodyMedium
+                    )
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(
+                                imageVector = Icons.Default.Clear,
+                                contentDescription = "清除",
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Stats
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                StatCard(
+                    label = "已安装",
+                    value = "${addons.size}",
+                    icon = Icons.Default.Extension,
+                    gradientColors = listOf(
+                        MaterialTheme.colorScheme.primary,
+                        MaterialTheme.colorScheme.tertiary
+                    ),
+                    modifier = Modifier.weight(1f)
+                )
+                StatCard(
+                    label = "已启用",
+                    value = "${addons.count { it.enabled }}",
+                    icon = Icons.Default.CheckCircle,
+                    gradientColors = listOf(
+                        Color(0xFF4CAF50),
+                        Color(0xFF2E7D32)
+                    ),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Addon list
+            if (filteredAddons.isEmpty()) {
+                EmptyState(
+                    icon = Icons.Default.ExtensionOff,
+                    title = "暂无拓展包",
+                    description = "点击右上角按钮导入拓展包",
+                    modifier = Modifier.weight(1f)
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(filteredAddons) { addon ->
+                        AddonCard(
+                            addon = addon,
+                            onClick = { selectedAddon = addon },
+                            onToggleEnabled = { enabled ->
+                                if (enabled) addonManager.enableAddon(addon.id)
+                                else addonManager.disableAddon(addon.id)
+                                refreshAddons()
+                            }
+                        )
+                    }
+                    item { Spacer(modifier = Modifier.height(16.dp)) }
+                }
+            }
+        }
+    }
+
+    if (showImportDialog) {
+        ImportAddonDialog(
+            onDismiss = { showImportDialog = false },
+            onImport = { json ->
+                val success = addonManager.installAddon(json)
+                if (success) {
+                    refreshAddons()
+                }
+                success
+            }
+        )
+    }
+}
+
+@Composable
+fun StatCard(
+    label: String,
+    value: String,
+    icon: ImageVector,
+    gradientColors: List<Color>,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    brush = Brush.horizontalGradient(gradientColors)
+                )
+                .padding(16.dp)
+        ) {
+            Column {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(28.dp)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.85f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun AddonCard(
+    addon: AddonPack,
+    onClick: () -> Unit,
+    onToggleEnabled: (Boolean) -> Unit
+) {
+    Card(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Icon
+            Card(
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                ),
+                modifier = Modifier.size(56.dp)
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Extension,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // Info
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = addon.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant
+                    ) {
+                        Text(
+                            text = "v${addon.version}",
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = addon.description.ifEmpty { "暂无描述" },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    AddonBadge(text = "${addon.customBlocks.size} 方块", tint = Color(0xFFE65100))
+                    AddonBadge(text = "${addon.customItems.size} 物品", tint = Color(0xFF1565C0))
+                    AddonBadge(text = "${addon.customCommands.size} 命令", tint = Color(0xFF2E7D32))
+                }
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Toggle
+            Switch(
+                checked = addon.enabled,
+                onCheckedChange = onToggleEnabled
+            )
+        }
+    }
+}
+
+@Composable
+fun AddonBadge(text: String, tint: Color) {
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = tint.copy(alpha = 0.12f)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelSmall,
+                color = tint,
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddonDetailPage(
+    addon: AddonPack,
+    onBack: () -> Unit,
+    onToggleEnabled: (String, Boolean) -> Unit,
+    onUninstall: (String) -> Unit
+) {
+    var showUninstallDialog by remember { mutableStateOf(false) }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("拓展包详情", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            )
+        }
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Header card
+            item {
+                Card(
+                    shape = RoundedCornerShape(20.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Card(
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                                ),
+                                modifier = Modifier.size(72.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Extension,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(36.dp)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = addon.name,
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "v${addon.version} · ${addon.author}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = addon.description.ifEmpty { "暂无描述" },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "启用拓展包",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Spacer(modifier = Modifier.weight(1f))
+                            Switch(
+                                checked = addon.enabled,
+                                onCheckedChange = { onToggleEnabled(addon.id, it) }
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Content statistics
+            item {
+                Text(
+                    text = "内容统计",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            item {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    DetailStatItem(
+                        label = "方块",
+                        value = addon.customBlocks.size.toString(),
+                        icon = Icons.Default.ViewModule,
+                        color = Color(0xFFE65100),
+                        modifier = Modifier.weight(1f)
+                    )
+                    DetailStatItem(
+                        label = "物品",
+                        value = addon.customItems.size.toString(),
+                        icon = Icons.Default.Category,
+                        color = Color(0xFF1565C0),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            item {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    DetailStatItem(
+                        label = "音效",
+                        value = addon.customSounds.size.toString(),
+                        icon = Icons.Default.VolumeUp,
+                        color = Color(0xFF6A1B9A),
+                        modifier = Modifier.weight(1f)
+                    )
+                    DetailStatItem(
+                        label = "粒子",
+                        value = addon.customParticles.size.toString(),
+                        icon = Icons.Default.BubbleChart,
+                        color = Color(0xFF00838F),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            item {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    DetailStatItem(
+                        label = "命令",
+                        value = addon.customCommands.size.toString(),
+                        icon = Icons.Default.LibraryBooks,
+                        color = Color(0xFF2E7D32),
+                        modifier = Modifier.weight(1f)
+                    )
+                    DetailStatItem(
+                        label = "模板",
+                        value = addon.customTemplates.size.toString(),
+                        icon = Icons.Default.AutoFixHigh,
+                        color = Color(0xFFEF6C00),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            // Uninstall button
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = { showUninstallDialog = true },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(vertical = 12.dp)
+                ) {
+                    Icon(Icons.Default.Delete, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("卸载拓展包", style = MaterialTheme.typography.titleMedium)
+                }
+            }
+        }
+    }
+
+    if (showUninstallDialog) {
+        AlertDialog(
+            onDismissRequest = { showUninstallDialog = false },
+            title = { Text("卸载拓展包") },
+            text = { Text("确定要卸载「${addon.name}」吗？所有自定义内容将被移除。") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onUninstall(addon.id)
+                        showUninstallDialog = false
+                    }
+                ) {
+                    Text("卸载", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showUninstallDialog = false }) {
+                    Text("取消")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun DetailStatItem(
+    label: String,
+    value: String,
+    icon: ImageVector,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = color.copy(alpha = 0.08f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+            Column {
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = color
+                )
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ImportAddonDialog(
+    onDismiss: () -> Unit,
+    onImport: (String) -> Boolean
+) {
+    var inputText by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("导入拓展包") },
+        text = {
+            Column {
+                Text(
+                    text = "请输入拓展包JSON内容：",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = inputText,
+                    onValueChange = {
+                        inputText = it
+                        errorMessage = null
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp),
+                    placeholder = { Text('{', '\n', '"', "id", '"', ": ...", '\n', '}') },
+                    shape = RoundedCornerShape(12.dp),
+                    isError = errorMessage != null
+                )
+                if (errorMessage != null) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = errorMessage!!,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (inputText.isBlank()) {
+                        errorMessage = "请输入JSON内容"
+                    } else {
+                        val success = onImport(inputText)
+                        if (success) {
+                            onDismiss()
+                        } else {
+                            errorMessage = "JSON格式无效，请检查内容"
+                        }
+                    }
+                }
+            ) {
+                Text("导入")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("取消")
+            }
+        }
+    )
 }

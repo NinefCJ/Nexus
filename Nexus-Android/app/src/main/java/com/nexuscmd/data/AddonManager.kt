@@ -31,6 +31,89 @@ class AddonManager(private val context: Context) {
 
     private val installedAddons = mutableListOf<AddonPack>()
 
+    init {
+        loadDefaultAddons()
+    }
+
+    private fun loadDefaultAddons() {
+        val exampleAddon = AddonPack(
+            id = "example_custom_items",
+            name = "示例拓展包",
+            description = "展示拓展包功能的示例，包含一些自定义内容",
+            version = "1.0.0",
+            author = "Nexus Team",
+            enabled = true,
+            customBlocks = listOf(
+                Block("custom:ruby_block", "红宝石块", "建筑", "由红宝石制成的装饰方块"),
+                Block("custom:crystal_ore", "水晶矿石", "自然", "深山中的神秘水晶矿")
+            ),
+            customItems = listOf(
+                Item("custom:ruby_sword", "红宝石剑", "武器", "锋利的红宝石制成的剑"),
+                Item("custom:magic_wand", "魔法魔杖", "工具", "可以释放魔法的魔杖")
+            ),
+            customSounds = listOf(
+                SoundEffect("custom:magic_chime", "魔法铃声", "魔法", "神奇的魔法音效", "1", "1")
+            ),
+            customParticles = listOf(
+                Particle("custom:star_sparkle", "星星闪光", "魔法", "闪亮的星星粒子效果", true)
+            ),
+            customCommands = listOf(
+                SavedCommand(
+                    id = "custom:fly_cmd",
+                    command = "/effect @s levitation 10 1 true",
+                    name = "飞行效果",
+                    description = "给玩家10秒的漂浮效果",
+                    category = "实用"
+                )
+            ),
+            customTemplates = listOf(
+                SavedCommand(
+                    id = "custom:house_tpl",
+                    command = "/fill ~-5 ~ ~-5 ~5 ~5 ~5 stone hollow",
+                    name = "快速造房",
+                    description = "快速生成一个石屋框架",
+                    category = "建筑"
+                )
+            )
+        )
+        installedAddons.add(exampleAddon)
+
+        val redstoneAddon = AddonPack(
+            id = "redstone_toolkit",
+            name = "红石工具包",
+            description = "实用的红石相关命令和模板集合",
+            version = "1.2.0",
+            author = "RedstoneMaster",
+            enabled = false,
+            customCommands = listOf(
+                SavedCommand(
+                    id = "rs:clock",
+                    command = "/setblock ~ ~-1 ~ redstone_block 0 destroy",
+                    name = "红石时钟",
+                    description = "快速生成红石脉冲",
+                    category = "红石"
+                ),
+                SavedCommand(
+                    id = "rs:lamp_array",
+                    command = "/fill ~ ~ ~ ~9 ~ ~ redstone_lamp",
+                    name = "红石灯阵",
+                    description = "生成一排红石灯",
+                    category = "红石"
+                )
+            ),
+            customTemplates = listOf(
+                SavedCommand(
+                    id = "rs:piston_door",
+                    command = "/fill ~ ~ ~ ~2 ~2 ~1 piston",
+                    name = "活塞门",
+                    description = "基础活塞门结构",
+                    category = "红石"
+                )
+            )
+        )
+        installedAddons.add(redstoneAddon)
+    }
+
     fun loadAddons(): List<AddonPack> {
         return installedAddons.toList()
     }
