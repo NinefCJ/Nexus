@@ -43,6 +43,8 @@ import com.nexuscmd.data.HistoryItem
 import com.nexuscmd.data.SavedCommand
 import com.nexuscmd.data.SoundEffect
 import com.nexuscmd.data.SoundEffectLibrary
+import com.nexuscmd.data.ParticleLibrary
+import com.nexuscmd.data.Particle
 import com.nexuscmd.ui.components.SyntaxHighlightEditor
 import com.nexuscmd.ui.theme.MCCommandHelperTheme
 import com.nexuscmd.ui.theme.SyntaxCommand
@@ -162,7 +164,7 @@ fun MainScreen(
         ) {
             // Tab selector
             NavigationBar {
-                listOf("编辑器", "模板", "命令库", "音效", "历史", "设置").forEachIndexed { index, title ->
+                listOf("编辑器", "模板", "命令库", "音效", "粒子", "历史", "设置").forEachIndexed { index, title ->
                     NavigationBarItem(
                         selected = selectedTab == index,
                         onClick = { selectedTab = index },
@@ -173,7 +175,8 @@ fun MainScreen(
                                     1 -> Icons.Default.AutoFixHigh
                                     2 -> Icons.Default.LibraryBooks
                                     3 -> Icons.Default.VolumeUp
-                                    4 -> Icons.Default.History
+                                    4 -> Icons.Default.BubbleChart
+                                    5 -> Icons.Default.History
                                     else -> Icons.Default.Settings
                                 },
                                 contentDescription = title
@@ -191,8 +194,9 @@ fun MainScreen(
                     1 -> TemplateGeneratorTab(viewModel)
                     2 -> CommandLibraryTab(viewModel, uiState)
                     3 -> SoundEffectLibraryTab(viewModel)
-                    4 -> HistoryTab(viewModel, uiState)
-                    5 -> SettingsTab(
+                    4 -> ParticleLibraryTab(viewModel)
+                    5 -> HistoryTab(viewModel, uiState)
+                    6 -> SettingsTab(
                         viewModel = viewModel,
                         onRequestPermission = onRequestFloatingPermission,
                         onStartFloating = onStartFloating
@@ -1049,6 +1053,272 @@ fun toneForSoundEffect(effect: SoundEffect): Int {
         "音乐" -> ToneGenerator.TONE_DTMF_8
         "UI" -> ToneGenerator.TONE_PROP_PROMPT
         else -> ToneGenerator.TONE_PROP_NACK
+    }
+}
+
+@Composable
+fun ParticleLibraryTab(viewModel: MainViewModel) {
+    var searchQuery by remember { mutableStateOf("") }
+    var selectedCategory by remember { mutableStateOf<String?>(null) }
+    var position by remember { mutableStateOf("~ ~ ~") }
+    var delta by remember { mutableStateOf("0 0 0") }
+    var speed by remember { mutableStateOf("0") }
+    var count by remember { mutableStateOf("1") }
+    var mode by remember { mutableStateOf("default") }
+
+    val clipboardManager = LocalClipboardManager.current
+    val displayedParticles = remember(searchQuery, selectedCategory) {
+        ParticleLibrary.filter(searchQuery, selectedCategory)
+    }
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        item {
+            Text(
+                text = "粒子库",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "选择粒子生成基岩版 /particle 指令",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+
+        item {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("搜索粒子ID、中文名或说明...") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(Icons.Default.Clear, contentDescription = "清除")
+                        }
+                    }
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
+            )
+        }
+
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ParticleLibrary.categories.forEach { category ->
+                    FilterChip(
+                        selected = selectedCategory == category || (category == "全部" && selectedCategory == null),
+                        onClick = {
+                            selectedCategory = if (category == "全部") null else category
+                        },
+                        label = { Text(category, style = MaterialTheme.typography.bodySmall) }
+                    )
+                }
+            }
+        }
+
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
+                )
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Tune,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "默认参数",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = position,
+                            onValueChange = { position = it },
+                            label = { Text("位置") },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true
+                        )
+                        OutlinedTextField(
+                            value = count,
+                            onValueChange = { count = it },
+                            label = { Text("数量") },
+                            modifier = Modifier.weight(0.5f),
+                            singleLine = true
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = delta,
+                            onValueChange = { delta = it },
+                            label = { Text("偏移") },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true
+                        )
+                        OutlinedTextField(
+                            value = speed,
+                            onValueChange = { speed = it },
+                            label = { Text("速度") },
+                            modifier = Modifier.weight(0.5f),
+                            singleLine = true
+                        )
+                    }
+                }
+            }
+        }
+
+        item {
+            Text(
+                text = "共 ${displayedParticles.size} 个粒子",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        items(displayedParticles) { particle ->
+            ParticleLibraryItem(
+                particle = particle,
+                position = position,
+                delta = delta,
+                speed = speed,
+                count = count,
+                mode = mode,
+                onCopy = {
+                    val command = ParticleLibrary.buildParticleCommand(particle, position, delta, speed, count, mode)
+                    clipboardManager.setText(AnnotatedString(command))
+                },
+                onInsert = {
+                    val command = ParticleLibrary.buildParticleCommand(particle, position, delta, speed, count, mode)
+                    viewModel.onCommandTextChanged(command)
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun ParticleLibraryItem(
+    particle: Particle,
+    position: String,
+    delta: String,
+    speed: String,
+    count: String,
+    mode: String,
+    onCopy: () -> Unit,
+    onInsert: () -> Unit
+) {
+    val clipboardManager = LocalClipboardManager.current
+    val command = ParticleLibrary.buildParticleCommand(particle, position, delta, speed, count, mode)
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.BubbleChart,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.tertiary
+                    )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = particle.name,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = particle.id,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontFamily = FontFamily.Monospace
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = particle.description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = command,
+                style = MaterialTheme.typography.bodySmall,
+                fontFamily = FontFamily.Monospace,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                OutlinedButton(
+                    onClick = {
+                        clipboardManager.setText(AnnotatedString(command))
+                    },
+                    modifier = Modifier.height(32.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ContentCopy,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("复制", style = MaterialTheme.typography.bodySmall)
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(
+                    onClick = {
+                        viewModel.onCommandTextChanged(command)
+                    },
+                    modifier = Modifier.height(32.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("插入", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
     }
 }
 

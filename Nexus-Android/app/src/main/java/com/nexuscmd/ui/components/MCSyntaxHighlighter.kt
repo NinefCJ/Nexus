@@ -78,23 +78,72 @@ enum class TokenType {
 
 class MCSyntaxHighlighter {
 
+    // 基岩版完整命令列表
     private val commandNames = setOf(
+        // 基础命令
         "give", "summon", "tp", "teleport", "setblock", "fill", "clear",
-        "effect", "enchant", "kill", "clear", "replaceitem", "spawnpoint",
+        "effect", "enchant", "kill", "replaceitem", "spawnpoint",
         "time", "weather", "gamerule", "difficulty", "gamemode", "defaultgamemode",
         "scoreboard", "execute", "tell", "msg", "w", "me", "say", "team",
         "title", "playsound", "stopsound", "particle", "function", "schedule",
-        "advancement", "recipe", "loot", "data", "attribute", "bossbar",
-        "clone", "execute", "forceload", "item", "mined", "origin", "place",
-        "random", "structure", "tag", "trigger", "worldborder", "kick", "ban",
-        "banip", "pardon", "pardon-ip", "op", "deop", "list", "whitelist",
-        "publish", "save", "stop", "kick", "reload"
+        "advancement", "recipe", "loot", "bossbar", "tag", "trigger",
+        "worldborder", "kick", "ban", "banip", "pardon", "pardon-ip",
+        "op", "deop", "list", "whitelist", "publish", "save", "stop", "reload",
+        
+        // 基岩版独有命令
+        "ability", "alwaysday", "camerashake", "clearspawnpoint", "clone",
+        "connect", "damage", "deop", "difficulty", "effect", "enchant",
+        "event", "execute", "fill", "forceload", "function", "gamemode",
+        "gamerule", "give", "globalpause", "help", "immutableworld", "item",
+        "jfr", "kick", "kill", "lesson", "list", "locate", "locatebiome",
+        "loot", "marshal", "mask", "massawake", "mobs", "music", "network",
+        "op", "ops", "pardon", "pardonip", "particle", "perf", "playanimation",
+        "playsound", "publish", "ride", "save", "save query", "save resume",
+        "save hold", "save", "schedule", "scoreboard", "setblock", "setidletimeout",
+        "setspawnpoint", "setworldspawn", "spawnpoint", "spreadplayers", "stop",
+        "stopsound", "structure", "summon", "tag", "teleport", "tell", "tellraw",
+        "test", "testfor", "testforblock", "testforblocks", "tickingarea",
+        "time", "title", "titleraw", "toggledownfall", "tp", "transfer",
+        "volumearea", "wb", "worldbuilder", "wsserver",
+        
+        // 教育版命令
+        "allowlist", "askraw", "blockplace", "blockpush", "broadcast",
+        "bubblecabinet", "c", "casueffect", "classroom", "clearid",
+        "closechat", "code", "connectwire", "count", "createagent",
+        "damage", "debug", "detect", "detectredstone", "disconnectwire",
+        "drop", "dropitem", "equip", "execute", "exit", "exp", "export",
+        "fill", "fillbiome", "fog", "getchunkdata", "getclientvar",
+        "getlocalplayername", "getplayercount", "getspawnpoint", "getwd",
+        "give", "globalsound", "goto", "haschat", "hascontaineropen",
+        "health", "hit", "import", "index", "inspect", "join", "kick",
+        "kill", "list", "localevent", "log", "move", "msg", "music",
+        "mute", "noclip", "notecraft", "particle", "play", "playanimation",
+        "playerfalling", "players", "pos", "random", "release",
+        "render", "ride", "rotate", "run", "scan", "score", "script",
+        "select", "set", "setblock", "setchatqueue", "setmaxplayers",
+        "setmotor", "setnosprint", "setplayername", "setpos", "setrole",
+        "setspawn", "settimer", "settp", "setunlock", "shake", "show",
+        "shutdownevents", "sig", "sound", "spawn", "spawndata", "spawnexplosions",
+        "spawnitem", "spawnpoint", "spawnpxz", "spawnrelative", "stopsound",
+        "structure", "summon", "tag", "talking", "teleport", "tell",
+        "test", "testfor", "testforblock", "testforblocks", "tick",
+        "title", "tickingarea", "time", "titleraw", "tm", "tp", "trace",
+        "transfer", "unlockachievements", "volumearea", "walk", "weather",
+        "worldbuilder", "wsserver", "xp"
     )
 
+    // 基岩版execute子命令
     private val keywords = setOf(
         "if", "unless", "at", "as", "in", "on", "positioned", "rotated",
         "facing", "anchored", "entity", "blocks", "store", "run", "set",
-        "add", "remove", "list", "get", "reset", "operation"
+        "add", "remove", "list", "get", "reset", "operation",
+        // 基岩版特有关键词
+        "covalence", "detect", "forward", "horse", "owner", "radius",
+        "rx", "rxm", "ry", "rym", "score_", "tag_", "type_", "x_", "xm", "y", "ym", "z", "zm",
+        // 选择器参数
+        "name", "type", "level", "game_mode", "x", "y", "z", "dx", "dy", "dz",
+        "distance", "scores", "tag", "team", "limit", "sort", "sort_nearest",
+        "sort_random", "sort_distance", "sort_arbitrary"
     )
 
     private val effects = setOf(
