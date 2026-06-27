@@ -45,6 +45,10 @@ import com.nexuscmd.data.SoundEffect
 import com.nexuscmd.data.SoundEffectLibrary
 import com.nexuscmd.data.ParticleLibrary
 import com.nexuscmd.data.Particle
+import com.nexuscmd.data.BlockLibrary
+import com.nexuscmd.data.Block
+import com.nexuscmd.data.ItemLibrary
+import com.nexuscmd.data.Item
 import com.nexuscmd.ui.components.SyntaxHighlightEditor
 import com.nexuscmd.ui.theme.MCCommandHelperTheme
 import com.nexuscmd.ui.theme.SyntaxCommand
@@ -164,7 +168,7 @@ fun MainScreen(
         ) {
             // Tab selector
             NavigationBar {
-                listOf("编辑器", "模板", "命令库", "音效", "粒子", "历史", "设置").forEachIndexed { index, title ->
+                listOf("编辑器", "模板", "命令库", "方块", "物品", "音效", "粒子", "历史", "设置").forEachIndexed { index, title ->
                     NavigationBarItem(
                         selected = selectedTab == index,
                         onClick = { selectedTab = index },
@@ -174,15 +178,17 @@ fun MainScreen(
                                     0 -> Icons.Default.Edit
                                     1 -> Icons.Default.AutoFixHigh
                                     2 -> Icons.Default.LibraryBooks
-                                    3 -> Icons.Default.VolumeUp
-                                    4 -> Icons.Default.BubbleChart
-                                    5 -> Icons.Default.History
+                                    3 -> Icons.Default.ViewModule
+                                    4 -> Icons.Default.Category
+                                    5 -> Icons.Default.VolumeUp
+                                    6 -> Icons.Default.BubbleChart
+                                    7 -> Icons.Default.History
                                     else -> Icons.Default.Settings
                                 },
                                 contentDescription = title
                             )
                         },
-                        label = { Text(title) }
+                        label = { Text(title, style = MaterialTheme.typography.labelSmall) }
                     )
                 }
             }
@@ -193,10 +199,12 @@ fun MainScreen(
                     0 -> EditorTab(viewModel, uiState)
                     1 -> TemplateGeneratorTab(viewModel)
                     2 -> CommandLibraryTab(viewModel, uiState)
-                    3 -> SoundEffectLibraryTab(viewModel)
-                    4 -> ParticleLibraryTab(viewModel)
-                    5 -> HistoryTab(viewModel, uiState)
-                    6 -> SettingsTab(
+                    3 -> BlockLibraryTab(viewModel)
+                    4 -> ItemLibraryTab(viewModel)
+                    5 -> SoundEffectLibraryTab(viewModel)
+                    6 -> ParticleLibraryTab(viewModel)
+                    7 -> HistoryTab(viewModel, uiState)
+                    8 -> SettingsTab(
                         viewModel = viewModel,
                         onRequestPermission = onRequestFloatingPermission,
                         onStartFloating = onStartFloating
@@ -1053,6 +1061,277 @@ fun toneForSoundEffect(effect: SoundEffect): Int {
         "音乐" -> ToneGenerator.TONE_DTMF_8
         "UI" -> ToneGenerator.TONE_PROP_PROMPT
         else -> ToneGenerator.TONE_PROP_NACK
+    }
+}
+
+@Composable
+fun BlockLibraryTab(viewModel: MainViewModel) {
+    var searchQuery by remember { mutableStateOf("") }
+    var selectedCategory by remember { mutableStateOf<String?>(null) }
+    val clipboardManager = LocalClipboardManager.current
+    val displayedBlocks = remember(searchQuery, selectedCategory) {
+        BlockLibrary.filter(searchQuery, selectedCategory)
+    }
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        item {
+            Text(
+                text = "方块库",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "基岩版方块ID与中文翻译，用于 /setblock /fill 等命令",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+
+        item {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("搜索方块ID、中文名...") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(Icons.Default.Clear, contentDescription = "清除")
+                        }
+                    }
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
+            )
+        }
+
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                BlockLibrary.categories.take(8).forEach { category ->
+                    FilterChip(
+                        selected = selectedCategory == category || (category == "全部" && selectedCategory == null),
+                        onClick = {
+                            selectedCategory = if (category == "全部") null else category
+                        },
+                        label = { Text(category, style = MaterialTheme.typography.labelSmall) }
+                    )
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                BlockLibrary.categories.drop(8).forEach { category ->
+                    FilterChip(
+                        selected = selectedCategory == category || (category == "全部" && selectedCategory == null),
+                        onClick = {
+                            selectedCategory = if (category == "全部") null else category
+                        },
+                        label = { Text(category, style = MaterialTheme.typography.labelSmall) }
+                    )
+                }
+            }
+        }
+
+        item {
+            Text(
+                text = "共 ${displayedBlocks.size} 个方块",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        items(displayedBlocks) { block ->
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ViewModule,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = block.name,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            text = block.id,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontFamily = FontFamily.Monospace
+                        )
+                        if (block.description.isNotEmpty()) {
+                            Text(
+                                text = block.description,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    IconButton(onClick = {
+                        clipboardManager.setText(AnnotatedString(block.id))
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.ContentCopy,
+                            contentDescription = "复制ID",
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ItemLibraryTab(viewModel: MainViewModel) {
+    var searchQuery by remember { mutableStateOf("") }
+    var selectedCategory by remember { mutableStateOf<String?>(null) }
+    val clipboardManager = LocalClipboardManager.current
+    val displayedItems = remember(searchQuery, selectedCategory) {
+        ItemLibrary.filter(searchQuery, selectedCategory)
+    }
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        item {
+            Text(
+                text = "物品库",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "基岩版物品ID与中文翻译，用于 /give /replaceitem 等命令",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+
+        item {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("搜索物品ID、中文名...") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(Icons.Default.Clear, contentDescription = "清除")
+                        }
+                    }
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
+            )
+        }
+
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                ItemLibrary.categories.forEach { category ->
+                    FilterChip(
+                        selected = selectedCategory == category || (category == "全部" && selectedCategory == null),
+                        onClick = {
+                            selectedCategory = if (category == "全部") null else category
+                        },
+                        label = { Text(category, style = MaterialTheme.typography.labelSmall) }
+                    )
+                }
+            }
+        }
+
+        item {
+            Text(
+                text = "共 ${displayedItems.size} 个物品",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        items(displayedItems) { item ->
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Category,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.secondary
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = item.name,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            text = item.id,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontFamily = FontFamily.Monospace
+                        )
+                        if (item.description.isNotEmpty()) {
+                            Text(
+                                text = item.description,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    IconButton(onClick = {
+                        clipboardManager.setText(AnnotatedString(item.id))
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.ContentCopy,
+                            contentDescription = "复制ID",
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
