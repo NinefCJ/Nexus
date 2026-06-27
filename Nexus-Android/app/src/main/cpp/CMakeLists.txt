@@ -11,6 +11,10 @@ add_library(core STATIC IMPORTED)
 set_target_properties(core PROPERTIES IMPORTED_LOCATION
     ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libcore.a)
 
+# 设置 C++ 标准为 C++14（最稳定兼容的选择）
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
 # Source files for JNI
 set(JNI_SOURCES
     native.cpp
