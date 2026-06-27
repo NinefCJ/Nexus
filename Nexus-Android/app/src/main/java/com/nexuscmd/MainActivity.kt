@@ -4,6 +4,8 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.media.AudioManager
+import android.media.ToneGenerator
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -39,6 +41,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nexuscmd.data.HistoryItem
 import com.nexuscmd.data.SavedCommand
+import com.nexuscmd.data.SoundEffect
+import com.nexuscmd.data.SoundEffectLibrary
 import com.nexuscmd.ui.components.SyntaxHighlightEditor
 import com.nexuscmd.ui.theme.MCCommandHelperTheme
 import com.nexuscmd.ui.theme.SyntaxCommand
@@ -158,7 +162,7 @@ fun MainScreen(
         ) {
             // Tab selector
             NavigationBar {
-                listOf("编辑器", "模板", "命令库", "历史", "设置").forEachIndexed { index, title ->
+                listOf("编辑器", "模板", "命令库", "音效", "历史", "设置").forEachIndexed { index, title ->
                     NavigationBarItem(
                         selected = selectedTab == index,
                         onClick = { selectedTab = index },
@@ -168,7 +172,8 @@ fun MainScreen(
                                     0 -> Icons.Default.Edit
                                     1 -> Icons.Default.AutoFixHigh
                                     2 -> Icons.Default.LibraryBooks
-                                    3 -> Icons.Default.History
+                                    3 -> Icons.Default.VolumeUp
+                                    4 -> Icons.Default.History
                                     else -> Icons.Default.Settings
                                 },
                                 contentDescription = title
@@ -185,8 +190,9 @@ fun MainScreen(
                     0 -> EditorTab(viewModel, uiState)
                     1 -> TemplateGeneratorTab(viewModel)
                     2 -> CommandLibraryTab(viewModel, uiState)
-                    3 -> HistoryTab(viewModel, uiState)
-                    4 -> SettingsTab(
+                    3 -> SoundEffectLibraryTab(viewModel)
+                    4 -> HistoryTab(viewModel, uiState)
+                    5 -> SettingsTab(
                         viewModel = viewModel,
                         onRequestPermission = onRequestFloatingPermission,
                         onStartFloating = onStartFloating
@@ -761,6 +767,288 @@ fun CommandLibraryItem(
                 )
             }
         }
+    }
+}
+
+@Composable
+fun SoundEffectLibraryTab(viewModel: MainViewModel) {
+    var searchQuery by remember { mutableStateOf("") }
+    var selectedCategory by remember { mutableStateOf<String?>(null) }
+    var target by remember { mutableStateOf("@s") }
+    var position by remember { mutableStateOf("~ ~ ~") }
+    var volume by remember { mutableStateOf("1") }
+    var pitch by remember { mutableStateOf("1") }
+    var minimumVolume by remember { mutableStateOf("0") }
+
+    val clipboardManager = LocalClipboardManager.current
+    val toneGenerator = remember { ToneGenerator(AudioManager.STREAM_MUSIC, 80) }
+    val displayedEffects = remember(searchQuery, selectedCategory) {
+        SoundEffectLibrary.filter(searchQuery, selectedCategory)
+    }
+
+    DisposableEffect(Unit) {
+        onDispose { toneGenerator.release() }
+    }
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        item {
+            Text(
+                text = "音效库",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "选择音效生成基岩版 /playsound 指令，试听为本机短音预览，不代表游戏内真实音频。",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+
+        item {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("搜索音效ID、中文名或说明...") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(Icons.Default.Clear, contentDescription = "清除")
+                        }
+                    }
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
+            )
+        }
+
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                SoundEffectLibrary.categories.forEach { category ->
+                    FilterChip(
+                        selected = selectedCategory == category || (category == "全部" && selectedCategory == null),
+                        onClick = {
+                            selectedCategory = if (category == "全部") null else category
+                        },
+                        label = { Text(category, style = MaterialTheme.typography.bodySmall) }
+                    )
+                }
+            }
+        }
+
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
+                )
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Tune,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "默认参数",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("@s", "@p", "@a", "@r").forEach { selector ->
+                            FilterChip(
+                                selected = target == selector,
+                                onClick = { target = selector },
+                                label = { Text(selector) }
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = position,
+                            onValueChange = { position = it },
+                            modifier = Modifier.weight(1f),
+                            label = { Text("坐标") },
+                            singleLine = true
+                        )
+                        OutlinedTextField(
+                            value = volume,
+                            onValueChange = { volume = it },
+                            modifier = Modifier.weight(1f),
+                            label = { Text("音量") },
+                            singleLine = true
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = pitch,
+                            onValueChange = { pitch = it },
+                            modifier = Modifier.weight(1f),
+                            label = { Text("音高") },
+                            singleLine = true
+                        )
+                        OutlinedTextField(
+                            value = minimumVolume,
+                            onValueChange = { minimumVolume = it },
+                            modifier = Modifier.weight(1f),
+                            label = { Text("最小音量") },
+                            singleLine = true
+                        )
+                    }
+                }
+            }
+        }
+
+        item {
+            Text(
+                text = "共 ${displayedEffects.size} 个音效",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        items(displayedEffects, key = { it.id }) { effect ->
+            SoundEffectItem(
+                effect = effect,
+                command = SoundEffectLibrary.buildPlaySoundCommand(
+                    effect = effect,
+                    target = target,
+                    position = position,
+                    volume = volume.ifBlank { effect.volume },
+                    pitch = pitch.ifBlank { effect.pitch },
+                    minimumVolume = minimumVolume.ifBlank { "0" }
+                ),
+                onPreview = {
+                    toneGenerator.startTone(toneForSoundEffect(effect), 350)
+                },
+                onUse = { command ->
+                    viewModel.onCommandTextChanged(command)
+                    viewModel.addToHistory(command)
+                },
+                onCopy = { command ->
+                    clipboardManager.setText(AnnotatedString(command))
+                    viewModel.addToHistory(command)
+                }
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SoundEffectItem(
+    effect: SoundEffect,
+    command: String,
+    onPreview: () -> Unit,
+    onUse: (String) -> Unit,
+    onCopy: (String) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.GraphicEq,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.secondary
+                    )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = effect.name,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = effect.id,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontFamily = FontFamily.Monospace,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                AssistChip(
+                    onClick = {},
+                    label = { Text(effect.category) },
+                    enabled = false
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = effect.description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            SyntaxHighlightedText(
+                text = command,
+                style = MaterialTheme.typography.bodySmall
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = onPreview,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Default.PlayArrow, contentDescription = null)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("试听")
+                }
+                OutlinedButton(
+                    onClick = { onCopy(command) },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Default.ContentCopy, contentDescription = null)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("复制")
+                }
+                Button(
+                    onClick = { onUse(command) },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Default.Edit, contentDescription = null)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("使用")
+                }
+            }
+        }
+    }
+}
+
+fun toneForSoundEffect(effect: SoundEffect): Int {
+    return when (effect.category) {
+        "实体" -> ToneGenerator.TONE_DTMF_2
+        "玩家" -> ToneGenerator.TONE_PROP_ACK
+        "方块" -> ToneGenerator.TONE_PROP_BEEP
+        "红石" -> ToneGenerator.TONE_DTMF_5
+        "天气" -> ToneGenerator.TONE_DTMF_0
+        "音乐" -> ToneGenerator.TONE_DTMF_8
+        "UI" -> ToneGenerator.TONE_PROP_PROMPT
+        else -> ToneGenerator.TONE_PROP_NACK
     }
 }
 

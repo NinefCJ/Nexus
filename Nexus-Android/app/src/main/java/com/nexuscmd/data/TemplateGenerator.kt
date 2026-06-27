@@ -472,12 +472,15 @@ class TemplateGenerator {
 
         // ============ 声音粒子 (基岩版) ============
         CommandTemplate("playsound_basic", "播放声音", "声音粒子",
-            "向玩家播放声音",
-            "/playsound <sound> <selector>",
+            "从内置音效库选择音效并向玩家播放",
+            "/playsound <sound> <selector> <coords> <volume> <pitch>",
             listOf(
                 TemplateParameter("sound", ParamType.SELECT, "random.orb",
-                    listOf("random.orb", "random.levelup", "block.note.chime", "ambient.weather.thunder", "block.anvil.use", "mob.enderdragon.growl"), "声音ID"),
-                TemplateParameter("selector", ParamType.SELECTOR, "@p", emptyList(), "目标玩家")
+                    SoundEffectLibrary.effects.map { it.id }, "声音ID"),
+                TemplateParameter("selector", ParamType.SELECTOR, "@p", emptyList(), "目标玩家"),
+                TemplateParameter("coords", ParamType.COORDINATE, "~ ~ ~", emptyList(), "播放位置"),
+                TemplateParameter("volume", ParamType.NUMBER, "1", emptyList(), "音量"),
+                TemplateParameter("pitch", ParamType.NUMBER, "1", emptyList(), "音高")
             )
         ),
         CommandTemplate("particle_basic", "生成粒子", "声音粒子",
