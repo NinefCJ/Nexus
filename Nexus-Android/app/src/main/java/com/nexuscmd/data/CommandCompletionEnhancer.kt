@@ -7,14 +7,19 @@ class CommandCompletionEnhancer(
     private val blockLibrary: BlockLibrary = BlockLibrary,
     private val itemLibrary: ItemLibrary = ItemLibrary,
     private val soundEffectLibrary: SoundEffectLibrary = SoundEffectLibrary,
-    private val particleLibrary: ParticleLibrary = ParticleLibrary
+    private val particleLibrary: ParticleLibrary = ParticleLibrary,
+    private val addonBlocks: List<Block> = emptyList(),
+    private val addonItems: List<Item> = emptyList(),
+    private val addonSounds: List<SoundEffect> = emptyList(),
+    private val addonParticles: List<Particle> = emptyList()
 ) {
 
     data class EnhancedSuggestion(
         val text: String,
         val displayText: String,
         val type: SuggestionType,
-        val description: String = ""
+        val description: String = "",
+        val source: String = "minecraft"  // "minecraft" or addon id
     )
 
     enum class SuggestionType {
@@ -34,13 +39,13 @@ class CommandCompletionEnhancer(
         baseCompletions: List<String>
     ): List<EnhancedSuggestion> {
         val text = currentInput.take(cursorPosition)
-        
+
         if (text.startsWith("/") && text.contains(" ")) {
             val cmdName = text.trimStart('/').substringBefore(" ")
             val args = text.substringAfter(" ").split(" ")
             val currentArgIndex = args.size - 1
             val currentArg = args.lastOrNull() ?: ""
-            
+
             return when (cmdName.lowercase()) {
                 "setblock", "fill", "clone", "testforblock", "testforblocks" -> {
                     if (currentArgIndex >= 2) getBlockSuggestions(currentArg)
@@ -65,60 +70,136 @@ class CommandCompletionEnhancer(
                 else -> baseCompletions.map { EnhancedSuggestion(it, it, SuggestionType.COMMAND) }
             }
         }
-        
+
         return baseCompletions.map { EnhancedSuggestion(it, it, SuggestionType.COMMAND) }
     }
 
     private fun getBlockSuggestions(query: String): List<EnhancedSuggestion> {
-        val normalized = query.trim().lowercase().removePrefix("minecraft:")
-        val blocks = blockLibrary.filter(normalized, null).take(15)
-        return blocks.map { block ->
+        val normalized = query.trim().lowercase()
+        val vanillaBlocks = blockLibrary.filter(normalized.removePrefix("minecraft:"), null).take(15)
+        val addonBlockSuggestions = addonBlocks
+            .filter {
+                it.id.contains(normalized, ignoreCase = true) ||
+                it.name.contains(normalized, ignoreCase = true)
+            }
+            .take(15)
+            .map { block ->
+                EnhancedSuggestion(
+                    text = block.id,
+                    displayText = block.name,
+                    type = SuggestionType.BLOCK,
+                    description = block.id,
+                    source = "addon"
+                )
+            }
+
+        val vanillaSuggestions = vanillaBlocks.map { block ->
             EnhancedSuggestion(
                 text = block.id,
                 displayText = block.name,
                 type = SuggestionType.BLOCK,
-                description = block.id
+                description = block.id,
+                source = "minecraft"
             )
         }
+
+        return addonBlockSuggestions + vanillaSuggestions
     }
 
     private fun getItemSuggestions(query: String): List<EnhancedSuggestion> {
-        val normalized = query.trim().lowercase().removePrefix("minecraft:")
-        val items = itemLibrary.filter(normalized, null).take(15)
-        return items.map { item ->
+        val normalized = query.trim().lowercase()
+        val vanillaItems = itemLibrary.filter(normalized.removePrefix("minecraft:"), null).take(15)
+        val addonItemSuggestions = addonItems
+            .filter {
+                it.id.contains(normalized, ignoreCase = true) ||
+                it.name.contains(normalized, ignoreCase = true)
+            }
+            .take(15)
+            .map { item ->
+                EnhancedSuggestion(
+                    text = item.id,
+                    displayText = item.name,
+                    type = SuggestionType.ITEM,
+                    description = item.id,
+                    source = "addon"
+                )
+            }
+
+        val vanillaSuggestions = vanillaItems.map { item ->
             EnhancedSuggestion(
                 text = item.id,
                 displayText = item.name,
                 type = SuggestionType.ITEM,
-                description = item.id
+                description = item.id,
+                source = "minecraft"
             )
         }
+
+        return addonItemSuggestions + vanillaSuggestions
     }
 
     private fun getSoundSuggestions(query: String): List<EnhancedSuggestion> {
-        val normalized = query.trim().lowercase().removePrefix("minecraft:")
-        val sounds = soundEffectLibrary.filter(normalized, null).take(15)
-        return sounds.map { sound ->
+        val normalized = query.trim().lowercase()
+        val vanillaSounds = soundEffectLibrary.filter(normalized.removePrefix("minecraft:"), null).take(15)
+        val addonSoundSuggestions = addonSounds
+            .filter {
+                it.id.contains(normalized, ignoreCase = true) ||
+                it.name.contains(normalized, ignoreCase = true)
+            }
+            .take(15)
+            .map { sound ->
+                EnhancedSuggestion(
+                    text = sound.id,
+                    displayText = sound.name,
+                    type = SuggestionType.SOUND,
+                    description = sound.id,
+                    source = "addon"
+                )
+            }
+
+        val vanillaSuggestions = vanillaSounds.map { sound ->
             EnhancedSuggestion(
                 text = sound.id,
                 displayText = sound.name,
                 type = SuggestionType.SOUND,
-                description = sound.id
+                description = sound.id,
+                source = "minecraft"
             )
         }
+
+        return addonSoundSuggestions + vanillaSuggestions
     }
 
     private fun getParticleSuggestions(query: String): List<EnhancedSuggestion> {
-        val normalized = query.trim().lowercase().removePrefix("minecraft:")
-        val particles = particleLibrary.filter(normalized, null).take(15)
-        return particles.map { particle ->
+        val normalized = query.trim().lowercase()
+        val vanillaParticles = particleLibrary.filter(normalized.removePrefix("minecraft:"), null).take(15)
+        val addonParticleSuggestions = addonParticles
+            .filter {
+                it.id.contains(normalized, ignoreCase = true) ||
+                it.name.contains(normalized, ignoreCase = true)
+            }
+            .take(15)
+            .map { particle ->
+                EnhancedSuggestion(
+                    text = "minecraft:${particle.id}",
+                    displayText = particle.name,
+                    type = SuggestionType.PARTICLE,
+                    description = particle.id,
+                    source = "addon"
+                )
+            }
+
+        val vanillaSuggestions = vanillaParticles.map { particle ->
             EnhancedSuggestion(
                 text = "minecraft:${particle.id}",
                 displayText = particle.name,
                 type = SuggestionType.PARTICLE,
-                description = particle.id
+                description = particle.id,
+                source = "minecraft"
             )
         }
+
+        return addonParticleSuggestions + vanillaSuggestions
     }
 
     companion object {

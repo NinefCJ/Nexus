@@ -6,6 +6,8 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.nexuscmd.data.AddonManager
+import com.nexuscmd.data.AddonPack
 import com.nexuscmd.data.CommandRepository
 import com.nexuscmd.data.HistoryItem
 import com.nexuscmd.data.HistoryManager
@@ -45,7 +47,12 @@ data class MainUiState(
     val currentTheme: AppTheme = AppTheme.FOLLOW_SYSTEM,
 
     // Snackbar
-    val snackbarMessage: String? = null
+    val snackbarMessage: String? = null,
+
+    // Addons
+    val installedAddons: List<AddonPack> = emptyList(),
+    val addonCommands: List<SavedCommand> = emptyList(),
+    val addonTemplates: List<SavedCommand> = emptyList()
 )
 
 data class CommandLibraryItem(
@@ -64,6 +71,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val commandRepository = CommandRepository(application)
     private val historyManager = HistoryManager(application)
     private val settingsManager = SettingsManager(application)
+    private val addonManager = AddonManager.getInstance(application)
 
     init {
         loadInitialData()
@@ -76,6 +84,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val allCommands = getBuiltInCommands()
             val theme = settingsManager.currentTheme
 
+            // Load addon data
+            val addons = addonManager.loadAddons()
+            val enabledAddons = addons.filter { it.enabled }
+            val addonCommands = enabledAddons.flatMap { it.customCommands }
+            val addonTemplates = enabledAddons.flatMap { it.customTemplates }
+
+            // Build quick commands from addons
+            val addonQuickCommands = addonCommands.map { cmd ->
+                Triple(cmd.command, cmd.name, Icons.Default.Extension)
+            }
+
             _uiState.value = _uiState.value.copy(
                 quickCommands = listOf(
                     Triple("/give @p diamond 1", "给予钻石", Icons.Default.CardGiftcard),
@@ -86,11 +105,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     Triple("/effect @s speed 30 1", "加速效果", Icons.Default.Speed),
                     Triple("/scoreboard objectives add", "记分板", Icons.Default.Leaderboard),
                     Triple("/give @p written_book", "给予书本", Icons.Default.MenuBook)
-                ),
+                ) + addonQuickCommands.take(4),  // Add up to 4 addon commands
                 favoriteCommands = favorites,
                 historyItems = history,
                 allCommands = allCommands,
-                currentTheme = theme
+                currentTheme = theme,
+                installedAddons = addons,
+                addonCommands = addonCommands,
+                addonTemplates = addonTemplates
             )
         }
     }
@@ -236,6 +258,57 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun clearSnackbar() {
         _uiState.value = _uiState.value.copy(snackbarMessage = null)
+    }
+
+    fun refreshAddonData() {
+        viewModelScope.launch {
+            val addons = addonManager.loadAddons()
+            val enabledAddons = addons.filter { it.enabled }
+            val addonCommands = enabledAddons.flatMap { it.customCommands }
+            val addonTemplates = enabledAddons.flatMap { it.customTemplates }
+
+            val addonQuickCommands = addonCommands.map { cmd ->
+                Triple(cmd.command, cmd.name, Icons.Default.Extension)
+            }
+
+            _uiState.value = _uiState.value.copy(
+                installedAddons = addons,
+                addonCommands = addonCommands,
+                addonTemplates = addonTemplates,
+                quickCommands = listOf(
+                    Triple("/give @p diamond 1", "给予钻石", Icons.Default.CardGiftcard),
+                    Triple("/summon minecraft:zombie", "生成僵尸", Icons.Default.Widgets),
+                    Triple("/tp @s ~ ~ ~", "传送原地", Icons.Default.SwapHoriz),
+                    Triple("/setblock ~ ~ ~ stone", "放置石头", Icons.Default.Create),
+                    Triple("/fill ~ ~ ~ ~10 ~10 stone", "填充石头", Icons.Default.Map),
+                    Triple("/effect @s speed 30 1", "加速效果", Icons.Default.Speed),
+                    Triple("/scoreboard objectives add", "记分板", Icons.Default.Leaderboard),
+                    Triple("/give @p written_book", "给予书本", Icons.Default.MenuBook)
+                ) + addonQuickCommands.take(4)
+            )
+        }
+    }
+
+    fun getAddonFilteredCommands(): List<CommandLibraryItem> {
+        val query = _uiState.value.searchQuery.lowercase()
+        return _uiState.value.addonCommands.map { cmd ->
+            CommandLibraryItem(
+                name = cmd.name,
+                description = cmd.description,
+                syntax = cmd.command,
+                category = "拓展包",
+                icon = Icons.Default.Extension
+            )
+        }.filter {
+            query.isEmpty() ||
+            it.name.contains(query, ignoreCase = true) ||
+            it.description.contains(query, ignoreCase = true) ||
+            it.syntax.contains(query, ignoreCase = true)
+        }
+    }
+
+    fun getAddonTemplates(): List<SavedCommand> {
+        return _uiState.value.addonTemplates
     }
 
     private fun refreshFavorites() {
