@@ -31,7 +31,7 @@ jobs:
         run: |
           mkdir -p $HOME/android-sdk/cmdline-tools/latest
           # 下载官方命令行工具 (11.0 版本最稳定)
-          wget https://dl.google.com/android/repository/commandlinetools-linux-11076758_latest.zip -O cmdline-tools.zip
+           wget https://dl.google.com/android/repository/commandlinetools-linux-14742923_latest.zip -O cmdline-tools.zip
           # 解压到 latest 文件夹 (注意：必须是 latest 这个子目录)
           unzip cmdline-tools.zip -d $HOME/android-sdk/cmdline-tools/latest
           rm cmdline-tools.zip
