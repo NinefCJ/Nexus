@@ -1,5 +1,8 @@
 package com.nexuscmd
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -9,14 +12,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -26,17 +28,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.nexuscmd.data.HistoryItem
+import com.nexuscmd.data.SavedCommand
 import com.nexuscmd.ui.theme.MCCommandHelperTheme
 import com.nexuscmd.ui.theme.SyntaxCommand
-import com.nexuscmd.ui.theme.SyntaxNumber
-import com.nexuscmd.ui.theme.SyntaxSelector
-import com.nexuscmd.ui.theme.SyntaxString
-import org.json.JSONArray
-import org.json.JSONObject
+import java.text.SimpleDateFormat
+import java.util.*
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
@@ -47,7 +53,7 @@ class MainActivity : ComponentActivity() {
         CommandHelper.Registry.getInstance().initialize("")
 
         setContent {
-            MCCommandHelperTheme {
+            MCCommandHelperTheme(darkTheme = viewModel.uiState.value.isDarkTheme) {
                 MainScreen(
                     viewModel = viewModel,
                     onRequestFloatingPermission = { requestFloatingWindowPermission() },
@@ -90,25 +96,43 @@ fun MainScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Handle snackbar messages
+    LaunchedEffect(uiState.snackbarMessage) {
+        uiState.snackbarMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearSnackbar()
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            imageVector = Icons.Default.Code,
+                            imageVector = Icons.Default.Terminal,
                             contentDescription = null,
-                            modifier = Modifier.size(28.dp)
+                            modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "MC命令助手",
+                            text = "Nexus",
                             fontWeight = FontWeight.Bold
                         )
                     }
                 },
                 actions = {
+                    // Theme toggle
+                    IconButton(onClick = { viewModel.setDarkTheme(!uiState.isDarkTheme) }) {
+                        Icon(
+                            imageVector = if (uiState.isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
+                            contentDescription = "切换主题"
+                        )
+                    }
+                    // Floating window
                     IconButton(onClick = onRequestFloatingPermission) {
                         Icon(Icons.Default.PictureInPicture, contentDescription = "悬浮窗权限")
                     }
@@ -139,7 +163,7 @@ fun MainScreen(
                             Icon(
                                 imageVector = when (index) {
                                     0 -> Icons.Default.Edit
-                                    1 -> Icons.Default.Bookmark
+                                    1 -> Icons.Default.LibraryBooks
                                     2 -> Icons.Default.History
                                     else -> Icons.Default.Settings
                                 },
@@ -155,9 +179,10 @@ fun MainScreen(
             Box(modifier = Modifier.weight(1f)) {
                 when (selectedTab) {
                     0 -> EditorTab(viewModel, uiState)
-                    1 -> CommandLibraryTab()
-                    2 -> HistoryTab()
+                    1 -> CommandLibraryTab(viewModel, uiState)
+                    2 -> HistoryTab(viewModel, uiState)
                     3 -> SettingsTab(
+                        viewModel = viewModel,
                         onRequestPermission = onRequestFloatingPermission,
                         onStartFloating = onStartFloating
                     )
@@ -169,6 +194,9 @@ fun MainScreen(
 
 @Composable
 fun EditorTab(viewModel: MainViewModel, uiState: MainUiState) {
+    val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -182,7 +210,25 @@ fun EditorTab(viewModel: MainViewModel, uiState: MainUiState) {
                 onCommandChange = { viewModel.onCommandTextChanged(it) },
                 validation = uiState.validation,
                 completions = uiState.completions,
-                onCompletionClick = { viewModel.applyCompletion(it) }
+                onCompletionClick = { viewModel.applyCompletion(it) },
+                isFavorite = uiState.isCurrentCommandFavorite,
+                onFavoriteClick = { viewModel.toggleCurrentFavorite() },
+                onCopyClick = {
+                    if (uiState.commandText.isNotEmpty()) {
+                        clipboardManager.setText(AnnotatedString(uiState.commandText))
+                        viewModel.addToHistory(uiState.commandText)
+                    }
+                },
+                onShareClick = {
+                    if (uiState.commandText.isNotEmpty()) {
+                        val sendIntent = Intent().apply {
+                            action = Intent.ACTION_SEND
+                            putExtra(Intent.EXTRA_TEXT, uiState.commandText)
+                            type = "text/plain"
+                        }
+                        context.startActivity(Intent.createChooser(sendIntent, "分享命令"))
+                    }
+                }
             )
         }
 
@@ -209,8 +255,32 @@ fun EditorTab(viewModel: MainViewModel, uiState: MainUiState) {
                 command = cmd,
                 description = desc,
                 icon = icon,
-                onClick = { viewModel.onCommandTextChanged(cmd) }
+                onClick = { viewModel.onCommandTextChanged(cmd) },
+                onLongClick = {
+                    clipboardManager.setText(AnnotatedString(cmd))
+                }
             )
+        }
+
+        // Favorites section
+        if (uiState.favoriteCommands.isNotEmpty()) {
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "我的收藏",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            items(uiState.favoriteCommands.take(5)) { fav ->
+                FavoriteCommandItem(
+                    command = fav,
+                    onClick = { viewModel.onCommandTextChanged(fav.command) },
+                    onDelete = { viewModel.removeFromFavorites(fav.id) }
+                )
+            }
         }
     }
 }
@@ -222,7 +292,11 @@ fun CommandInputCard(
     onCommandChange: (String) -> Unit,
     validation: ValidationResult?,
     completions: List<CompletionItem>,
-    onCompletionClick: (CompletionItem) -> Unit
+    onCompletionClick: (CompletionItem) -> Unit,
+    isFavorite: Boolean,
+    onFavoriteClick: () -> Unit,
+    onCopyClick: () -> Unit,
+    onShareClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -240,7 +314,7 @@ fun CommandInputCard(
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 8.dp)
+                modifier = Modifier.padding(bottom = 12.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.Terminal,
@@ -253,9 +327,46 @@ fun CommandInputCard(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
+                Spacer(modifier = Modifier.weight(1f))
+
+                // Favorite button
+                IconButton(
+                    onClick = onFavoriteClick,
+                    enabled = commandText.isNotEmpty()
+                ) {
+                    Icon(
+                        imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = "收藏",
+                        tint = if (isFavorite) Color.Red else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                // Copy button
+                IconButton(
+                    onClick = onCopyClick,
+                    enabled = commandText.isNotEmpty()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ContentCopy,
+                        contentDescription = "复制",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                // Share button
+                IconButton(
+                    onClick = onShareClick,
+                    enabled = commandText.isNotEmpty()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Share,
+                        contentDescription = "分享",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
-            // Syntax highlighted input area
+            // Input area
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -263,20 +374,24 @@ fun CommandInputCard(
                     .background(MaterialTheme.colorScheme.surfaceVariant)
                     .padding(12.dp)
             ) {
-                TextField(
+                BasicTextField(
                     value = commandText,
                     onValueChange = onCommandChange,
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("/give @p diamond_sword 1", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)) },
-                    textStyle = MaterialTheme.typography.bodyLarge.copy(
-                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                    textStyle = LocalTextStyle.current.copy(
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 16.sp
                     ),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent
-                    ),
+                    decorationBox = { innerTextField ->
+                        if (commandText.isEmpty()) {
+                            Text(
+                                text = "/give @p diamond_sword 1",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                        innerTextField()
+                    },
                     singleLine = false,
                     maxLines = 4
                 )
@@ -363,7 +478,7 @@ fun CompletionChip(item: CompletionItem, onClick: () -> Unit) {
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onSurface,
-            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+            fontFamily = FontFamily.Monospace
         )
         if (item.detail.isNotEmpty()) {
             Spacer(modifier = Modifier.width(8.dp))
@@ -396,16 +511,17 @@ fun CommandInfoCard(info: CommandInfo) {
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = info.name,
+                    text = "/${info.name}",
                     fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.titleSmall
+                    style = MaterialTheme.typography.titleSmall,
+                    fontFamily = FontFamily.Monospace
                 )
             }
             Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = info.syntax,
                 style = MaterialTheme.typography.bodySmall,
-                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                fontFamily = FontFamily.Monospace,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(4.dp))
@@ -418,12 +534,14 @@ fun CommandInfoCard(info: CommandInfo) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuickCommandItem(
     command: String,
     description: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    onClick: () -> Unit
+    icon: ImageVector,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit
 ) {
     Card(
         onClick = onClick,
@@ -459,8 +577,10 @@ fun QuickCommandItem(
                     text = command,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
-                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                    color = SyntaxCommand
+                    fontFamily = FontFamily.Monospace,
+                    color = SyntaxCommand,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = description,
@@ -478,17 +598,70 @@ fun QuickCommandItem(
 }
 
 @Composable
-fun CommandLibraryTab() {
-    val commands = listOf(
-        "give" to "给予玩家物品",
-        "summon" to "生成实体",
-        "tp" to "传送实体",
-        "setblock" to "放置方块",
-        "fill" to "填充区域",
-        "effect" to "添加状态效果",
-        "scoreboard" to "记分板操作",
-        "execute" to "执行命令"
-    )
+fun FavoriteCommandItem(
+    command: SavedCommand,
+    onClick: () -> Unit,
+    onDelete: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Favorite,
+                contentDescription = null,
+                tint = Color.Red,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = command.name,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = command.command,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontFamily = FontFamily.Monospace,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            IconButton(onClick = onDelete) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "删除",
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun CommandLibraryTab(viewModel: MainViewModel, uiState: MainUiState) {
+    val filteredCommands = viewModel.getFilteredCommands()
+    var selectedCategory by remember { mutableStateOf<String?>(null) }
+    val categories = listOf("全部", "物品", "实体", "传送", "方块", "世界", "游戏规则", "记分板", "玩家", "管理员", "服务器")
+
+    val displayedCommands = if (selectedCategory == null || selectedCategory == "全部") {
+        filteredCommands
+    } else {
+        filteredCommands.filter { it.category == selectedCategory }
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -497,58 +670,201 @@ fun CommandLibraryTab() {
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item {
-            Text(
-                text = "命令库",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "共 ${commands.size} 条命令",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+            // Search bar
+            OutlinedTextField(
+                value = uiState.searchQuery,
+                onValueChange = { viewModel.onSearchQueryChanged(it) },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("搜索命令...") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (uiState.searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { viewModel.onSearchQueryChanged("") }) {
+                            Icon(Icons.Default.Clear, contentDescription = "清除")
+                        }
+                    }
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
             )
             Spacer(modifier = Modifier.height(12.dp))
         }
 
-        items(commands) { (name, desc) ->
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
+        // Category chips
+        item {
+            LazyColumn(modifier = Modifier.height(40.dp)) {
+                item {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        categories.forEach { category ->
+                            FilterChip(
+                                selected = selectedCategory == category || (category == "全部" && selectedCategory == null),
+                                onClick = {
+                                    selectedCategory = if (category == "全部") null else category
+                                },
+                                label = { Text(category, style = MaterialTheme.typography.bodySmall) }
+                            )
+                        }
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        item {
+            Text(
+                text = "共 ${displayedCommands.size} 条命令",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        items(displayedCommands) { cmd ->
+            CommandLibraryItem(
+                command = cmd,
+                onClick = { viewModel.onCommandTextChanged(cmd.syntax) }
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CommandLibraryItem(
+    command: CommandLibraryItem,
+    onClick: () -> Unit
+) {
+    val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
+
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Bookmark,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.secondary
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "/$name",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.SemiBold,
-                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-                        )
-                        Text(
-                            text = desc,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                Icon(
+                    imageVector = command.icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.secondary
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "/${command.name}",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = FontFamily.Monospace
+                )
+                Text(
+                    text = command.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = command.syntax,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontFamily = FontFamily.Monospace,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            IconButton(onClick = {
+                clipboardManager.setText(AnnotatedString(command.syntax))
+            }) {
+                Icon(
+                    imageVector = Icons.Default.ContentCopy,
+                    contentDescription = "复制",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun HistoryTab(viewModel: MainViewModel, uiState: MainUiState) {
+    val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
+    val dateFormat = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
+
+    if (uiState.historyItems.isEmpty()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = Icons.Default.History,
+                contentDescription = null,
+                modifier = Modifier.size(64.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "暂无历史记录",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "你输入的命令将显示在这里",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            )
+        }
+    } else {
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Header with clear button
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "历史记录",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                TextButton(onClick = { viewModel.clearHistory() }) {
+                    Icon(Icons.Default.DeleteSweep, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("清空")
+                }
+            }
+
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(uiState.historyItems) { item ->
+                    HistoryItemCard(
+                        item = item,
+                        onClick = { viewModel.onCommandTextChanged(item.command) },
+                        onCopy = {
+                            clipboardManager.setText(AnnotatedString(item.command))
+                        },
+                        onDelete = { viewModel.deleteHistoryItem(item.id) },
+                        dateFormat = dateFormat
+                    )
                 }
             }
         }
@@ -556,40 +872,99 @@ fun CommandLibraryTab() {
 }
 
 @Composable
-fun HistoryTab() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+fun HistoryItemCard(
+    item: HistoryItem,
+    onClick: () -> Unit,
+    onCopy: () -> Unit,
+    onDelete: () -> Unit,
+    dateFormat: SimpleDateFormat
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        )
     ) {
-        Icon(
-            imageVector = Icons.Default.History,
-            contentDescription = null,
-            modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "暂无历史记录",
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = "你的命令使用记录将显示在这里",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.History,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = item.command,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontFamily = FontFamily.Monospace,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = dateFormat.format(Date(item.timestamp)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            IconButton(onClick = onCopy) {
+                Icon(
+                    imageVector = Icons.Default.ContentCopy,
+                    contentDescription = "复制",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            IconButton(onClick = onDelete) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "删除",
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
     }
 }
 
 @Composable
 fun SettingsTab(
+    viewModel: MainViewModel,
     onRequestPermission: () -> Unit,
     onStartFloating: () -> Unit
 ) {
+    var showClearDataDialog by remember { mutableStateOf(false) }
+
+    if (showClearDataDialog) {
+        AlertDialog(
+            onDismissRequest = { showClearDataDialog = false },
+            title = { Text("清空所有数据") },
+            text = { Text("确定要清空所有收藏、历史记录和设置吗？此操作不可恢复。") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.clearAllData()
+                        showClearDataDialog = false
+                    }
+                ) {
+                    Text("确定", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearDataDialog = false }) {
+                    Text("取消")
+                }
+            }
+        )
+    }
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -605,7 +980,30 @@ fun SettingsTab(
             Spacer(modifier = Modifier.height(12.dp))
         }
 
+        // Appearance section
         item {
+            Text(
+                text = "外观",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+        }
+
+        item {
+            SettingToggleItem(
+                icon = Icons.Default.DarkMode,
+                title = "深色主题",
+                description = "使用深色配色方案",
+                checked = viewModel.uiState.value.isDarkTheme,
+                onCheckedChange = { viewModel.setDarkTheme(it) }
+            )
+        }
+
+        // Floating window section
+        item {
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "悬浮窗",
                 style = MaterialTheme.typography.titleSmall,
@@ -633,6 +1031,29 @@ fun SettingsTab(
             )
         }
 
+        // Data section
+        item {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "数据",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+        }
+
+        item {
+            SettingItem(
+                icon = Icons.Default.DeleteSweep,
+                title = "清空所有数据",
+                description = "清除收藏、历史记录和设置",
+                onClick = { showClearDataDialog = true },
+                isDestructive = true
+            )
+        }
+
+        // About section
         item {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
@@ -652,18 +1073,90 @@ fun SettingsTab(
                 onClick = {}
             )
         }
+
+        item {
+            SettingItem(
+                icon = Icons.Default.Code,
+                title = "源代码",
+                description = "GitHub: NinefCJ/Nexus",
+                onClick = {}
+            )
+        }
     }
 }
 
 @Composable
 fun SettingItem(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     title: String,
     description: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    isDestructive: Boolean = false
 ) {
     Card(
         onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(
+                        if (isDestructive) MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
+                        else MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = if (isDestructive) MaterialTheme.colorScheme.error
+                    else MaterialTheme.colorScheme.primary
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = if (isDestructive) MaterialTheme.colorScheme.error
+                    else MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+fun SettingToggleItem(
+    icon: ImageVector,
+    title: String,
+    description: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
@@ -702,17 +1195,10 @@ fun SettingItem(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            Switch(
+                checked = checked,
+                onCheckedChange = onCheckedChange
             )
         }
     }
 }
-
-data class CommandInfo(
-    val name: String,
-    val syntax: String,
-    val description: String
-)
