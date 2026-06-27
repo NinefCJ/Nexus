@@ -39,8 +39,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nexuscmd.data.HistoryItem
 import com.nexuscmd.data.SavedCommand
+import com.nexuscmd.ui.components.SyntaxHighlightEditor
 import com.nexuscmd.ui.theme.MCCommandHelperTheme
 import com.nexuscmd.ui.theme.SyntaxCommand
+import com.nexuscmd.ui.components.SyntaxColorLegend
+import com.nexuscmd.ui.components.SyntaxHighlightedText
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -368,36 +371,15 @@ fun CommandInputCard(
                 }
             }
 
-            // Input area
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .padding(12.dp)
-            ) {
-                BasicTextField(
-                    value = commandText,
-                    onValueChange = onCommandChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    textStyle = LocalTextStyle.current.copy(
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 16.sp
-                    ),
-                    decorationBox = { innerTextField ->
-                        if (commandText.isEmpty()) {
-                            Text(
-                                text = "/give @p diamond_sword 1",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                fontFamily = FontFamily.Monospace
-                            )
-                        }
-                        innerTextField()
-                    },
-                    singleLine = false,
-                    maxLines = 4
-                )
-            }
+            // Input area with syntax highlighting
+            SyntaxHighlightEditor(
+                value = commandText,
+                onValueChange = onCommandChange,
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = "/give @p diamond_sword 1",
+                singleLine = false,
+                maxLines = 4
+            )
 
             // Validation status
             validation?.let { result ->
@@ -520,11 +502,9 @@ fun CommandInfoCard(info: CommandInfo) {
                 )
             }
             Spacer(modifier = Modifier.height(6.dp))
-            Text(
+            SyntaxHighlightedText(
                 text = info.syntax,
-                style = MaterialTheme.typography.bodySmall,
-                fontFamily = FontFamily.Monospace,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                style = MaterialTheme.typography.bodySmall
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
@@ -575,14 +555,9 @@ fun QuickCommandItem(
             }
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(
+                SyntaxHighlightedText(
                     text = command,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    fontFamily = FontFamily.Monospace,
-                    color = SyntaxCommand,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    style = MaterialTheme.typography.bodyMedium
                 )
                 Text(
                     text = description,
@@ -632,13 +607,9 @@ fun FavoriteCommandItem(
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium
                 )
-                Text(
+                SyntaxHighlightedText(
                     text = command.command,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontFamily = FontFamily.Monospace,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    style = MaterialTheme.typography.bodySmall
                 )
             }
             IconButton(onClick = onDelete) {
@@ -775,13 +746,9 @@ fun CommandLibraryItem(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Text(
+                SyntaxHighlightedText(
                     text = command.syntax,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontFamily = FontFamily.Monospace,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    style = MaterialTheme.typography.bodySmall
                 )
             }
             IconButton(onClick = {
@@ -903,12 +870,9 @@ fun HistoryItemCard(
             )
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(
+                SyntaxHighlightedText(
                     text = item.command,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontFamily = FontFamily.Monospace,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                    style = MaterialTheme.typography.bodyMedium
                 )
                 Text(
                     text = dateFormat.format(Date(item.timestamp)),
@@ -1449,13 +1413,10 @@ fun TemplateEditor(
                 modifier = Modifier.padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
+                SyntaxHighlightedText(
                     text = generatedCommand,
                     style = MaterialTheme.typography.bodyMedium,
-                    fontFamily = FontFamily.Monospace,
-                    modifier = Modifier.weight(1f),
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis
+                    modifier = Modifier.weight(1f)
                 )
                 IconButton(onClick = {
                     clipboardManager.setText(AnnotatedString(generatedCommand))
