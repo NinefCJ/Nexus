@@ -27,7 +27,7 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
     ${CORE_SOURCES}
 )
 
-target_include_directories(nexus PUBLIC ${CORE_DIR}/include)
+target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC ${CORE_DIR}/include)
 
 find_library(log-lib log)
 
