@@ -2130,19 +2130,19 @@ fun ThemePreviewCard(
                 .padding(8.dp),
             horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
         ) {
-            androidx.compose.foundation.Box(
+            androidx.compose.foundation.layout.Box(
                 modifier = androidx.compose.ui.Modifier
                     .size(48.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(colors[2])
             ) {
-                androidx.compose.foundation.Box(
+                androidx.compose.foundation.layout.Box(
                     modifier = androidx.compose.ui.Modifier
                         .fillMaxWidth()
                         .height(12.dp)
                         .background(colors[0])
                 )
-                androidx.compose.foundation.Box(
+                androidx.compose.foundation.layout.Box(
                     modifier = androidx.compose.ui.Modifier
                         .align(androidx.compose.ui.Alignment.BottomStart)
                         .padding(start = 6.dp, bottom = 6.dp)
