@@ -68,9 +68,13 @@ jobs:
           EXIT_CODE=${PIPESTATUS[0]}
           if [ $EXIT_CODE -ne 0 ]; then
             echo ""
+            echo "==================== BUILD LOG (last 500 lines) ===================="
+            echo ""
+            tail -n 500 build.log
+            echo ""
             echo "==================== ERROR SUMMARY ===================="
             echo ""
-            grep -iE "error:|FAILURE|What went wrong|Caused by:|Exception in thread" build.log | head -100 | while read line; do
+            grep -iE "^e:|^e |error:|FAILURE|What went wrong|Caused by:|Exception in thread|Unresolved reference|Type mismatch|Too many arguments|No value passed|Cannot access|is not a member of" build.log | head -200 | while read line; do
               echo "::error::$line"
             done
             echo "::error::Build failed with exit code $EXIT_CODE"
