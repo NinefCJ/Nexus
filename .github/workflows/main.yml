@@ -62,7 +62,24 @@ jobs:
 
       - name: Build Debug APK
         working-directory: Nexus-Android
-        run: gradle assembleDebug --stacktrace
+        run: |
+          set +e
+          gradle assembleDebug --stacktrace --info 2>&1 | tee build.log
+          EXIT_CODE=${PIPESTATUS[0]}
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo ""
+            echo "==================== ERROR SUMMARY ===================="
+            echo ""
+            grep -iE "error:|FAILURE|Exception:|What went wrong" build.log | tail -80 || true
+          fi
+          exit $EXIT_CODE
+
+      - name: Upload build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: Nexus-Android/build.log
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
