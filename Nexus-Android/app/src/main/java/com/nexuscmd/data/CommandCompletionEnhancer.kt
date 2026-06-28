@@ -1,8 +1,5 @@
 package com.nexuscmd.data
 
-import com.nexuscmd.Block
-import com.nexuscmd.Item
-
 class CommandCompletionEnhancer(
     private val blockLibrary: BlockLibrary = BlockLibrary,
     private val itemLibrary: ItemLibrary = ItemLibrary,
