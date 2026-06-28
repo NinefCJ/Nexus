@@ -60,23 +60,57 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
+      - name: Diagnose build environment
+        working-directory: Nexus-Android
+        run: |
+          echo "=== Working directory ==="
+          pwd
+          echo ""
+          echo "=== Files in directory ==="
+          ls -la
+          echo ""
+          echo "=== Gradle version ==="
+          gradle --version
+          echo ""
+          echo "=== Java version ==="
+          java -version
+          echo ""
+          echo "=== ANDROID_HOME ==="
+          echo $ANDROID_HOME
+          echo ""
+          echo "=== SDK contents ==="
+          ls -la $ANDROID_HOME || true
+
       - name: Build Debug APK
         working-directory: Nexus-Android
         run: |
           set +e
-          gradle assembleDebug --stacktrace 2>&1 | tee build.log
+          export GRADLE_OPTS="-Xmx4g -XX:MaxMetaspaceSize=1g"
+          gradle assembleDebug --stacktrace --info 2>&1 | tee build.log
           EXIT_CODE=${PIPESTATUS[0]}
+          echo ""
+          echo "=== Build exit code: $EXIT_CODE ==="
+          echo ""
+          echo "=== Build log size ==="
+          wc -l build.log
+          echo ""
           if [ $EXIT_CODE -ne 0 ]; then
             echo ""
-            echo "==================== BUILD LOG (last 500 lines) ===================="
+            echo "==================== FULL BUILD LOG ===================="
             echo ""
-            tail -n 500 build.log
+            cat build.log
             echo ""
-            echo "==================== ERROR SUMMARY ===================="
+            echo "==================== KOTLIN ERRORS ===================="
             echo ""
-            grep -iE "^e:|^e |error:|FAILURE|What went wrong|Caused by:|Exception in thread|Unresolved reference|Type mismatch|Too many arguments|No value passed|Cannot access|is not a member of" build.log | head -200 | while read line; do
-              echo "::error::$line"
-            done
+            grep -n "e: " build.log || echo "No 'e: ' errors found"
+            echo ""
+            echo "==================== COMPILE ERRORS ===================="
+            echo ""
+            grep -ni "error" build.log | head -100 || echo "No 'error' found"
+            echo ""
+            echo "==================== TASK FAILED ===================="
+            echo ""
+            grep -ni "FAILED" build.log || echo "No 'FAILED' found"
             echo "::error::Build failed with exit code $EXIT_CODE"
           fi
           exit $EXIT_CODE
