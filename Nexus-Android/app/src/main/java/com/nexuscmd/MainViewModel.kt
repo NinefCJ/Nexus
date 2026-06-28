@@ -488,7 +488,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val obj = JSONObject(json)
             ValidationResult(
                 hasError = obj.getBoolean("hasError"),
-                message = obj.optString("message", null),
+                message = obj.optString("message", "").takeIf { it.isNotEmpty() },
                 position = if (obj.has("position")) obj.getInt("position") else null
             )
         } catch (e: Exception) {
@@ -497,143 +497,132 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun getBuiltInCommands(): List<CommandLibraryItem> = listOf(
-        // ============ 物品类 (基岩版) ============
-        CommandLibraryItem("give", "给予玩家物品", "/give <player: target> <itemName: Item> [amount: int] [data: int] [components: json]", "物品", Icons.Default.CardGiftcard),
-        CommandLibraryItem("clear", "清除玩家物品", "/clear [player: target] [itemName: Item] [data: int] [maxCount: int]", "物品", Icons.Default.Delete),
-        CommandLibraryItem("replaceitem", "替换物品栏物品", "/replaceitem entity <target: target> <slotType: EntityEquipmentSlot> <slotId: int> <itemName: Item> [amount: int] [data: int] [components: json]", "物品", Icons.Default.Inventory2),
-        CommandLibraryItem("replaceitem-block", "替换容器物品", "/replaceitem block <position: x y z> slot.container <slotId: int> <itemName: Item> [amount: int] [data: int] [components: json]", "物品", Icons.Default.Inventory2),
-        CommandLibraryItem("enchant", "附魔玩家手持物品", "/enchant <player: target> <enchantmentName: Enchant> [level: int]", "物品", Icons.Default.AutoAwesome),
+        // ============ 基础命令 (官方JSON库) ============
+        CommandLibraryItem("?", "显示命令帮助", "/? <页数>", "帮助", Icons.Default.Help),
+        CommandLibraryItem("aimassist", "开启或关闭玩家的辅助瞄准功能", "/aimassist <玩家> <清除|设置>", "玩家", Icons.Default.MyLocation),
+        CommandLibraryItem("alwaysday", "切换昼夜更替锁定", "/alwaysday [lock]", "世界", Icons.Default.WbSunny),
+        CommandLibraryItem("camera", "修改玩家的相机视角", "/camera <玩家> <重置|设置|跟踪>", "基岩版独有", Icons.Default.CameraAlt),
+        CommandLibraryItem("camerashake", "对玩家视野施以一定强度和时间的摇晃效果", "/camerashake <添加|停止> <玩家>", "基岩版独有", Icons.Default.CameraAlt),
+        CommandLibraryItem("clear", "清除玩家物品栏中的物品", "/clear <玩家> [物品ID] [数据值] [最大数量]", "物品", Icons.Default.Delete),
+        CommandLibraryItem("clearspawnpoint", "重置玩家重生点", "/clearspawnpoint [玩家]", "传送", Icons.Default.Home),
+        CommandLibraryItem("clone", "在区域间复制方块", "/clone <起点> <终点> <目标点> [遮罩模式]", "方块", Icons.Default.ContentCopy),
+        CommandLibraryItem("connect", "连接WebSocket服务器", "/connect <服务器地址>", "服务器", Icons.Default.Public),
+        CommandLibraryItem("controlscheme", "修改相机预设的控制方案", "/controlscheme <玩家> <清除|设置>", "基岩版独有", Icons.Default.Gamepad),
+        CommandLibraryItem("damage", "对实体造成来源于特定实体的伤害", "/damage <目标> <伤害> [伤害类型]", "实体", Icons.Default.HeartBroken),
+        CommandLibraryItem("daylock", "锁定或解锁终为白日", "/daylock [lock]", "世界", Icons.Default.WbSunny),
+        CommandLibraryItem("deop", "撤销管理员身份", "/deop <玩家>", "管理员", Icons.Default.PersonRemove),
+        CommandLibraryItem("dialogue", "为玩家打开或改变NPC的对话框", "/dialogue <NPC> <玩家> [场景名称]", "基岩版独有", Icons.Default.RecordVoiceOver),
+        CommandLibraryItem("difficulty", "设定难度等级", "/difficulty <难度>", "世界", Icons.Default.Shield),
+        CommandLibraryItem("effect", "管理玩家及其他实体上的状态效果", "/effect <实体> <效果ID> [持续秒数] [等级]", "实体", Icons.Default.Speed),
+        CommandLibraryItem("enchant", "为一个实体手持的物品添加附魔", "/enchant <目标> <魔咒ID> [等级]", "物品", Icons.Default.AutoAwesome),
+        CommandLibraryItem("event", "触发实体事件", "/event <目标> <实体事件>", "基岩版独有", Icons.Default.Bolt),
+        CommandLibraryItem("execute", "更改命令执行的主体、位置等上下文", "/execute <子命令> <run> <命令>", "执行", Icons.Default.Terminal),
+        CommandLibraryItem("fill", "用指定方块填充区域", "/fill <起点> <终点> <方块ID> [旧方块处理方式]", "方块", Icons.Default.Map),
+        CommandLibraryItem("fog", "更改玩家的迷雾效果", "/fog <玩家> <添加|移除> <迷雾ID>", "基岩版独有", Icons.Default.Cloud),
+        CommandLibraryItem("function", "调用函数", "/function <函数名>", "执行", Icons.Default.Functions),
+        CommandLibraryItem("gamemode", "更改游戏模式", "/gamemode <游戏模式> [玩家]", "游戏模式", Icons.Default.VideogameAsset),
+        CommandLibraryItem("gamerule", "查看或修改游戏规则", "/gamerule <规则> [值]", "世界", Icons.Default.Tune),
+        CommandLibraryItem("gametest", "GameTest 测试", "/gametest <运行|创建|清除>", "开发", Icons.Default.BugReport),
+        CommandLibraryItem("give", "给予玩家特定物品", "/give <玩家> <物品名称> [数量] [数据值]", "物品", Icons.Default.CardGiftcard),
+        CommandLibraryItem("help", "显示命令帮助", "/help [页数|命令]", "帮助", Icons.Default.Help),
+        CommandLibraryItem("hud", "修改HUD的可见性", "/hud <玩家> <修改> [HUD元素]", "基岩版独有", Icons.Default.Visibility),
+        CommandLibraryItem("inputpermission", "对玩家的权限状态进行指定操作", "/inputpermission <查询|设置> <玩家>", "基岩版独有", Icons.Default.TouchApp),
+        CommandLibraryItem("kick", "踢出特定玩家", "/kick <玩家> <原因>", "管理员", Icons.Default.ExitToApp),
+        CommandLibraryItem("kill", "击杀或移除实体", "/kill <目标>", "实体", Icons.Default.Gradient),
+        CommandLibraryItem("list", "列出在线玩家", "/list", "管理员", Icons.Default.People),
+        CommandLibraryItem("locate", "寻找最近的特定生物群系或结构的坐标", "/locate <群系|结构> <ID>", "世界", Icons.Default.Search),
+        CommandLibraryItem("loot", "将指定的战利品放入物品栏或世界", "/loot <给予|生成|替换>", "物品", Icons.Default.Redeem),
+        CommandLibraryItem("me", "发送一条关于自己的消息", "/me <消息>", "玩家互动", Icons.Default.Face),
+        CommandLibraryItem("mobevent", "控制或查询允许运行的生物事件", "/mobevent <事件> [状态]", "世界", Icons.Default.Tune),
+        CommandLibraryItem("msg", "将一条私聊消息发送给一个或多个玩家", "/msg <玩家> <消息>", "玩家互动", Icons.Default.Message),
+        CommandLibraryItem("music", "播放指定的音乐", "/music <播放|停止|音量>", "声音粒子", Icons.Default.VolumeUp),
+        CommandLibraryItem("op", "赋予特定玩家管理员身份", "/op <玩家>", "管理员", Icons.Default.AdminPanelSettings),
+        CommandLibraryItem("particle", "在指定位置生成粒子发射器", "/particle <颗粒效果> [生成位置]", "声音粒子", Icons.Default.AutoFixHigh),
+        CommandLibraryItem("place", "放置已配置的地物、结构模板", "/place <地物|结构> <ID> [位置]", "世界", Icons.Default.Apartment),
+        CommandLibraryItem("playanimation", "在特定实体上播放实体动画", "/playanimation <实体> <动画ID>", "基岩版独有", Icons.Default.Movie),
+        CommandLibraryItem("playsound", "在特定位置为指定玩家播放声音", "/playsound <声音ID> <目标> [位置]", "声音粒子", Icons.Default.VolumeUp),
+        CommandLibraryItem("recipe", "对玩家赋予或收回指定的配方", "/recipe <赋予|收回> <玩家> <配方ID>", "基岩版独有", Icons.Default.Receipt),
+        CommandLibraryItem("reload", "重新加载行为包中的函数与脚本", "/reload", "服务器", Icons.Default.Refresh),
+        CommandLibraryItem("replaceitem", "替换方块或实体物品栏内的物品", "/replaceitem <方块|实体> <位置> <槽位>", "物品", Icons.Default.Inventory2),
+        CommandLibraryItem("ride", "管理实体的骑乘关系", "/ride <乘客> <骑乘|取消>", "实体", Icons.Default.Directions),
+        CommandLibraryItem("say", "向所有玩家广播消息", "/say <消息>", "玩家互动", Icons.Default.Campaign),
+        CommandLibraryItem("schedule", "计划执行函数", "/schedule <添加|移除> <函数> <时间>", "执行", Icons.Default.Schedule),
+        CommandLibraryItem("scoreboard", "管理记分板中的记分项和分数持有者", "/scoreboard <管理记分项|管理分数>", "记分板", Icons.Default.Leaderboard),
+        CommandLibraryItem("script", "调试GameTest框架选项", "/script <调试器|性能分析器>", "开发", Icons.Default.Code),
+        CommandLibraryItem("scriptevent", "通过ID和消息来触发Script API脚本事件", "/scriptevent <消息ID> <消息>", "基岩版独有", Icons.Default.Code),
+        CommandLibraryItem("setblock", "更改指定坐标位置的方块", "/setblock <坐标> <方块ID> [替换方式]", "方块", Icons.Default.Create),
+        CommandLibraryItem("setmaxplayers", "设置世界的最大可加入玩家数", "/setmaxplayers <最大玩家数>", "管理员", Icons.Default.GroupAdd),
+        CommandLibraryItem("setworldspawn", "设置世界重生点", "/setworldspawn [位置]", "传送", Icons.Default.Public),
+        CommandLibraryItem("spawnpoint", "设置玩家重生点", "/spawnpoint [玩家] [位置]", "传送", Icons.Default.Home),
+        CommandLibraryItem("spreadplayers", "将指定实体传送到区域内的随机位置", "/spreadplayers <X> <Z> <间距> <范围> <实体>", "传送", Icons.Default.SwapHoriz),
+        CommandLibraryItem("stopsound", "为指定玩家停止播放声音", "/stopsound <玩家> <声音ID>", "声音粒子", Icons.Default.VolumeOff),
+        CommandLibraryItem("structure", "使用命令保存或加载结构", "/structure <保存|加载|删除> <结构ID>", "基岩版独有", Icons.Default.Apartment),
+        CommandLibraryItem("summon", "召唤一个实体", "/summon <实体类型> [生成位置]", "实体", Icons.Default.Widgets),
+        CommandLibraryItem("tag", "管理实体的标签", "/tag <目标> <添加|移除|列表>", "记分板", Icons.Default.Label),
+        CommandLibraryItem("teleport", "传送实体到指定的地点", "/teleport <目标> <目的地>", "传送", Icons.Default.SwapHoriz),
+        CommandLibraryItem("tell", "发送私聊消息", "/tell <玩家> <消息>", "玩家互动", Icons.Default.Chat),
+        CommandLibraryItem("tellraw", "向指定玩家发送JSON文本消息", "/tellraw <玩家> <JSON消息>", "玩家互动", Icons.Default.RssFeed),
+        CommandLibraryItem("testfor", "测试指定的实体是否存在", "/testfor <目标>", "帮助", Icons.Default.Check),
+        CommandLibraryItem("testforblock", "测试指定坐标的方块是否满足条件", "/testforblock <位置> <方块ID>", "方块", Icons.Default.GridOn),
+        CommandLibraryItem("testforblocks", "测试指定区域的方块是否满足条件", "/testforblocks <起点> <终点> <目标点>", "方块", Icons.Default.GridOn),
+        CommandLibraryItem("tickingarea", "添加、删除或列出常加载区域", "/tickingarea <添加|删除|列表>", "世界", Icons.Default.AreaChart),
+        CommandLibraryItem("time", "更改或查询世界的游戏时间", "/time <set|add|query> <值>", "世界", Icons.Default.Schedule),
+        CommandLibraryItem("title", "控制屏幕标题", "/title <玩家> <clear|title|subtitle>", "玩家互动", Icons.Default.FormatSize),
+        CommandLibraryItem("titleraw", "控制屏幕JSON文本标题", "/titleraw <玩家> <JSON标题>", "玩家互动", Icons.Default.FormatSize),
+        CommandLibraryItem("toggledownfall", "切换当前天气是否降雨", "/toggledownfall", "世界", Icons.Default.WbCloudy),
+        CommandLibraryItem("tp", "传送实体", "/tp <目标> <目的地>", "传送", Icons.Default.SwapHoriz),
+        CommandLibraryItem("w", "发送私聊消息(短)", "/w <玩家> <消息>", "玩家互动", Icons.Default.Forum),
+        CommandLibraryItem("weather", "设置或查询当前天气", "/weather <clear|rain|thunder> [持续时间]", "世界", Icons.Default.WbSunny),
+        CommandLibraryItem("wsserver", "连接WebSocket服务器", "/wsserver <服务器地址>", "服务器", Icons.Default.Public),
+        CommandLibraryItem("xp", "调整玩家的经验值", "/xp <数量> [玩家]", "玩家互动", Icons.Default.AutoGraph),
+    )
 
-        // ============ 实体类 (基岩版) ============
-        CommandLibraryItem("summon", "生成实体", "/summon <entityType: EntityType> [spawnPos: x y z] [spawnEvent: string] [nameTag: string]", "实体", Icons.Default.Widgets),
-        CommandLibraryItem("kill", "清除实体", "/kill [target: target]", "实体", Icons.Default.Gradient),
-        CommandLibraryItem("effect", "添加状态效果", "/effect <player: target> <effect: Effect> [seconds: int] [amplifier: int] [hideParticles: Boolean]", "实体", Icons.Default.Speed),
-        CommandLibraryItem("effect-clear", "清除状态效果", "/effect <player: target> clear", "实体", Icons.Default.CleaningServices),
-        CommandLibraryItem("damage", "对实体造成伤害", "/damage <target: target> <amount: int> [cause: DamageCause] [entity: target]", "实体", Icons.Default.HeartBroken),
-        CommandLibraryItem("ride", "控制骑乘状态", "/ride <riders: target> <start_riding|stop_riding|evict_riders|summon_rider|summon_ride> ...", "实体", Icons.Default.Directions),
-
-        // ============ 传送类 (基岩版) ============
-        CommandLibraryItem("tp", "传送到实体", "/tp <victim: target> <destination: target> [checkForBlocks: Boolean]", "传送", Icons.Default.SwapHoriz),
-        CommandLibraryItem("tp-coords", "传送到坐标", "/tp <victim: target> <destination: x y z> [yRot: value] [xRot: value] [checkForBlocks: Boolean]", "传送", Icons.Default.LocationOn),
-        CommandLibraryItem("tp-facing", "传送并面向目标", "/tp <victim: target> <destination: x y z> facing <lookAtEntity: target> [checkForBlocks: Boolean]", "传送", Icons.Default.NearMe),
-        CommandLibraryItem("teleport", "传送(tp别名)", "/teleport <victim: target> <destination: target> [checkForBlocks: Boolean]", "传送", Icons.Default.NearMe),
-        CommandLibraryItem("spawnpoint", "设置玩家出生点", "/spawnpoint [player: target] [spawnPos: x y z]", "传送", Icons.Default.Home),
-        CommandLibraryItem("setworldspawn", "设置世界出生点", "/setworldspawn [spawnPoint: x y z]", "传送", Icons.Default.Public),
-        CommandLibraryItem("spreadplayers", "随机散布实体", "/spreadplayers <x: value> <z: value> <spreadDistance: float> <maxRange: float> <victim: target>", "传送", Icons.Default.SwapHoriz),
-
-        // ============ 方块类 (基岩版最新版) ============
-        CommandLibraryItem("setblock", "放置方块", "/setblock <position: x y z> <tileName: Block> [blockStates: block states] [destroy|keep|replace]", "方块", Icons.Default.Create),
-        CommandLibraryItem("fill", "填充区域", "/fill <from: x y z> <to: x y z> <tileName: Block> [blockStates: block states] [oldBlockHandling: FillMode]", "方块", Icons.Default.Map),
-        CommandLibraryItem("fill-replace", "填充替换", "/fill <from: x y z> <to: x y z> <tileName: Block> replace [replaceTileName: Block] [replaceBlockStates: block states]", "方块", Icons.Default.Map),
-        CommandLibraryItem("clone", "复制区域", "/clone <begin: x y z> <end: x y z> <destination: x y z> [maskMode: MaskMode] [cloneMode: CloneMode]", "方块", Icons.Default.ContentCopy),
-        CommandLibraryItem("testforblock", "检测方块", "/testforblock <position: x y z> <tileName: Block> [blockStates: block states]", "方块", Icons.Default.GridOn),
-        CommandLibraryItem("testforblocks", "检测区域方块", "/testforblocks <begin: x y z> <end: x y z> <destination: x y z> [mode: TestForBlocksMode]", "方块", Icons.Default.GridOn),
-
-        // ============ 世界类 (基岩版) ============
-        CommandLibraryItem("time", "时间设置", "/time <set|add|query> <amount: int>", "世界", Icons.Default.Schedule),
-        CommandLibraryItem("time-set", "设置时间", "/time set <day|night|noon|midnight|sunrise|sunset|amount: int>", "世界", Icons.Default.Schedule),
-        CommandLibraryItem("weather", "天气设置", "/weather <clear|rain|thunder> [duration: int]", "世界", Icons.Default.WbSunny),
-        CommandLibraryItem("difficulty", "难度设置", "/difficulty <peaceful|easy|normal|hard>", "世界", Icons.Default.Shield),
-        CommandLibraryItem("gamerule", "游戏规则", "/gamerule <rule: GameRule> [value: Boolean|int|float]", "世界", Icons.Default.Tune),
-        CommandLibraryItem("gamerule-keepInventory", "死亡不掉落", "/gamerule keepInventory true", "世界", Icons.Default.Lock),
-        CommandLibraryItem("gamerule-mobGriefing", "禁用生物破坏", "/gamerule mobGriefing false", "世界", Icons.Default.Block),
-        CommandLibraryItem("locate", "查找结构或生物群系", "/locate <structure|biome> <feature: string>", "世界", Icons.Default.Search),
-        CommandLibraryItem("tickingarea", "常加载区域", "/tickingarea add <from: x y z> <to: x y z> [name: string]", "世界", Icons.Default.AreaChart),
-        CommandLibraryItem("tickingarea-circle", "圆形常加载区域", "/tickingarea add circle <center: x y z> <radius: int> [name: string]", "世界", Icons.Default.AreaChart),
-        CommandLibraryItem("mobevent", "生物事件开关", "/mobevent <event: string> [value: Boolean]", "世界", Icons.Default.Tune),
-        CommandLibraryItem("daylock", "锁定日夜循环", "/daylock [lock: Boolean]", "世界", Icons.Default.WbSunny),
-        CommandLibraryItem("alwaysday", "daylock别名", "/alwaysday [lock: Boolean]", "世界", Icons.Default.WbSunny),
-
-        // ============ 游戏模式 (基岩版) ============
-        CommandLibraryItem("gamemode", "游戏模式", "/gamemode <survival|creative|adventure|spectator> [player: target]", "游戏模式", Icons.Default.VideogameAsset),
-        CommandLibraryItem("gamemode-creative", "切换创造", "/gamemode creative [player: target]", "游戏模式", Icons.Default.Palette),
-        CommandLibraryItem("gamemode-survival", "切换生存", "/gamemode survival [player: target]", "游戏模式", Icons.Default.SelfImprovement),
-
-        // ============ 记分板 (基岩版) ============
-        CommandLibraryItem("scoreboard", "记分板", "/scoreboard <objectives|players> ...", "记分板", Icons.Default.Leaderboard),
-        CommandLibraryItem("scoreboard-objectives", "创建记分项", "/scoreboard objectives add <objective: string> dummy [displayName: string]", "记分板", Icons.Default.AddTask),
-        CommandLibraryItem("scoreboard-players", "设置分数", "/scoreboard players <set|add|remove> <player: target> <objective: string> <count: int>", "记分板", Icons.Default.Edit),
-        CommandLibraryItem("scoreboard-random", "随机分数", "/scoreboard players random <player: target> <objective: string> <min: int> <max: int>", "记分板", Icons.Default.Casino),
-        CommandLibraryItem("scoreboard-test", "检测分数范围", "/scoreboard players test <player: target> <objective: string> <min: wildcard int> [max: wildcard int]", "记分板", Icons.Default.Check),
-        CommandLibraryItem("scoreboard-operation", "分数运算", "/scoreboard players operation <player: target> <targetObjective: string> <operation: operator> <selector: target> <objective: string>", "记分板", Icons.Default.Calculate),
-        CommandLibraryItem("scoreboard-setdisplay", "设置显示", "/scoreboard objectives setdisplay <list|sidebar|belowname> [objective: string] [ascending|descending]", "记分板", Icons.Default.Visibility),
-        CommandLibraryItem("tag", "标签管理", "/tag <target: target> <add|remove|list> [name: string]", "记分板", Icons.Default.Label),
-
-        // ============ 执行命令 (基岩版最新版) ============
-        CommandLibraryItem("execute", "链式执行命令", "/execute <subcommand> ... <run|if|unless> ...", "执行", Icons.Default.Terminal),
-        CommandLibraryItem("execute-run", "执行命令", "/execute as <origin: target> at <origin: target> run <command: command>", "执行", Icons.Default.PlayArrow),
-        CommandLibraryItem("execute-if-block", "检测方块后执行", "/execute if block <position: x y z> <block: Block> [blockStates: block states] run <command: command>", "执行", Icons.Default.Check),
-        CommandLibraryItem("execute-if-entity", "检测实体后执行", "/execute if entity <target: target> run <command: command>", "执行", Icons.Default.Check),
-        CommandLibraryItem("function", "执行函数", "/function <name: filepath>", "执行", Icons.Default.Functions),
-
-        // ============ 玩家互动 (基岩版) ============
-        CommandLibraryItem("msg", "发送私信", "/msg <target: target> <message: message>", "玩家互动", Icons.Default.Message),
-        CommandLibraryItem("tell", "发送私信", "/tell <target: target> <message: message>", "玩家互动", Icons.Default.Chat),
-        CommandLibraryItem("w", "发送私信(短)", "/w <target: target> <message: message>", "玩家互动", Icons.Default.Forum),
-        CommandLibraryItem("me", "动作消息", "/me <message: message>", "玩家互动", Icons.Default.Face),
-        CommandLibraryItem("say", "广播消息", "/say <message: message>", "玩家互动", Icons.Default.Campaign),
-        CommandLibraryItem("title", "标题显示", "/title <player: target> <clear|reset|title|subtitle|actionbar> [titleText: message]", "玩家互动", Icons.Default.FormatSize),
-        CommandLibraryItem("titleraw", "标题显示(JSON)", "/titleraw <player: target> <clear|reset|title|subtitle|actionbar> [raw json message: json]", "玩家互动", Icons.Default.FormatSize),
-        CommandLibraryItem("tellraw", "原始JSON消息", "/tellraw <player: target> <raw json message: json>", "玩家互动", Icons.Default.RssFeed),
-        CommandLibraryItem("xp", "经验值", "/xp <amount: int> [player: target]", "玩家互动", Icons.Default.AutoGraph),
-        CommandLibraryItem("xp-level", "经验等级", "/xp <amount: int>L [player: target]", "玩家互动", Icons.Default.Graph),
-
-        // ============ 声音粒子 (基岩版) ============
-        CommandLibraryItem("playsound", "播放声音", "/playsound <sound: string> [player: target] [position: x y z] [volume: float] [pitch: float] [minimumVolume: float]", "声音粒子", Icons.Default.VolumeUp),
-        CommandLibraryItem("stopsound", "停止声音", "/stopsound <player: target> [sound: string]", "声音粒子", Icons.Default.VolumeOff),
-        CommandLibraryItem("particle", "生成粒子", "/particle <effect: string> <position: x y z>", "声音粒子", Icons.Default.AutoFixHigh),
-        CommandLibraryItem("music", "音乐控制", "/music <play|queue|stop|volume> ...", "声音粒子", Icons.Default.VolumeUp),
-
-        // ============ 管理员 (基岩版) ============
-        CommandLibraryItem("op", "给予管理权限", "/op <player: target>", "管理员", Icons.Default.AdminPanelSettings),
-        CommandLibraryItem("deop", "移除管理权限", "/deop <player: target>", "管理员", Icons.Default.PersonRemove),
-        CommandLibraryItem("kick", "踢出玩家", "/kick <name: target> [reason: message]", "管理员", Icons.Default.ExitToApp),
-        CommandLibraryItem("list", "列出玩家", "/list", "管理员", Icons.Default.People),
-        CommandLibraryItem("whitelist", "白名单", "/whitelist <add|remove|list|on|off|reload> [player: string]", "管理员", Icons.Default.VerifiedUser),
-        CommandLibraryItem("allowlist", "白名单别名", "/allowlist <add|remove|list|on|off|reload> [player: string]", "管理员", Icons.Default.VerifiedUser),
-        CommandLibraryItem("setmaxplayers", "设置最大玩家数", "/setmaxplayers <maxPlayers: int>", "管理员", Icons.Default.GroupAdd),
-        CommandLibraryItem("permission", "权限管理", "/permission <list|reload>", "管理员", Icons.Default.AdminPanelSettings),
-        CommandLibraryItem("ops", "权限管理别名", "/ops <list|reload>", "管理员", Icons.Default.AdminPanelSettings),
-
-        // ============ 服务器 (基岩版) ============
-        CommandLibraryItem("stop", "停止服务器", "/stop", "服务器", Icons.Default.Power),
-        CommandLibraryItem("save", "保存世界", "/save <hold|query|resume>", "服务器", Icons.Default.Save),
-        CommandLibraryItem("transfer", "转移服务器", "/transfer <player: target> <server: string> [port: int]", "服务器", Icons.Default.Public),
-        CommandLibraryItem("wsserver", "连接WebSocket服务器", "/wsserver <serverUri: string>", "服务器", Icons.Default.Public),
-        CommandLibraryItem("connect", "wsserver别名", "/connect <serverUri: string>", "服务器", Icons.Default.Public),
-
-        // ============ 基岩版独有 ============
-        CommandLibraryItem("ability", "玩家能力", "/ability <player: target> <ability: Ability> [value: Boolean]", "基岩版独有", Icons.Default.Accessibility),
-        CommandLibraryItem("camera", "摄像机控制", "/camera <players: target> <clear|fade|set> ...", "基岩版独有", Icons.Default.CameraAlt),
-        CommandLibraryItem("camerashake", "摄像机震动", "/camerashake <players: target> add [intensity: float] [seconds: float] [shakeType: CameraShakeType]", "基岩版独有", Icons.Default.CameraAlt),
-        CommandLibraryItem("camerashake-stop", "停止摄像机震动", "/camerashake <players: target> stop", "基岩版独有", Icons.Default.CameraAlt),
-        CommandLibraryItem("dialogue", "NPC对话", "/dialogue <open|change> ...", "基岩版独有", Icons.Default.RecordVoiceOver),
-        CommandLibraryItem("event", "触发实体事件", "/event entity <target: target> <eventName: string>", "基岩版独有", Icons.Default.Bolt),
-        CommandLibraryItem("fog", "迷雾设置", "/fog <victim: target> <push|pop|remove> ...", "基岩版独有", Icons.Default.Cloud),
-        CommandLibraryItem("hud", "HUD显示控制", "/hud <target: target> <hide|reset> <hud_element: HudElement>", "基岩版独有", Icons.Default.Visibility),
-        CommandLibraryItem("inputpermission", "输入权限", "/inputpermission <query|set> <player: target> ...", "基岩版独有", Icons.Default.TouchApp),
-        CommandLibraryItem("playanimation", "播放动画", "/playanimation <entity: target> <animation: string> [next_state: string] [blend_out_time: float] [stop_expression: string] [controller: string]", "基岩版独有", Icons.Default.Movie),
-        CommandLibraryItem("querytarget", "查询目标数据", "/querytarget <target: target>", "基岩版独有", Icons.Default.Search),
-        CommandLibraryItem("structure", "结构保存加载", "/structure <save|load|delete> <name: string> ...", "基岩版独有", Icons.Default.Apartment),
-        CommandLibraryItem("scriptevent", "脚本事件", "/scriptevent <messageId: string> [message: message]", "基岩版独有", Icons.Default.Code),
-        CommandLibraryItem("worldbuilder", "世界建造者模式", "/worldbuilder", "基岩版独有", Icons.Default.Build),
-        CommandLibraryItem("gametips", "游戏提示", "/gametips <player: target> <tip: string>", "基岩版独有", Icons.Default.Lightbulb),
-
-        // ============ 帮助与检测 ============
-        CommandLibraryItem("help", "命令帮助", "/help [page: int|command: CommandName]", "帮助", Icons.Default.Help),
-        CommandLibraryItem("?", "命令帮助别名", "/? [page: int|command: CommandName]", "帮助", Icons.Default.Help),
-        CommandLibraryItem("testfor", "检测实体", "/testfor <victim: target>", "帮助", Icons.Default.Check),
-
-        // ============ 常用速查 (基岩版) ============
-        CommandLibraryItem("速查-死亡不掉落", "开启死亡不掉落", "/gamerule keepInventory true", "速查", Icons.Default.Lock),
-        CommandLibraryItem("速查-禁用生物破坏", "禁用爬行者破坏", "/gamerule mobGriefing false", "速查", Icons.Default.Block),
-        CommandLibraryItem("速查-白天", "设置为白天", "/time set day", "速查", Icons.Default.LightMode),
-        CommandLibraryItem("速查-晴天", "设置为晴天", "/weather clear", "速查", Icons.Default.WbSunny),
-        CommandLibraryItem("速查-创造模式", "切换创造模式", "/gamemode creative @s", "速查", Icons.Default.Palette),
-        CommandLibraryItem("速查-生存模式", "切换生存模式", "/gamemode survival @s", "速查", Icons.Default.SelfImprovement),
-        CommandLibraryItem("速查-给予钻石", "给自己64个钻石", "/give @s diamond 64", "速查", Icons.Default.Diamond),
-        CommandLibraryItem("速查-隐身效果", "获得隐身效果并隐藏粒子", "/effect @s invisibility 600 1 true", "速查", Icons.Default.VisibilityOff),
-        CommandLibraryItem("速查-显示坐标", "开启显示坐标", "/gamerule showCoordinates true", "速查", Icons.Default.LocationOn),
-        CommandLibraryItem("速查-常加载区域", "添加常加载", "/tickingarea add ~ ~ ~ ~10 ~10 ~10", "速查", Icons.Default.AreaChart),
+    fun getQuickCommands(): List<CommandLibraryItem> = listOf(
+        // ============ 游戏规则 ============
+        CommandLibraryItem("死亡不掉落", "开启死亡不掉落", "/gamerule keepInventory true", "游戏规则", Icons.Default.Lock),
+        CommandLibraryItem("禁用生物破坏", "禁用爬行者破坏", "/gamerule mobGriefing false", "游戏规则", Icons.Default.Block),
+        CommandLibraryItem("显示坐标", "开启显示坐标", "/gamerule showCoordinates true", "游戏规则", Icons.Default.LocationOn),
+        CommandLibraryItem("关闭火焰蔓延", "防止火灾蔓延", "/gamerule fireDamage false", "游戏规则", Icons.Default.LocalFireDepartment),
+        CommandLibraryItem("关闭TNT爆炸", "禁用TNT伤害", "/gamerule tntExplodes false", "游戏规则", Icons.Default.Warning),
+        
+        // ============ 效果类 ============
+        CommandLibraryItem("隐身效果", "获得隐身效果", "/effect @s invisibility 600 1 true", "效果", Icons.Default.VisibilityOff),
+        CommandLibraryItem("速度效果", "永久加速", "/effect @s speed 999999 2", "效果", Icons.Default.Speed),
+        CommandLibraryItem("夜视效果", "永久夜视", "/effect @s night_vision 999999 1 true", "效果", Icons.Default.Visibility),
+        CommandLibraryItem("水下呼吸", "永久水下呼吸", "/effect @s water_breathing 999999 1 true", "效果", Icons.Default.Water),
+        CommandLibraryItem("跳跃提升", "跳得更高", "/effect @s jump_boost 999999 5", "效果", Icons.Default.TrendingUp),
+        CommandLibraryItem("生命提升", "生命提升255级", "/effect @s health_boost 999999 255", "效果", Icons.Default.Favorite),
+        CommandLibraryItem("瞬间治疗", "瞬间恢复生命", "/effect @s instant_health 1 255", "效果", Icons.Default.Favorite),
+        CommandLibraryItem("防火效果", "永久防火", "/effect @s fire_resistance 999999 1 true", "效果", Icons.Default.Shield),
+        
+        // ============ 传送类 ============
+        CommandLibraryItem("设置家", "设置个人出生点", "/spawnpoint @s ~ ~ ~", "传送", Icons.Default.Home),
+        CommandLibraryItem("重置出生点", "重置个人出生点", "/clearspawnpoint @s", "传送", Icons.Default.Refresh),
+        
+        // ============ 模式切换 ============
+        CommandLibraryItem("创造模式", "切换创造模式", "/gamemode creative @s", "模式", Icons.Default.Palette),
+        CommandLibraryItem("生存模式", "切换生存模式", "/gamemode survival @s", "模式", Icons.Default.SelfImprovement),
+        CommandLibraryItem("冒险模式", "切换冒险模式", "/gamemode adventure @s", "模式", Icons.Default.Explore),
+        CommandLibraryItem("旁观模式", "切换旁观模式", "/gamemode spectator @s", "模式", Icons.Default.Visibility),
+        
+        // ============ 物品类 ============
+        CommandLibraryItem("给予钻石", "给自己64个钻石", "/give @s diamond 64", "物品", Icons.Default.Diamond),
+        CommandLibraryItem("给予铁锭", "给自己64个铁锭", "/give @s iron_ingot 64", "物品", Icons.Default.Build),
+        CommandLibraryItem("给予金锭", "给自己64个金锭", "/give @s gold_ingot 64", "物品", Icons.Default.Star),
+        CommandLibraryItem("给予下界之星", "给自己下界之星", "/give @s nether_star 1", "物品", Icons.Default.Stars),
+        CommandLibraryItem("给予命令方块", "获得命令方块", "/give @s command_block 1", "物品", Icons.Default.Terminal),
+        CommandLibraryItem("给予结构方块", "获得结构方块", "/give @s structure_block 1", "物品", Icons.Default.Apartment),
+        
+        // ============ 其他常用 ============
+        CommandLibraryItem("白天", "设置为白天", "/time set day", "其他", Icons.Default.LightMode),
+        CommandLibraryItem("夜晚", "设置为夜晚", "/time set night", "其他", Icons.Default.DarkMode),
+        CommandLibraryItem("晴天", "设置为晴天", "/weather clear", "其他", Icons.Default.WbSunny),
+        CommandLibraryItem("雨天", "设置为雨天", "/weather rain", "其他", Icons.Default.WbCloudy),
+        CommandLibraryItem("雷雨", "设置为雷雨", "/weather thunder", "其他", Icons.Default.Bolt),
+        CommandLibraryItem("生成闪电", "召唤闪电", "/summon lightning_bolt", "其他", Icons.Default.Bolt),
+        CommandLibraryItem("常加载区域", "添加常加载", "/tickingarea add ~ ~ ~ ~10 ~10 ~10", "其他", Icons.Default.AreaChart),
+        CommandLibraryItem("清除掉落物", "清除所有掉落物", "/kill @e[type=item]", "其他", Icons.Default.DeleteSweep),
+        CommandLibraryItem("清除生物", "清除所有生物", "/kill @e[type=!player]", "其他", Icons.Default.DeleteSweep),
+        CommandLibraryItem("锁定白天", "锁定为白天", "/daylock true", "其他", Icons.Default.WbSunny),
     )
 }

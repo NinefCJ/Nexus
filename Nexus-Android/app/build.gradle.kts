@@ -11,8 +11,8 @@ android {
         applicationId = "com.nexuscmd"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
 
         ndk {
             abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
@@ -40,6 +40,8 @@ android {
 
     kotlinOptions {
         jvmTarget = "17"
+        freeCompilerArgs += "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api"
+        freeCompilerArgs += "-opt-in=androidx.compose.material.ExperimentalMaterialApi"
     }
 
     buildFeatures {

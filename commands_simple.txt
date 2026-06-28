@@ -1,0 +1,77 @@
+﻿?	显示命令帮助
+aimassist	开启或关闭玩家的辅助瞄准功能
+alwaysday	切换昼夜更替锁定
+camera	修改玩家的相机视角
+camerashake	对玩家视野施以一定强度和时间的摇晃效果
+clear	清除玩家物品栏中的物品
+clearspawnpoint	重置玩家重生点
+clone	在区域间复制方块
+connect	连接WebSocket服务器
+controlscheme	修改相机预设的控制方案
+damage	对实体造成来源于特定实体的伤害
+daylock	锁定或解锁终为白日
+deop	撤销管理员身份
+dialogue	为玩家打开或改变NPC的对话框
+difficulty	设定难度等级
+effect	管理玩家及其他实体上的状态效果
+enchant	为一个实体手持的物品添加附魔，受限于铁砧机制
+event	触发实体事件
+execute	更改命令执行的主体、位置等上下文，并且执行命令
+fill	用指定方块填充区域
+fog	更改玩家的迷雾效果
+function	调用函数
+gamemode	更改游戏模式
+gamerule	查看或修改游戏规则
+gametest	GameTest 测试
+give	给予玩家特定物品
+help	
+hud	修改HUD的可见性
+inputpermission	对玩家的权限状态进行指定操作
+kick	踢出特定玩家
+kill	击杀或移除实体
+list	列出在线玩家
+locate	寻找并确定最近的特定生物群系或结构的坐标
+loot	将指定的战利品放入物品栏或世界
+me	发送一条关于自己的消息
+mobevent	控制或查询允许运行的生物事件
+msg	将一条私聊消息发送给一个或多个玩家
+music	播放指定的音乐
+op	赋予特定玩家管理员身份
+particle	在指定位置生成粒子发射器
+place	以指定位置为生成原点，放置已配置的地物、结构地物、结构模板或结构池
+playanimation	在特定实体上播放实体动画
+playsound	在特定位置为指定玩家播放声音
+recipe	对玩家赋予或收回指定的配方
+reload	重新加载行为包中的函数与脚本
+replaceitem	替换方块或实体物品栏内的物品
+ride	管理实体的骑乘关系
+say	向所有玩家广播消息
+schedule	计划执行函数
+scoreboard	管理记分板中的记分项和分数持有者
+script	调试GameTest框架选项
+scriptevent	通过ID和消息来触发 Script API 脚本事件
+setblock	更改指定坐标位置的方块
+setmaxplayers	设置世界的最大可加入玩家数
+setworldspawn	设置世界重生点
+spawnpoint	设置玩家重生点
+spreadplayers	将指定实体传送到区域内的随机位置
+stopsound	为指定玩家停止播放声音
+structure	使用命令保存或加载结构
+summon	召唤一个实体
+tag	管理实体的标签
+teleport	传送实体到指定的地点，并修改其旋转角度
+tell	
+tellraw	向指定玩家发送JSON文本消息
+testfor	测试指定的实体是否存在
+testforblock	测试指定坐标的方块是否满足条件
+testforblocks	测试指定区域的方块是否满足条件
+tickingarea	添加、删除或列出常加载区域
+time	更改或查询世界的游戏时间
+title	控制屏幕标题
+titleraw	控制屏幕JSON文本标题
+toggledownfall	切换当前天气是否降雨
+tp	
+w	
+weather	设置或查询当前天气
+wsserver	
+xp	调整玩家的经验值

@@ -50,7 +50,7 @@
                 android:id="@+id/btn_minimize"
                 android:layout_width="28dp"
                 android:layout_height="28dp"
-                android:src="@android:drawable/ic_menu_close_clear_cancel"
+                android:src="@android:drawable/arrow_down_float"
                 android:background="?android:attr/selectableItemBackgroundBorderless"
                 android:contentDescription="最小化"
                 android:padding="4dp" />

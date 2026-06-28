@@ -154,7 +154,7 @@ class FloatingWindowService : Service() {
 
                 completionsContainer.removeAllViews()
                 completions.take(4).forEach { item ->
-                    val chip = layoutInflater.inflate(R.layout.completion_chip, null)
+                    val chip = LayoutInflater.from(this@FloatingWindowService).inflate(R.layout.completion_chip, null)
                     val chipText = chip.findViewById<TextView>(R.id.chip_text)
                     val chipDetail = chip.findViewById<TextView>(R.id.chip_detail)
                     chipText.text = item.label
@@ -269,7 +269,7 @@ class FloatingWindowService : Service() {
             val obj = JSONObject(json)
             ValidationResult(
                 hasError = obj.getBoolean("hasError"),
-                message = obj.optString("message", null),
+                message = obj.optString("message", "").takeIf { it.isNotEmpty() },
                 position = if (obj.has("position")) obj.getInt("position") else null
             )
         } catch (e: Exception) {

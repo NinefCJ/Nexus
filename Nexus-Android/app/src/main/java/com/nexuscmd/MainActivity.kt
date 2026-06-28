@@ -174,7 +174,7 @@ fun MainScreen(
         ) {
             // Tab selector
             NavigationBar {
-                listOf("编辑器", "模板", "命令库", "方块", "物品", "音效", "粒子", "历史", "设置").forEachIndexed { index, title ->
+                listOf("编辑器", "命令库", "速查", "资源库", "历史", "设置").forEachIndexed { index, title ->
                     NavigationBarItem(
                         selected = selectedTab == index,
                         onClick = { selectedTab = index },
@@ -182,13 +182,10 @@ fun MainScreen(
                             Icon(
                                 imageVector = when (index) {
                                     0 -> Icons.Default.Edit
-                                    1 -> Icons.Default.AutoFixHigh
-                                    2 -> Icons.Default.LibraryBooks
-                                    3 -> Icons.Default.ViewModule
-                                    4 -> Icons.Default.Category
-                                    5 -> Icons.Default.VolumeUp
-                                    6 -> Icons.Default.BubbleChart
-                                    7 -> Icons.Default.History
+                                    1 -> Icons.Default.LibraryBooks
+                                    2 -> Icons.Default.Bolt
+                                    3 -> Icons.Default.GridView
+                                    4 -> Icons.Default.History
                                     else -> Icons.Default.Settings
                                 },
                                 contentDescription = title
@@ -203,14 +200,11 @@ fun MainScreen(
             Box(modifier = Modifier.weight(1f)) {
                 when (selectedTab) {
                     0 -> EditorTab(viewModel, uiState)
-                    1 -> TemplateGeneratorTab(viewModel)
-                    2 -> CommandLibraryTab(viewModel, uiState)
-                    3 -> BlockLibraryTab(viewModel)
-                    4 -> ItemLibraryTab(viewModel)
-                    5 -> SoundEffectLibraryTab(viewModel)
-                    6 -> ParticleLibraryTab(viewModel)
-                    7 -> HistoryTab(viewModel, uiState)
-                    8 -> SettingsTab(
+                    1 -> CommandLibraryTab(viewModel, uiState)
+                    2 -> QuickCommandsTab(viewModel)
+                    3 -> ResourceLibraryTab(viewModel)
+                    4 -> HistoryTab(viewModel, uiState)
+                    5 -> SettingsTab(
                         viewModel = viewModel,
                         onRequestPermission = onRequestFloatingPermission,
                         onStartFloating = onStartFloating,
@@ -241,58 +235,58 @@ fun MainScreen(
 fun EditorTab(viewModel: MainViewModel, uiState: MainUiState) {
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
+    var expandedSections by remember { mutableStateOf(setOf("quickInsert", "quickCommands", "favorites")) }
 
-    LazyColumn(
+    fun toggleSection(section: String) {
+        expandedSections = if (expandedSections.contains(section)) {
+            expandedSections - section
+        } else {
+            expandedSections + section
+        }
+    }
+
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Command input card
-        item {
-            CommandInputCard(
-                commandText = uiState.commandText,
-                onCommandChange = { viewModel.onCommandTextChanged(it) },
-                validation = uiState.validation,
-                completions = uiState.completions,
-                onCompletionClick = { viewModel.applyCompletion(it) },
-                isFavorite = uiState.isCurrentCommandFavorite,
-                onFavoriteClick = { viewModel.toggleCurrentFavorite() },
-                onCopyClick = {
-                    if (uiState.commandText.isNotEmpty()) {
-                        clipboardManager.setText(AnnotatedString(uiState.commandText))
-                        viewModel.addToHistory(uiState.commandText)
-                    }
-                },
-                onShareClick = {
-                    if (uiState.commandText.isNotEmpty()) {
-                        val sendIntent = Intent().apply {
-                            action = Intent.ACTION_SEND
-                            putExtra(Intent.EXTRA_TEXT, uiState.commandText)
-                            type = "text/plain"
-                        }
-                        context.startActivity(Intent.createChooser(sendIntent, "分享命令"))
-                    }
+        CommandInputCard(
+            commandText = uiState.commandText,
+            onCommandChange = { viewModel.onCommandTextChanged(it) },
+            validation = uiState.validation,
+            completions = uiState.completions,
+            onCompletionClick = { viewModel.applyCompletion(it) },
+            isFavorite = uiState.isCurrentCommandFavorite,
+            onFavoriteClick = { viewModel.toggleCurrentFavorite() },
+            onCopyClick = {
+                if (uiState.commandText.isNotEmpty()) {
+                    clipboardManager.setText(AnnotatedString(uiState.commandText))
+                    viewModel.addToHistory(uiState.commandText)
                 }
-            )
-        }
-
-        // Command info card
-        item {
-            if (uiState.currentCommandInfo != null) {
-                CommandInfoCard(info = uiState.currentCommandInfo)
+            },
+            onShareClick = {
+                if (uiState.commandText.isNotEmpty()) {
+                    val sendIntent = Intent().apply {
+                        action = Intent.ACTION_SEND
+                        putExtra(Intent.EXTRA_TEXT, uiState.commandText)
+                        type = "text/plain"
+                    }
+                    context.startActivity(Intent.createChooser(sendIntent, "分享命令"))
+                }
             }
+        )
+
+        if (uiState.currentCommandInfo != null) {
+            CommandInfoCard(info = uiState.currentCommandInfo)
         }
 
-        // Quick commands
-        item {
-            Text(
-                text = "快速插入",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(top = 8.dp)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+        ExpandableSection(
+            title = "快速插入",
+            icon = Icons.Default.AutoFixHigh,
+            isExpanded = expandedSections.contains("quickInsert"),
+            onToggle = { toggleSection("quickInsert") }
+        ) {
             QuickInsertToolbar(
                 onInsert = { text ->
                     val current = viewModel.uiState.value.commandText
@@ -301,46 +295,223 @@ fun EditorTab(viewModel: MainViewModel, uiState: MainUiState) {
             )
         }
 
-        item {
-            Text(
-                text = "快速命令",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(top = 8.dp)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-
-        items(uiState.quickCommands) { (cmd, desc, icon) ->
-            QuickCommandItem(
-                command = cmd,
-                description = desc,
-                icon = icon,
-                onClick = { viewModel.onCommandTextChanged(cmd) },
-                onLongClick = {
-                    clipboardManager.setText(AnnotatedString(cmd))
+        ExpandableSection(
+            title = "快速命令",
+            icon = Icons.Default.Lightbulb,
+            isExpanded = expandedSections.contains("quickCommands"),
+            onToggle = { toggleSection("quickCommands") }
+        ) {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                items(uiState.quickCommands) { (cmd, desc, icon) ->
+                    QuickCommandItem(
+                        command = cmd,
+                        description = desc,
+                        icon = icon,
+                        onClick = { viewModel.onCommandTextChanged(cmd) },
+                        onLongClick = {
+                            clipboardManager.setText(AnnotatedString(cmd))
+                        }
+                    )
                 }
-            )
+            }
         }
 
-        // Favorites section
         if (uiState.favoriteCommands.isNotEmpty()) {
-            item {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "我的收藏",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+            ExpandableSection(
+                title = "我的收藏",
+                icon = Icons.Default.Favorite,
+                isExpanded = expandedSections.contains("favorites"),
+                onToggle = { toggleSection("favorites") }
+            ) {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    items(uiState.favoriteCommands.take(5)) { fav ->
+                        FavoriteCommandItem(
+                            command = fav,
+                            onClick = { viewModel.onCommandTextChanged(fav.command) },
+                            onDelete = { viewModel.removeFromFavorites(fav.id) }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ExpandableSection(
+    title: String,
+    icon: ImageVector,
+    isExpanded: Boolean,
+    onToggle: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onToggle)
+                    .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Icon(
+                    imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
-            items(uiState.favoriteCommands.take(5)) { fav ->
-                FavoriteCommandItem(
-                    command = fav,
-                    onClick = { viewModel.onCommandTextChanged(fav.command) },
-                    onDelete = { viewModel.removeFromFavorites(fav.id) }
+            AnimatedVisibility(visible = isExpanded) {
+                Column(modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp)) {
+                    content()
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun QuickCommandsTab(viewModel: MainViewModel) {
+    val quickCommands = viewModel.getQuickCommands()
+    var searchQuery by remember { mutableStateOf("") }
+    var selectedCategory by remember { mutableStateOf<String?>(null) }
+    
+    val categories = listOf("全部", "游戏规则", "效果", "传送", "模式", "物品", "其他")
+    
+    val filteredCommands = remember(quickCommands, searchQuery, selectedCategory) {
+        val filtered = if (searchQuery.isEmpty()) {
+            quickCommands
+        } else {
+            quickCommands.filter { 
+                it.name.contains(searchQuery, ignoreCase = true) || 
+                it.syntax.contains(searchQuery, ignoreCase = true)
+            }
+        }
+        if (selectedCategory == null || selectedCategory == "全部") {
+            filtered
+        } else {
+            filtered.filter { it.category == selectedCategory }
+        }
+    }
+    
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Search bar
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            placeholder = { Text("搜索速查命令...") },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = "搜索") },
+            singleLine = true
+        )
+        
+        // Category chips
+        LazyRow(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(categories.size) { index ->
+                FilterChip(
+                    selected = selectedCategory == categories[index] || (index == 0 && selectedCategory == null),
+                    onClick = { 
+                        selectedCategory = if (index == 0) null else categories[index]
+                    },
+                    label = { Text(categories[index]) }
                 )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        // Commands list
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(filteredCommands.size) { index ->
+                val cmd = filteredCommands[index]
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        viewModel.onCommandTextChanged(cmd.syntax)
+                    }
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = cmd.icon,
+                                contentDescription = cmd.name,
+                                modifier = Modifier.size(24.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = cmd.name.removePrefix("速查-"),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Text(
+                            text = cmd.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = cmd.syntax,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ResourceLibraryTab(viewModel: MainViewModel) {
+    var selectedSubTab by remember { mutableIntStateOf(0) }
+    val subTabs = listOf("方块", "物品", "音效", "粒子")
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        TabRow(selectedTabIndex = selectedSubTab) {
+            subTabs.forEachIndexed { index, title ->
+                Tab(
+                    selected = selectedSubTab == index,
+                    onClick = { selectedSubTab = index },
+                    text = { Text(title) }
+                )
+            }
+        }
+        Box(modifier = Modifier.weight(1f)) {
+            when (selectedSubTab) {
+                0 -> BlockLibraryTab(viewModel)
+                1 -> ItemLibraryTab(viewModel)
+                2 -> SoundEffectLibraryTab(viewModel)
+                3 -> ParticleLibraryTab(viewModel)
             }
         }
     }
@@ -735,22 +906,36 @@ fun FavoriteCommandItem(
 fun CommandLibraryTab(viewModel: MainViewModel, uiState: MainUiState) {
     val filteredCommands = viewModel.getFilteredCommands()
     var selectedCategory by remember { mutableStateOf<String?>(null) }
-    val categories = listOf("全部", "物品", "实体", "传送", "方块", "世界", "游戏模式", "记分板", "执行", "玩家互动", "声音粒子", "管理员", "服务器", "基岩版独有", "帮助", "速查")
+    var displayCount by remember { mutableStateOf(30) }
+    val categories = listOf("全部", "物品", "实体", "传送", "方块", "世界", "游戏模式", "记分板", "执行", "玩家互动", "声音粒子", "管理员", "服务器", "基岩版独有", "帮助")
 
-    val displayedCommands = if (selectedCategory == null || selectedCategory == "全部") {
-        filteredCommands
-    } else {
-        filteredCommands.filter { it.category == selectedCategory }
+    val displayedCommands = remember(filteredCommands, selectedCategory) {
+        val all = if (selectedCategory == null || selectedCategory == "全部") {
+            filteredCommands
+        } else {
+            filteredCommands.filter { it.category == selectedCategory }
+        }
+        all
+    }
+
+    val showCommands = displayedCommands.take(displayCount)
+    val hasMore = displayCount < displayedCommands.size
+
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+
+    LaunchedEffect(selectedCategory, uiState.searchQuery) {
+        displayCount = 30
+        listState.scrollToItem(0)
     }
 
     LazyColumn(
+        state = listState,
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         item {
-            // Search bar
             OutlinedTextField(
                 value = uiState.searchQuery,
                 onValueChange = { viewModel.onSearchQueryChanged(it) },
@@ -767,27 +952,22 @@ fun CommandLibraryTab(viewModel: MainViewModel, uiState: MainUiState) {
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp)
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
         }
 
-        // Category chips
         item {
-            LazyColumn(modifier = Modifier.height(40.dp)) {
-                item {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        categories.forEach { category ->
-                            FilterChip(
-                                selected = selectedCategory == category || (category == "全部" && selectedCategory == null),
-                                onClick = {
-                                    selectedCategory = if (category == "全部") null else category
-                                },
-                                label = { Text(category, style = MaterialTheme.typography.bodySmall) }
-                            )
-                        }
-                    }
+            LazyRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                items(categories) { category ->
+                    FilterChip(
+                        selected = selectedCategory == category || (category == "全部" && selectedCategory == null),
+                        onClick = {
+                            selectedCategory = if (category == "全部") null else category
+                        },
+                        label = { Text(category, style = MaterialTheme.typography.bodySmall) }
+                    )
                 }
             }
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
         }
 
         item {
@@ -796,77 +976,76 @@ fun CommandLibraryTab(viewModel: MainViewModel, uiState: MainUiState) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            Spacer(modifier = Modifier.height(4.dp))
         }
 
-        items(displayedCommands) { cmd ->
-            CommandLibraryItem(
+        items(showCommands, key = { it.name }) { cmd ->
+            SimpleCommandItem(
                 command = cmd,
                 onClick = { viewModel.onCommandTextChanged(cmd.syntax) }
             )
         }
+
+        if (hasMore) {
+            item {
+                TextButton(
+                    onClick = { displayCount += 30 },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("加载更多 (${displayedCommands.size - displayCount} 条剩余)")
+                }
+            }
+        }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CommandLibraryItem(
+fun SimpleCommandItem(
     command: CommandLibraryItem,
     onClick: () -> Unit
 ) {
-    val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
 
-    Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Icon(
+            imageVector = command.icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(10.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "/${command.name}",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                fontFamily = FontFamily.Monospace
+            )
+            Text(
+                text = command.description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        IconButton(
+            onClick = { clipboardManager.setText(AnnotatedString(command.syntax)) },
+            modifier = Modifier.size(32.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = command.icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.secondary
-                )
-            }
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "/${command.name}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    fontFamily = FontFamily.Monospace
-                )
-                Text(
-                    text = command.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                SyntaxHighlightedText(
-                    text = command.syntax,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-            IconButton(onClick = {
-                clipboardManager.setText(AnnotatedString(command.syntax))
-            }) {
-                Icon(
-                    imageVector = Icons.Default.ContentCopy,
-                    contentDescription = "复制",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            Icon(
+                imageVector = Icons.Default.ContentCopy,
+                contentDescription = "复制",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp)
+            )
         }
     }
 }
@@ -875,42 +1054,40 @@ fun CommandLibraryItem(
 fun SoundEffectLibraryTab(viewModel: MainViewModel) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf<String?>(null) }
+    var displayCount by remember { mutableStateOf(30) }
     var target by remember { mutableStateOf("@s") }
     var position by remember { mutableStateOf("~ ~ ~") }
     var volume by remember { mutableStateOf("1") }
     var pitch by remember { mutableStateOf("1") }
     var minimumVolume by remember { mutableStateOf("0") }
+    var showParams by remember { mutableStateOf(false) }
 
     val clipboardManager = LocalClipboardManager.current
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
     val toneGenerator = remember { ToneGenerator(AudioManager.STREAM_MUSIC, 80) }
     val displayedEffects = remember(searchQuery, selectedCategory) {
         SoundEffectLibrary.filter(searchQuery, selectedCategory)
+    }
+
+    LaunchedEffect(searchQuery, selectedCategory) {
+        displayCount = 30
+        listState.scrollToItem(0)
     }
 
     DisposableEffect(Unit) {
         onDispose { toneGenerator.release() }
     }
 
+    val showEffects = displayedEffects.take(displayCount)
+    val hasMore = displayCount < displayedEffects.size
+
     LazyColumn(
+        state = listState,
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(3.dp)
     ) {
-        item {
-            Text(
-                text = "音效库",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "选择音效生成基岩版 /playsound 指令，试听为本机短音预览，不代表游戏内真实音频。",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-        }
-
         item {
             OutlinedTextField(
                 value = searchQuery,
@@ -928,11 +1105,12 @@ fun SoundEffectLibraryTab(viewModel: MainViewModel) {
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp)
             )
+            Spacer(modifier = Modifier.height(8.dp))
         }
 
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                SoundEffectLibrary.categories.forEach { category ->
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                items(SoundEffectLibrary.categories) { category ->
                     FilterChip(
                         selected = selectedCategory == category || (category == "全部" && selectedCategory == null),
                         onClick = {
@@ -942,108 +1120,183 @@ fun SoundEffectLibraryTab(viewModel: MainViewModel) {
                     )
                 }
             }
+            Spacer(modifier = Modifier.height(4.dp))
         }
 
         item {
-            Card(
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
-                )
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Tune,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "默认参数",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf("@s", "@p", "@a", "@r").forEach { selector ->
-                            FilterChip(
-                                selected = target == selector,
-                                onClick = { target = selector },
-                                label = { Text(selector) }
+                Text(
+                    text = "共 ${displayedEffects.size} 个音效",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                TextButton(onClick = { showParams = !showParams }) {
+                    Text(
+                        if (showParams) "隐藏参数" else "参数设置",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(2.dp))
+        }
+
+        if (showParams) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(10.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            listOf("@s", "@p", "@a", "@r").forEach { selector ->
+                                FilterChip(
+                                    selected = target == selector,
+                                    onClick = { target = selector },
+                                    label = { Text(selector, style = MaterialTheme.typography.labelSmall) }
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            OutlinedTextField(
+                                value = position,
+                                onValueChange = { position = it },
+                                modifier = Modifier.weight(1f),
+                                label = { Text("坐标", style = MaterialTheme.typography.bodySmall) },
+                                singleLine = true
+                            )
+                            OutlinedTextField(
+                                value = volume,
+                                onValueChange = { volume = it },
+                                modifier = Modifier.weight(1f),
+                                label = { Text("音量", style = MaterialTheme.typography.bodySmall) },
+                                singleLine = true
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            OutlinedTextField(
+                                value = pitch,
+                                onValueChange = { pitch = it },
+                                modifier = Modifier.weight(1f),
+                                label = { Text("音高", style = MaterialTheme.typography.bodySmall) },
+                                singleLine = true
+                            )
+                            OutlinedTextField(
+                                value = minimumVolume,
+                                onValueChange = { minimumVolume = it },
+                                modifier = Modifier.weight(1f),
+                                label = { Text("最小音量", style = MaterialTheme.typography.bodySmall) },
+                                singleLine = true
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
-                            value = position,
-                            onValueChange = { position = it },
-                            modifier = Modifier.weight(1f),
-                            label = { Text("坐标") },
-                            singleLine = true
-                        )
-                        OutlinedTextField(
-                            value = volume,
-                            onValueChange = { volume = it },
-                            modifier = Modifier.weight(1f),
-                            label = { Text("音量") },
-                            singleLine = true
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
-                            value = pitch,
-                            onValueChange = { pitch = it },
-                            modifier = Modifier.weight(1f),
-                            label = { Text("音高") },
-                            singleLine = true
-                        )
-                        OutlinedTextField(
-                            value = minimumVolume,
-                            onValueChange = { minimumVolume = it },
-                            modifier = Modifier.weight(1f),
-                            label = { Text("最小音量") },
-                            singleLine = true
-                        )
-                    }
                 }
+                Spacer(modifier = Modifier.height(4.dp))
             }
         }
 
-        item {
-            Text(
-                text = "共 ${displayedEffects.size} 个音效",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-
-        items(displayedEffects, key = { it.id }) { effect ->
-            SoundEffectItem(
+        items(showEffects, key = { it.id }) { effect ->
+            val command = SoundEffectLibrary.buildPlaySoundCommand(
                 effect = effect,
-                command = SoundEffectLibrary.buildPlaySoundCommand(
-                    effect = effect,
-                    target = target,
-                    position = position,
-                    volume = volume.ifBlank { effect.volume },
-                    pitch = pitch.ifBlank { effect.pitch },
-                    minimumVolume = minimumVolume.ifBlank { "0" }
-                ),
+                target = target,
+                position = position,
+                volume = volume.ifBlank { effect.volume },
+                pitch = pitch.ifBlank { effect.pitch },
+                minimumVolume = minimumVolume.ifBlank { "0" }
+            )
+            SimpleSoundItem(
+                effect = effect,
                 onPreview = {
                     toneGenerator.startTone(toneForSoundEffect(effect), 350)
                 },
-                onUse = { command ->
+                onUse = {
                     viewModel.onCommandTextChanged(command)
                     viewModel.addToHistory(command)
                 },
-                onCopy = { command ->
+                onCopy = {
                     clipboardManager.setText(AnnotatedString(command))
                     viewModel.addToHistory(command)
                 }
+            )
+        }
+
+        if (hasMore) {
+            item {
+                TextButton(
+                    onClick = { displayCount += 40 },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("加载更多 (${displayedEffects.size - displayCount} 个剩余)")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SimpleSoundItem(
+    effect: SoundEffect,
+    onPreview: () -> Unit,
+    onUse: () -> Unit,
+    onCopy: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.Default.GraphicEq,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.secondary,
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = effect.name,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                text = effect.id,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontFamily = FontFamily.Monospace
+            )
+        }
+        IconButton(onClick = onPreview, modifier = Modifier.size(28.dp)) {
+            Icon(
+                Icons.Default.PlayArrow,
+                contentDescription = "试听",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+        IconButton(onClick = onCopy, modifier = Modifier.size(28.dp)) {
+            Icon(
+                Icons.Default.ContentCopy,
+                contentDescription = "复制",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+        IconButton(onClick = onUse, modifier = Modifier.size(28.dp)) {
+            Icon(
+                Icons.Default.Edit,
+                contentDescription = "使用",
+                tint = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier.size(18.dp)
             )
         }
     }
@@ -1157,31 +1410,27 @@ fun toneForSoundEffect(effect: SoundEffect): Int {
 fun BlockLibraryTab(viewModel: MainViewModel) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf<String?>(null) }
-    val clipboardManager = LocalClipboardManager.current
+    var displayCount by remember { mutableStateOf(30) }
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
     val displayedBlocks = remember(searchQuery, selectedCategory) {
         BlockLibrary.filter(searchQuery, selectedCategory)
     }
 
+    LaunchedEffect(searchQuery, selectedCategory) {
+        displayCount = 30
+        listState.scrollToItem(0)
+    }
+
+    val showBlocks = displayedBlocks.take(displayCount)
+    val hasMore = displayCount < displayedBlocks.size
+
     LazyColumn(
+        state = listState,
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(3.dp)
     ) {
-        item {
-            Text(
-                text = "方块库",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "基岩版方块ID与中文翻译，用于 /setblock /fill 等命令",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-        }
-
         item {
             OutlinedTextField(
                 value = searchQuery,
@@ -1199,11 +1448,12 @@ fun BlockLibraryTab(viewModel: MainViewModel) {
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp)
             )
+            Spacer(modifier = Modifier.height(8.dp))
         }
 
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                BlockLibrary.categories.take(8).forEach { category ->
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                items(BlockLibrary.categories) { category ->
                     FilterChip(
                         selected = selectedCategory == category || (category == "全部" && selectedCategory == null),
                         onClick = {
@@ -1213,17 +1463,7 @@ fun BlockLibraryTab(viewModel: MainViewModel) {
                     )
                 }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                BlockLibrary.categories.drop(8).forEach { category ->
-                    FilterChip(
-                        selected = selectedCategory == category || (category == "全部" && selectedCategory == null),
-                        onClick = {
-                            selectedCategory = if (category == "全部") null else category
-                        },
-                        label = { Text(category, style = MaterialTheme.typography.labelSmall) }
-                    )
-                }
-            }
+            Spacer(modifier = Modifier.height(4.dp))
         }
 
         item {
@@ -1232,62 +1472,28 @@ fun BlockLibraryTab(viewModel: MainViewModel) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            Spacer(modifier = Modifier.height(2.dp))
         }
 
-        items(displayedBlocks) { block ->
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
+        items(showBlocks, key = { it.id }) { block ->
+            SimpleLibraryItem(
+                title = block.name,
+                subtitle = block.id,
+                description = block.description,
+                icon = Icons.Default.ViewModule,
+                iconTint = MaterialTheme.colorScheme.primary,
+                copyText = block.id,
+                onClick = { viewModel.onCommandTextChanged("/setblock ~ ~ ~ ${block.id}") }
+            )
+        }
+
+        if (hasMore) {
+            item {
+                TextButton(
+                    onClick = { displayCount += 40 },
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ViewModule,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = block.name,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            text = block.id,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontFamily = FontFamily.Monospace
-                        )
-                        if (block.description.isNotEmpty()) {
-                            Text(
-                                text = block.description,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                    IconButton(onClick = {
-                        clipboardManager.setText(AnnotatedString(block.id))
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.ContentCopy,
-                            contentDescription = "复制ID",
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
+                    Text("加载更多 (${displayedBlocks.size - displayCount} 个剩余)")
                 }
             }
         }
@@ -1298,31 +1504,28 @@ fun BlockLibraryTab(viewModel: MainViewModel) {
 fun ItemLibraryTab(viewModel: MainViewModel) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf<String?>(null) }
+    var displayCount by remember { mutableStateOf(30) }
     val clipboardManager = LocalClipboardManager.current
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
     val displayedItems = remember(searchQuery, selectedCategory) {
         ItemLibrary.filter(searchQuery, selectedCategory)
     }
 
+    LaunchedEffect(searchQuery, selectedCategory) {
+        displayCount = 30
+        listState.scrollToItem(0)
+    }
+
+    val showItems = displayedItems.take(displayCount)
+    val hasMore = displayCount < displayedItems.size
+
     LazyColumn(
+        state = listState,
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(3.dp)
     ) {
-        item {
-            Text(
-                text = "物品库",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "基岩版物品ID与中文翻译，用于 /give /replaceitem 等命令",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-        }
-
         item {
             OutlinedTextField(
                 value = searchQuery,
@@ -1340,11 +1543,12 @@ fun ItemLibraryTab(viewModel: MainViewModel) {
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp)
             )
+            Spacer(modifier = Modifier.height(8.dp))
         }
 
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                ItemLibrary.categories.forEach { category ->
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                items(ItemLibrary.categories) { category ->
                     FilterChip(
                         selected = selectedCategory == category || (category == "全部" && selectedCategory == null),
                         onClick = {
@@ -1354,6 +1558,7 @@ fun ItemLibraryTab(viewModel: MainViewModel) {
                     )
                 }
             }
+            Spacer(modifier = Modifier.height(4.dp))
         }
 
         item {
@@ -1362,64 +1567,93 @@ fun ItemLibraryTab(viewModel: MainViewModel) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            Spacer(modifier = Modifier.height(2.dp))
         }
 
-        items(displayedItems) { item ->
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
+        items(showItems, key = { it.id }) { item ->
+            SimpleLibraryItem(
+                title = item.name,
+                subtitle = item.id,
+                description = item.description,
+                icon = Icons.Default.Category,
+                iconTint = MaterialTheme.colorScheme.secondary,
+                copyText = item.id,
+                onClick = { viewModel.onCommandTextChanged("/give @s ${item.id} 1") }
+            )
+        }
+
+        if (hasMore) {
+            item {
+                TextButton(
+                    onClick = { displayCount += 40 },
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Category,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.secondary
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = item.name,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            text = item.id,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontFamily = FontFamily.Monospace
-                        )
-                        if (item.description.isNotEmpty()) {
-                            Text(
-                                text = item.description,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                    IconButton(onClick = {
-                        clipboardManager.setText(AnnotatedString(item.id))
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.ContentCopy,
-                            contentDescription = "复制ID",
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
+                    Text("加载更多 (${displayedItems.size - displayCount} 个剩余)")
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun SimpleLibraryItem(
+    title: String,
+    subtitle: String,
+    description: String = "",
+    icon: ImageVector,
+    iconTint: Color = MaterialTheme.colorScheme.primary,
+    copyText: String,
+    onClick: () -> Unit
+) {
+    val clipboardManager = LocalClipboardManager.current
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = iconTint,
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontFamily = FontFamily.Monospace
+            )
+            if (description.isNotEmpty()) {
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+        IconButton(
+            onClick = { clipboardManager.setText(AnnotatedString(copyText)) },
+            modifier = Modifier.size(28.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.ContentCopy,
+                contentDescription = "复制",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(16.dp)
+            )
         }
     }
 }
@@ -1428,37 +1662,35 @@ fun ItemLibraryTab(viewModel: MainViewModel) {
 fun ParticleLibraryTab(viewModel: MainViewModel) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf<String?>(null) }
+    var displayCount by remember { mutableStateOf(30) }
     var position by remember { mutableStateOf("~ ~ ~") }
     var delta by remember { mutableStateOf("0 0 0") }
     var speed by remember { mutableStateOf("0") }
     var count by remember { mutableStateOf("1") }
     var mode by remember { mutableStateOf("default") }
+    var showParams by remember { mutableStateOf(false) }
 
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
     val clipboardManager = LocalClipboardManager.current
     val displayedParticles = remember(searchQuery, selectedCategory) {
         ParticleLibrary.filter(searchQuery, selectedCategory)
     }
 
+    LaunchedEffect(searchQuery, selectedCategory) {
+        displayCount = 30
+        listState.scrollToItem(0)
+    }
+
+    val showParticles = displayedParticles.take(displayCount)
+    val hasMore = displayCount < displayedParticles.size
+
     LazyColumn(
+        state = listState,
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(3.dp)
     ) {
-        item {
-            Text(
-                text = "粒子库",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "选择粒子生成基岩版 /particle 指令",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-        }
-
         item {
             OutlinedTextField(
                 value = searchQuery,
@@ -1476,11 +1708,12 @@ fun ParticleLibraryTab(viewModel: MainViewModel) {
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp)
             )
+            Spacer(modifier = Modifier.height(8.dp))
         }
 
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ParticleLibrary.categories.forEach { category ->
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                items(ParticleLibrary.categories) { category ->
                     FilterChip(
                         selected = selectedCategory == category || (category == "全部" && selectedCategory == null),
                         onClick = {
@@ -1490,92 +1723,149 @@ fun ParticleLibraryTab(viewModel: MainViewModel) {
                     )
                 }
             }
+            Spacer(modifier = Modifier.height(4.dp))
         }
 
         item {
-            Card(
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
-                )
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Tune,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "默认参数",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
-                            value = position,
-                            onValueChange = { position = it },
-                            label = { Text("位置") },
-                            modifier = Modifier.weight(1f),
-                            singleLine = true
-                        )
-                        OutlinedTextField(
-                            value = count,
-                            onValueChange = { count = it },
-                            label = { Text("数量") },
-                            modifier = Modifier.weight(0.5f),
-                            singleLine = true
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
-                            value = delta,
-                            onValueChange = { delta = it },
-                            label = { Text("偏移") },
-                            modifier = Modifier.weight(1f),
-                            singleLine = true
-                        )
-                        OutlinedTextField(
-                            value = speed,
-                            onValueChange = { speed = it },
-                            label = { Text("速度") },
-                            modifier = Modifier.weight(0.5f),
-                            singleLine = true
-                        )
+                Text(
+                    text = "共 ${displayedParticles.size} 个粒子",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                TextButton(onClick = { showParams = !showParams }) {
+                    Text(
+                        if (showParams) "隐藏参数" else "参数设置",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(2.dp))
+        }
+
+        if (showParams) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(10.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            OutlinedTextField(
+                                value = position,
+                                onValueChange = { position = it },
+                                label = { Text("位置", style = MaterialTheme.typography.bodySmall) },
+                                modifier = Modifier.weight(1f),
+                                singleLine = true
+                            )
+                            OutlinedTextField(
+                                value = count,
+                                onValueChange = { count = it },
+                                label = { Text("数量", style = MaterialTheme.typography.bodySmall) },
+                                modifier = Modifier.weight(0.5f),
+                                singleLine = true
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            OutlinedTextField(
+                                value = delta,
+                                onValueChange = { delta = it },
+                                label = { Text("偏移", style = MaterialTheme.typography.bodySmall) },
+                                modifier = Modifier.weight(1f),
+                                singleLine = true
+                            )
+                            OutlinedTextField(
+                                value = speed,
+                                onValueChange = { speed = it },
+                                label = { Text("速度", style = MaterialTheme.typography.bodySmall) },
+                                modifier = Modifier.weight(0.5f),
+                                singleLine = true
+                            )
+                        }
                     }
                 }
+                Spacer(modifier = Modifier.height(4.dp))
             }
         }
 
-        item {
-            Text(
-                text = "共 ${displayedParticles.size} 个粒子",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+        items(showParticles, key = { it.id }) { particle ->
+            val command = ParticleLibrary.buildParticleCommand(particle, position, delta, speed, count, mode)
+            SimpleParticleItem(
+                particle = particle,
+                onCopy = { clipboardManager.setText(AnnotatedString(command)) },
+                onInsert = { viewModel.onCommandTextChanged(command) }
             )
         }
 
-        items(displayedParticles) { particle ->
-            ParticleLibraryItem(
-                particle = particle,
-                position = position,
-                delta = delta,
-                speed = speed,
-                count = count,
-                mode = mode,
-                onCopy = {
-                    val command = ParticleLibrary.buildParticleCommand(particle, position, delta, speed, count, mode)
-                    clipboardManager.setText(AnnotatedString(command))
-                },
-                onInsert = {
-                    val command = ParticleLibrary.buildParticleCommand(particle, position, delta, speed, count, mode)
-                    viewModel.onCommandTextChanged(command)
+        if (hasMore) {
+            item {
+                TextButton(
+                    onClick = { displayCount += 40 },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("加载更多 (${displayedParticles.size - displayCount} 个剩余)")
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun SimpleParticleItem(
+    particle: Particle,
+    onCopy: () -> Unit,
+    onInsert: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(onClick = onInsert)
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.Default.BubbleChart,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.tertiary,
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = particle.name,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                text = particle.id,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontFamily = FontFamily.Monospace
+            )
+        }
+        IconButton(onClick = onCopy, modifier = Modifier.size(28.dp)) {
+            Icon(
+                Icons.Default.ContentCopy,
+                contentDescription = "复制",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+        IconButton(onClick = onInsert, modifier = Modifier.size(28.dp)) {
+            Icon(
+                Icons.Default.Edit,
+                contentDescription = "插入",
+                tint = MaterialTheme.colorScheme.tertiary,
+                modifier = Modifier.size(18.dp)
             )
         }
     }
@@ -1671,9 +1961,7 @@ fun ParticleLibraryItem(
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Button(
-                    onClick = {
-                        viewModel.onCommandTextChanged(command)
-                    },
+                    onClick = onInsert,
                     modifier = Modifier.height(32.dp),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
                 ) {
@@ -3305,7 +3593,7 @@ fun ImportAddonDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(180.dp),
-                    placeholder = { Text('{', '\n', '"', "id", '"', ": ...", '\n', '}') },
+                    placeholder = { Text("{\n\"id\": ...\n}") },
                     shape = RoundedCornerShape(12.dp),
                     isError = errorMessage != null
                 )
