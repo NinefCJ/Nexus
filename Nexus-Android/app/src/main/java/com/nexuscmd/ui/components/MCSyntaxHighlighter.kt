@@ -1,4 +1,4 @@
-package com.nexuscmd.ui.theme
+package com.nexuscmd.ui.components
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString

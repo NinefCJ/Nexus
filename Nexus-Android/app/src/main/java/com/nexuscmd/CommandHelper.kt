@@ -44,3 +44,9 @@ data class ValidationResult(
     val message: String? = null,
     val position: Int? = null
 )
+
+data class CommandInfo(
+    val name: String,
+    val syntax: String = "",
+    val description: String = ""
+)

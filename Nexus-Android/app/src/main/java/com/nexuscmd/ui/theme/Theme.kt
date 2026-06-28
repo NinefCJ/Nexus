@@ -1,4 +1,4 @@
-package com.mccmdhelper.ui.theme
+package com.nexuscmd.ui.theme
 
 import android.app.Activity
 import android.os.Build

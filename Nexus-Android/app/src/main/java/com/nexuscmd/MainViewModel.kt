@@ -100,6 +100,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val history = historyManager.getHistory()
             val allCommands = getBuiltInCommands()
             val theme = settingsManager.currentTheme
+            val isDark = settingsManager.isDarkTheme
 
             // Load addon data
             val addons = addonManager.loadAddons()
@@ -131,6 +132,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 historyItems = history,
                 allCommands = allCommands,
                 currentTheme = theme,
+                isDarkTheme = isDark,
                 installedAddons = addons,
                 addonCommands = addonCommands,
                 addonTemplates = addonTemplates,
@@ -279,7 +281,36 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setTheme(theme: AppTheme) {
         settingsManager.currentTheme = theme
-        _uiState.value = _uiState.value.copy(currentTheme = theme)
+        val isDark = when (theme) {
+            AppTheme.FOLLOW_SYSTEM -> settingsManager.isDarkTheme
+            AppTheme.LIGHT -> false
+            AppTheme.GREEN, AppTheme.OCEAN, AppTheme.WARM -> settingsManager.isDarkTheme
+            else -> true
+        }
+        _uiState.value = _uiState.value.copy(
+            currentTheme = theme,
+            isDarkTheme = isDark
+        )
+    }
+
+    fun setDarkTheme(isDark: Boolean) {
+        settingsManager.isDarkTheme = isDark
+        val currentTheme = settingsManager.currentTheme
+        val newTheme = when {
+            currentTheme == AppTheme.FOLLOW_SYSTEM -> {
+                if (isDark) AppTheme.DARK else AppTheme.LIGHT
+            }
+            currentTheme == AppTheme.LIGHT && isDark -> AppTheme.DARK
+            currentTheme == AppTheme.DARK && !isDark -> AppTheme.LIGHT
+            else -> currentTheme
+        }
+        if (newTheme != currentTheme) {
+            settingsManager.currentTheme = newTheme
+        }
+        _uiState.value = _uiState.value.copy(
+            isDarkTheme = isDark,
+            currentTheme = newTheme
+        )
     }
 
     fun setAddonCompletionsFirst(enabled: Boolean) {
