@@ -6,18 +6,59 @@
 #include "command_registry.hpp"
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
+#include <memory>
+#include <unordered_map>
+#include <mutex>
 
 namespace mcmd {
 
-static CommandRegistry* g_registry = nullptr;
-static Completion* g_completion = nullptr;
+// 性能优化：使用智能指针管理全局对象
+static std::unique_ptr<CommandRegistry> g_registry;
+static std::unique_ptr<Completion> g_completion;
+
+// 性能优化：添加结果缓存
+class ResultCache {
+private:
+    std::unordered_map<std::string, std::string> cache_;
+    std::mutex mutex_;
+    static constexpr size_t MAX_CACHE_SIZE = 100;
+    
+public:
+    std::string get(const std::string& key) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto it = cache_.find(key);
+        if (it != cache_.end()) {
+            return it->second;
+        }
+        return "";
+    }
+    
+    void put(const std::string& key, const std::string& value) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (cache_.size() >= MAX_CACHE_SIZE) {
+            cache_.clear();
+        }
+        cache_[key] = value;
+    }
+    
+    void clear() {
+        std::lock_guard<std::mutex> lock(mutex_);
+        cache_.clear();
+    }
+};
+
+static ResultCache g_result_cache;
+
+// 性能优化：预分配 JSON buffer 大小
+static constexpr size_t INITIAL_BUFFER_SIZE = 1024;
 
 bool CommandHelperJni::initialize(const std::string& json_data) {
+    // 性能优化：使用智能指针避免内存泄漏
     if (!g_registry) {
-        g_registry = new CommandRegistry();
+        g_registry = std::make_unique<CommandRegistry>();
     }
     if (!g_completion) {
-        g_completion = new Completion(*g_registry);
+        g_completion = std::make_unique<Completion>(*g_registry);
     }
 
     if (!json_data.empty()) {
@@ -29,12 +70,21 @@ bool CommandHelperJni::initialize(const std::string& json_data) {
 std::string CommandHelperJni::getCompletions(const std::string& input, int cursor_position) {
     if (!g_completion) return "[]";
 
+    // 性能优化：检查缓存
+    std::string cache_key = "comp_" + input + "_" + std::to_string(cursor_position);
+    std::string cached = g_result_cache.get(cache_key);
+    if (!cached.empty()) {
+        return cached;
+    }
+
     Tokenizer tokenizer(input);
     auto tokens = tokenizer.tokenize();
 
     auto completions = g_completion->getCompletions(tokens, cursor_position, input);
 
+    // 性能优化：预分配 buffer 大小
     rapidjson::StringBuffer sb;
+    sb.Reserve(INITIAL_BUFFER_SIZE);
     rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
 
     writer.StartArray();
@@ -47,17 +97,28 @@ std::string CommandHelperJni::getCompletions(const std::string& input, int curso
     }
     writer.EndArray();
 
-    return sb.GetString();
+    std::string result = sb.GetString();
+    g_result_cache.put(cache_key, result);
+    return result;
 }
 
 std::string CommandHelperJni::getHighlights(const std::string& input) {
+    // 性能优化：检查缓存
+    std::string cache_key = "high_" + input;
+    std::string cached = g_result_cache.get(cache_key);
+    if (!cached.empty()) {
+        return cached;
+    }
+
     Tokenizer tokenizer(input);
     auto tokens = tokenizer.tokenize();
 
     Highlighter highlighter;
     auto highlights = highlighter.highlight(tokens);
 
+    // 性能优化：预分配 buffer 大小
     rapidjson::StringBuffer sb;
+    sb.Reserve(INITIAL_BUFFER_SIZE);
     rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
 
     writer.StartArray();
@@ -70,22 +131,34 @@ std::string CommandHelperJni::getHighlights(const std::string& input) {
     }
     writer.EndArray();
 
-    return sb.GetString();
+    std::string result = sb.GetString();
+    g_result_cache.put(cache_key, result);
+    return result;
 }
 
 std::string CommandHelperJni::validateCommand(const std::string& input) {
+    // 性能优化：检查缓存
+    std::string cache_key = "val_" + input;
+    std::string cached = g_result_cache.get(cache_key);
+    if (!cached.empty()) {
+        return cached;
+    }
+
     Tokenizer tokenizer(input);
     auto tokens = tokenizer.tokenize();
 
     if (tokenizer.error()) {
         rapidjson::StringBuffer sb;
+        sb.Reserve(256);
         rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
         writer.StartObject();
         writer.Key("hasError"); writer.Bool(true);
         writer.Key("message"); writer.String(tokenizer.error()->message.c_str());
         writer.Key("position"); writer.Int(tokenizer.error()->position);
         writer.EndObject();
-        return sb.GetString();
+        std::string result = sb.GetString();
+        g_result_cache.put(cache_key, result);
+        return result;
     }
 
     Parser parser(tokens);
@@ -93,16 +166,21 @@ std::string CommandHelperJni::validateCommand(const std::string& input) {
 
     if (parser.error()) {
         rapidjson::StringBuffer sb;
+        sb.Reserve(256);
         rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
         writer.StartObject();
         writer.Key("hasError"); writer.Bool(true);
         writer.Key("message"); writer.String(parser.error()->message.c_str());
         writer.Key("position"); writer.Int(parser.error()->position);
         writer.EndObject();
-        return sb.GetString();
+        std::string result = sb.GetString();
+        g_result_cache.put(cache_key, result);
+        return result;
     }
 
-    return "{\"hasError\":false}";
+    std::string result = "{\"hasError\":false}";
+    g_result_cache.put(cache_key, result);
+    return result;
 }
 
 std::string CommandHelperJni::getCommandInfo(const std::string& command_name) {

@@ -3,6 +3,7 @@ package com.nexuscmd
 import android.app.Application
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.runtime.Stable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -24,11 +25,14 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.*
 
+// 使用 @Stable 注解标记稳定的数据类，减少不必要的重组
+@Stable
 data class MainUiState(
     val commandText: String = "",
     val cursorPosition: Int = 0,
@@ -104,89 +108,118 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     companion object {
         private const val COMPLETION_DEBOUNCE_MS = 150L
+        private const val MAX_CACHE_SIZE = 100
     }
 
     init {
-        loadInitialData()
+        // 性能优化：使用延迟加载策略，先加载必要数据
+        loadInitialDataAsync()
     }
 
-    private fun loadInitialData() {
+    // 性能优化：异步并行加载初始数据
+    private fun loadInitialDataAsync() {
         viewModelScope.launch {
-            val favorites = commandRepository.getFavoriteCommands()
-            val history = historyManager.getHistory()
-            val allCommands = getBuiltInCommands()
-            val theme = settingsManager.currentTheme
-            val isDark = settingsManager.isDarkTheme
+            // 性能优化：先加载 UI 设置（优先级最高，影响界面显示）
+            loadUiSettings()
+            
+            // 性能优化：并行加载其他数据
+            val favoritesDeferred = async { commandRepository.getFavoriteCommands() }
+            val historyDeferred = async { historyManager.getHistory() }
+            val addonsDeferred = async { addonManager.loadAddons() }
+            val chainsDeferred = async { commandChainRepository.getAllChains() }
+            
+            // 性能优化：延迟加载命令库（大数据集）
+            val allCommandsDeferred = async { getBuiltInCommands() }
 
-            // Load addon data
-            val addons = addonManager.loadAddons()
+            // 等待所有数据加载完成
+            val favorites = favoritesDeferred.await()
+            val history = historyDeferred.await()
+            val addons = addonsDeferred.await()
+            val chains = chainsDeferred.await()
+            
             val enabledAddons = addons.filter { it.enabled }
             val addonCommands = enabledAddons.flatMap { it.customCommands }
             val addonTemplates = enabledAddons.flatMap { it.customTemplates }
-            val addonFirst = settingsManager.addonCompletionsFirst
 
-            // Load command chains
-            val chains = commandChainRepository.getAllChains()
-
-            // Build quick commands from addons
+            // 性能优化：预构建快速命令列表
+            val defaultQuickCommands = listOf(
+                Triple("/give @p diamond 1", "给予钻石", Icons.Default.CardGiftcard),
+                Triple("/summon minecraft:zombie", "生成僵尸", Icons.Default.Widgets),
+                Triple("/tp @s ~ ~ ~", "传送原地", Icons.Default.SwapHoriz),
+                Triple("/setblock ~ ~ ~ stone", "放置石头", Icons.Default.Create),
+                Triple("/fill ~ ~ ~ ~10 ~10 stone", "填充石头", Icons.Default.Map),
+                Triple("/effect @s speed 30 1", "加速效果", Icons.Default.Speed),
+                Triple("/scoreboard objectives add", "记分板", Icons.Default.Leaderboard),
+                Triple("/give @p written_book", "给予书本", Icons.Default.MenuBook)
+            )
+            
             val addonQuickCommands = addonCommands.map { cmd ->
                 Triple(cmd.command, cmd.name, Icons.Default.Extension)
             }
 
             _uiState.value = _uiState.value.copy(
-                quickCommands = listOf(
-                    Triple("/give @p diamond 1", "给予钻石", Icons.Default.CardGiftcard),
-                    Triple("/summon minecraft:zombie", "生成僵尸", Icons.Default.Widgets),
-                    Triple("/tp @s ~ ~ ~", "传送原地", Icons.Default.SwapHoriz),
-                    Triple("/setblock ~ ~ ~ stone", "放置石头", Icons.Default.Create),
-                    Triple("/fill ~ ~ ~ ~10 ~10 stone", "填充石头", Icons.Default.Map),
-                    Triple("/effect @s speed 30 1", "加速效果", Icons.Default.Speed),
-                    Triple("/scoreboard objectives add", "记分板", Icons.Default.Leaderboard),
-                    Triple("/give @p written_book", "给予书本", Icons.Default.MenuBook)
-                ) + addonQuickCommands.take(4),  // Add up to 4 addon commands
+                quickCommands = defaultQuickCommands + addonQuickCommands.take(4),
                 favoriteCommands = favorites,
                 historyItems = history,
-                allCommands = allCommands,
-                currentTheme = theme,
-                isDarkTheme = isDark,
+                allCommands = allCommandsDeferred.await(),
                 installedAddons = addons,
                 addonCommands = addonCommands,
                 addonTemplates = addonTemplates,
-                addonCompletionsFirst = addonFirst,
-                commandChains = chains,
-                customBackgroundUri = settingsManager.customBackgroundUri,
-                useCustomBackground = settingsManager.useCustomBackground,
-                backgroundOpacity = settingsManager.backgroundOpacity,
-                cardOpacity = settingsManager.cardOpacity,
-                useGlassmorphism = settingsManager.useGlassmorphism,
-                glassmorphismIntensity = settingsManager.glassmorphismIntensity,
-                cardCornerRadius = settingsManager.cardCornerRadius,
-                useDynamicColor = settingsManager.useDynamicColor,
-                useGradientAccents = settingsManager.useGradientAccents
+                addonCompletionsFirst = settingsManager.addonCompletionsFirst,
+                commandChains = chains
             )
         }
     }
 
+    // 性能优化：优先加载 UI 设置
+    private fun loadUiSettings() {
+        _uiState.value = _uiState.value.copy(
+            currentTheme = settingsManager.currentTheme,
+            isDarkTheme = settingsManager.isDarkTheme,
+            customBackgroundUri = settingsManager.customBackgroundUri,
+            useCustomBackground = settingsManager.useCustomBackground,
+            backgroundOpacity = settingsManager.backgroundOpacity,
+            cardOpacity = settingsManager.cardOpacity,
+            useGlassmorphism = settingsManager.useGlassmorphism,
+            glassmorphismIntensity = settingsManager.glassmorphismIntensity,
+            cardCornerRadius = settingsManager.cardCornerRadius,
+            useDynamicColor = settingsManager.useDynamicColor,
+            useGradientAccents = settingsManager.useGradientAccents
+        )
+    }
+
+    // 缓存上次处理的结果，避免重复计算
+    // 性能优化：限制缓存大小，防止内存泄漏
+    private var lastProcessedText: String = ""
+    private val completionCache = mutableMapOf<String, List<CompletionItem>>()
+
     fun onCommandTextChanged(newText: String) {
+        // 快速更新UI状态（文本和光标位置）
         _uiState.value = _uiState.value.copy(
             commandText = newText,
             cursorPosition = newText.length
         )
 
+        // 如果文本未变化，跳过处理
+        if (newText == lastProcessedText) return
+
+        // 取消之前的补全任务
         completionJob?.cancel()
         completionJob = viewModelScope.launch {
+            // Debounce: 延迟处理
             kotlinx.coroutines.delay(COMPLETION_DEBOUNCE_MS)
 
-            val isFavorite = if (newText.isNotBlank()) {
-                commandRepository.isFavorite(newText)
-            } else false
+            lastProcessedText = newText
 
-            _uiState.value = _uiState.value.copy(
-                isCurrentCommandFavorite = isFavorite
-            )
+            // 检查是否为收藏（并行执行）
+            val isFavoriteDeferred = viewModelScope.async {
+                if (newText.isNotBlank()) commandRepository.isFavorite(newText) else false
+            }
 
+            // 如果输入为空或不是命令，清空补全结果
             if (newText.isBlank() || !newText.startsWith("/")) {
                 _uiState.value = _uiState.value.copy(
+                    isCurrentCommandFavorite = isFavoriteDeferred.await(),
                     completions = emptyList(),
                     validation = null,
                     currentCommandInfo = null,
@@ -195,24 +228,66 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 return@launch
             }
 
+            // 检查缓存
+            val cachedCompletions = completionCache[newText]
+            if (cachedCompletions != null) {
+                _uiState.value = _uiState.value.copy(
+                    isCurrentCommandFavorite = isFavoriteDeferred.await(),
+                    completions = cachedCompletions,
+                    validation = parseValidation(helper.validateCommand(newText)),
+                    currentCommandInfo = extractCommandInfo(newText),
+                    syntaxHint = parseSyntaxHint(helper.getSyntaxHint(newText, newText.length))
+                )
+                return@launch
+            }
+
+            // 并行执行多个 Native 调用
             val cursorPos = newText.length
-            val completionsJson = helper.getCompletions(newText, cursorPos)
+            val completionsDeferred = viewModelScope.async { helper.getCompletions(newText, cursorPos) }
+            val validationDeferred = viewModelScope.async { helper.validateCommand(newText) }
+            val syntaxHintDeferred = viewModelScope.async { helper.getSyntaxHint(newText, cursorPos) }
+
+            // 等待所有结果
+            val completionsJson = completionsDeferred.await()
+            val validationJson = validationDeferred.await()
+            val syntaxHintJson = syntaxHintDeferred.await()
+
+            // 解析结果
             val completions = parseCompletions(completionsJson)
-
-            val validationJson = helper.validateCommand(newText)
             val validation = parseValidation(validationJson)
-
             val commandInfo = extractCommandInfo(newText)
-            val syntaxHintJson = helper.getSyntaxHint(newText, cursorPos)
             val syntaxHint = parseSyntaxHint(syntaxHintJson)
 
+            // 性能优化：限制缓存大小，防止内存无限增长
+            if (completionCache.size >= MAX_CACHE_SIZE) {
+                // 清空一半缓存，保留最近使用的
+                val keysToRemove = completionCache.keys.take(MAX_CACHE_SIZE / 2)
+                keysToRemove.forEach { completionCache.remove(it) }
+            }
+            completionCache[newText] = completions
+
+            // 更新状态
             _uiState.value = _uiState.value.copy(
+                isCurrentCommandFavorite = isFavoriteDeferred.await(),
                 completions = completions,
                 validation = validation,
                 currentCommandInfo = commandInfo,
                 syntaxHint = syntaxHint
             )
         }
+    }
+
+    // 性能优化：清空缓存方法，防止内存泄漏
+    fun clearCompletionCache() {
+        completionCache.clear()
+        lastProcessedText = ""
+    }
+
+    // 性能优化：在 ViewModel 销毁时清理资源
+    override fun onCleared() {
+        super.onCleared()
+        completionJob?.cancel()
+        completionCache.clear()
     }
 
     fun applyCompletion(item: CompletionItem) {

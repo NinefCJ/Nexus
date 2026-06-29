@@ -212,13 +212,17 @@ fun MainScreen(
 fun EditorTab(viewModel: MainViewModel, uiState: MainUiState) {
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
+    // 性能优化：使用 remember 缓存状态
     var expandedSections by remember { mutableStateOf(setOf("quickInsert", "quickCommands", "favorites")) }
 
-    fun toggleSection(section: String) {
-        expandedSections = if (expandedSections.contains(section)) {
-            expandedSections - section
-        } else {
-            expandedSections + section
+    // 性能优化：提取 toggleSection 为 remember 函数避免每次重组创建新函数
+    val toggleSection = remember {
+        { section: String ->
+            expandedSections = if (expandedSections.contains(section)) {
+                expandedSections - section
+            } else {
+                expandedSections + section
+            }
         }
     }
 
@@ -279,8 +283,9 @@ fun EditorTab(viewModel: MainViewModel, uiState: MainUiState) {
             isExpanded = expandedSections.contains("quickCommands"),
             onToggle = { toggleSection("quickCommands") }
         ) {
+            // 性能优化：使用带 key 的 LazyColumn items
             LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                items(uiState.quickCommands) { (cmd, desc, icon) ->
+                items(uiState.quickCommands, key = { it.first }) { (cmd, desc, icon) ->
                     QuickCommandItem(
                         command = cmd,
                         description = desc,
@@ -301,8 +306,12 @@ fun EditorTab(viewModel: MainViewModel, uiState: MainUiState) {
                 isExpanded = expandedSections.contains("favorites"),
                 onToggle = { toggleSection("favorites") }
             ) {
+                // 性能优化：使用带 key 的 LazyColumn items，限制显示数量
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    items(uiState.favoriteCommands.take(5)) { fav ->
+                    items(
+                        items = uiState.favoriteCommands.take(5),
+                        key = { it.id }
+                    ) { fav ->
                         FavoriteCommandItem(
                             command = fav,
                             onClick = { viewModel.onCommandTextChanged(fav.command) },
@@ -373,8 +382,9 @@ fun QuickCommandsTab(viewModel: MainViewModel) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf<String?>(null) }
     
-    val categories = listOf("全部", "游戏规则", "效果", "传送", "模式", "物品", "其他")
+    val categories = remember { listOf("全部", "游戏规则", "效果", "传送", "模式", "物品", "其他") }
     
+    // 性能优化：使用 remember 缓存过滤结果，避免每次重组都重新计算
     val filteredCommands = remember(quickCommands, searchQuery, selectedCategory) {
         val filtered = if (searchQuery.isEmpty()) {
             quickCommands
@@ -404,67 +414,77 @@ fun QuickCommandsTab(viewModel: MainViewModel) {
             singleLine = true
         )
         
-        // Category chips
+        // 性能优化：LazyRow 使用带 key 的 items
         LazyRow(
             modifier = Modifier.padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(categories.size) { index ->
+            items(categories, key = { it }) { category ->
                 FilterChip(
-                    selected = selectedCategory == categories[index] || (index == 0 && selectedCategory == null),
+                    selected = selectedCategory == category || (category == "全部" && selectedCategory == null),
                     onClick = { 
-                        selectedCategory = if (index == 0) null else categories[index]
+                        selectedCategory = if (category == "全部") null else category
                     },
-                    label = { Text(categories[index]) }
+                    label = { Text(category) }
                 )
             }
         }
         
         Spacer(modifier = Modifier.height(8.dp))
         
-        // Commands list
+        // 性能优化：LazyColumn 使用带 key 的 items
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(filteredCommands.size) { index ->
-                val cmd = filteredCommands[index]
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-                        viewModel.onCommandTextChanged(cmd.syntax)
-                    }
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = cmd.icon,
-                                contentDescription = cmd.name,
-                                modifier = Modifier.size(24.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = cmd.name.removePrefix("速查-"),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        Text(
-                            text = cmd.description,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = cmd.syntax,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
+            items(filteredCommands, key = { it.syntax }) { cmd ->
+                // 性能优化：使用 remember 缓存 Card 内容
+                QuickCommandCard(
+                    cmd = cmd,
+                    onClick = { viewModel.onCommandTextChanged(cmd.syntax) }
+                )
             }
+        }
+    }
+}
+
+// 性能优化：提取为独立的 Composable 函数，减少重组范围
+@Composable
+private fun QuickCommandCard(
+    cmd: CommandLibraryItem,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = cmd.icon,
+                    contentDescription = cmd.name,
+                    modifier = Modifier.size(24.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = cmd.name.removePrefix("速查-"),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Text(
+                text = cmd.description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = cmd.syntax,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }
@@ -497,29 +517,35 @@ fun ResourceLibraryTab(viewModel: MainViewModel) {
 
 @Composable
 fun QuickInsertToolbar(onInsert: (String) -> Unit) {
-    val items = listOf(
-        "@s" to "自己",
-        "@p" to "最近",
-        "@a" to "全部",
-        "@e" to "实体",
-        "@r" to "随机",
-        "~ ~ ~" to "位置",
-        " " to "空格"
-    )
+    // 性能优化：使用 remember 缓存静态列表
+    val items = remember {
+        listOf(
+            "@s" to "自己",
+            "@p" to "最近",
+            "@a" to "全部",
+            "@e" to "实体",
+            "@r" to "随机",
+            "~ ~ ~" to "位置",
+            " " to "空格"
+        )
+    }
     
-    val secondaryItems = listOf(
-        "[" to "[",
-        "]" to "]",
-        "{" to "{",
-        "}" to "}",
-        "=" to "=",
-        "," to ",",
-        "\"" to "\""
-    )
+    val secondaryItems = remember {
+        listOf(
+            "[" to "[",
+            "]" to "]",
+            "{" to "{",
+            "}" to "}",
+            "=" to "=",
+            "," to ",",
+            "\"" to "\""
+        )
+    }
 
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        // 性能优化：使用带 key 的 items
         LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            items(items) { (text, label) ->
+            items(items, key = { it.first }) { (text, label) ->
                 AssistChip(
                     onClick = { onInsert(text) },
                     label = { Text(label, style = MaterialTheme.typography.bodySmall) },
@@ -535,7 +561,7 @@ fun QuickInsertToolbar(onInsert: (String) -> Unit) {
             }
         }
         LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            items(secondaryItems) { (text, label) ->
+            items(secondaryItems, key = { it.first }) { (text, label) ->
                 AssistChip(
                     onClick = { onInsert(text) },
                     label = { Text(label, style = MaterialTheme.typography.bodySmall) },
@@ -897,8 +923,12 @@ fun CommandLibraryTab(viewModel: MainViewModel, uiState: MainUiState) {
     val filteredCommands = viewModel.getFilteredCommands()
     var selectedCategory by remember { mutableStateOf<String?>(null) }
     var displayCount by remember { mutableStateOf(30) }
-    val categories = listOf("全部", "物品", "实体", "传送", "方块", "世界", "游戏模式", "记分板", "执行", "玩家互动", "声音粒子", "管理员", "服务器", "基岩版独有", "帮助")
+    // 性能优化：使用 remember 缓存 categories 列表
+    val categories = remember {
+        listOf("全部", "物品", "实体", "传送", "方块", "世界", "游戏模式", "记分板", "执行", "玩家互动", "声音粒子", "管理员", "服务器", "基岩版独有", "帮助")
+    }
 
+    // 性能优化：使用 remember 缓存过滤结果
     val displayedCommands = remember(filteredCommands, selectedCategory) {
         val all = if (selectedCategory == null || selectedCategory == "全部") {
             filteredCommands
@@ -946,8 +976,9 @@ fun CommandLibraryTab(viewModel: MainViewModel, uiState: MainUiState) {
         }
 
         item {
+            // 性能优化：LazyRow 使用带 key 的 items
             LazyRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                items(categories) { category ->
+                items(categories, key = { it }) { category ->
                     FilterChip(
                         selected = selectedCategory == category || (category == "全部" && selectedCategory == null),
                         onClick = {
@@ -969,6 +1000,7 @@ fun CommandLibraryTab(viewModel: MainViewModel, uiState: MainUiState) {
             Spacer(modifier = Modifier.height(4.dp))
         }
 
+        // 性能优化：使用带 key 的 items
         items(showCommands, key = { it.name }) { cmd ->
             SimpleCommandItem(
                 command = cmd,

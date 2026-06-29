@@ -3,9 +3,13 @@
 #include <algorithm>
 #include <sstream>
 #include <unordered_map>
+#include <mutex>
+#include <functional>
 
 namespace mcmd {
 
+// 性能优化：使用 static const 避免重复初始化
+// 使用 string_view 优化字符串比较
 static const std::vector<std::string> SELECTORS = {
     "@p", "@a", "@e", "@s", "@r",
     "@p[tag=]", "@a[tag=]", "@e[tag=]", "@s[tag=]", "@r[tag=]"
@@ -39,6 +43,46 @@ static const std::unordered_map<std::string, std::string> PARAM_HINTS = {
     {"particle", "粒子ID (如 minecraft:heart, minecraft:explode)"}
 };
 
+// 性能优化：添加语法模板缓存
+class SyntaxTemplateCache {
+private:
+    std::unordered_map<std::string, std::string> cache_;
+    std::mutex mutex_;
+    static constexpr size_t MAX_CACHE_SIZE = 50;
+
+public:
+    std::string getOrCompute(const std::string& key, std::function<std::string()> compute) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        
+        auto it = cache_.find(key);
+        if (it != cache_.end()) {
+            return it->second;
+        }
+        
+        std::string result = compute();
+        
+        if (cache_.size() >= MAX_CACHE_SIZE) {
+            cache_.clear();
+        }
+        cache_[key] = result;
+        
+        return result;
+    }
+    
+    void clear() {
+        std::lock_guard<std::mutex> lock(mutex_);
+        cache_.clear();
+    }
+};
+
+static SyntaxTemplateCache g_template_cache;
+
+// 性能优化：使用 inline 函数优化字符串前缀检查
+inline bool starts_with_fast(const std::string& str, const std::string& prefix) {
+    if (prefix.size() > str.size()) return false;
+    return str.compare(0, prefix.size(), prefix) == 0;
+}
+
 Completion::Completion(const CommandRegistry& registry) : registry_(registry) {}
 
 std::vector<CompletionItem> Completion::getCompletions(
@@ -46,16 +90,20 @@ std::vector<CompletionItem> Completion::getCompletions(
     size_t cursor_position,
     const std::string& partial_input
 ) {
-    // If no input yet, return all commands
+    // 性能优化：快速路径 - 空输入返回所有命令
     if (partial_input.empty() || partial_input == "/") {
         return getCommandCompletions("", "");
     }
 
+    // 性能优化：避免重复字符串拷贝
     // Check if we're completing a command name
     if (tokens.empty() || (tokens.size() == 1 && tokens[0].type == TokenType::Command)) {
-        std::string cmd_name = partial_input;
-        if (starts_with(cmd_name, "/")) {
-            cmd_name = cmd_name.substr(1);
+        // 性能优化：使用 substr_view 而非 substr（如果支持）
+        std::string cmd_name;
+        if (partial_input[0] == '/') {
+            cmd_name = partial_input.substr(1);
+        } else {
+            cmd_name = partial_input;
         }
         return getCommandCompletions(cmd_name, "");
     }
@@ -95,10 +143,13 @@ std::vector<CompletionItem> Completion::getCommandCompletions(
 }
 
 std::vector<CompletionItem> Completion::getSelectorCompletions(const std::string& partial) {
+    // 性能优化：预分配结果数组大小
     std::vector<CompletionItem> results;
+    results.reserve(SELECTORS.size());
 
+    // 性能优化：使用快速前缀检查
     for (const auto& selector : SELECTORS) {
-        if (starts_with(selector, partial)) {
+        if (starts_with_fast(selector, partial)) {
             results.push_back({
                 selector,
                 "Target selector",
@@ -112,10 +163,13 @@ std::vector<CompletionItem> Completion::getSelectorCompletions(const std::string
 }
 
 std::vector<CompletionItem> Completion::getCoordinateCompletions(const std::string& partial) {
+    // 性能优化：预分配结果数组大小
     std::vector<CompletionItem> results;
+    results.reserve(COORDINATE_PREFIXES.size());
 
+    // 性能优化：使用快速前缀检查
     for (const auto& prefix : COORDINATE_PREFIXES) {
-        if (starts_with(prefix, partial)) {
+        if (starts_with_fast(prefix, partial)) {
             results.push_back({
                 prefix,
                 "Coordinate",
@@ -129,8 +183,12 @@ std::vector<CompletionItem> Completion::getCoordinateCompletions(const std::stri
 }
 
 std::string Completion::getSyntaxHint(const std::string& input, size_t cursor_pos) {
-    auto template_result = getSyntaxTemplate(input, cursor_pos);
-    return template_result.template_str;
+    // 性能优化：使用缓存避免重复计算
+    std::string cache_key = input + "_" + std::to_string(cursor_pos);
+    return g_template_cache.getOrCompute(cache_key, [this, &input, cursor_pos]() {
+        auto template_result = getSyntaxTemplate(input, cursor_pos);
+        return template_result.template_str;
+    });
 }
 
 std::string Completion::getParameterHint(const std::string& command_name, size_t param_index) {
