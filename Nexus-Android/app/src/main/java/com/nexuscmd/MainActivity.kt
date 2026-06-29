@@ -274,7 +274,8 @@ fun EditorTab(viewModel: MainViewModel, uiState: MainUiState) {
                     }
                     context.startActivity(Intent.createChooser(sendIntent, "分享命令"))
                 }
-            }
+            },
+            syntaxHint = uiState.syntaxHint
         )
 
         if (uiState.currentCommandInfo != null) {
@@ -579,7 +580,8 @@ fun CommandInputCard(
     isFavorite: Boolean,
     onFavoriteClick: () -> Unit,
     onCopyClick: () -> Unit,
-    onShareClick: () -> Unit
+    onShareClick: () -> Unit,
+    syntaxHint: SyntaxHint? = null
 ) {
     Card(
         modifier = Modifier
@@ -658,6 +660,17 @@ fun CommandInputCard(
                 singleLine = false,
                 maxLines = 4
             )
+
+            // Syntax hint overlay
+            syntaxHint?.let { hint ->
+                if (hint.template.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    com.nexuscmd.ui.components.SyntaxHintOverlay(
+                        syntaxHint = hint,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
 
             // Validation status
             validation?.let { result ->

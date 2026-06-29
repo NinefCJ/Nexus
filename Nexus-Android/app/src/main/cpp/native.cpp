@@ -46,4 +46,20 @@ Java_com_nexuscmd_CommandHelper_getCommandInfo(JNIEnv *env, jobject, jstring com
     return env->NewStringUTF(result.c_str());
 }
 
+JNIEXPORT jstring JNICALL
+Java_com_nexuscmd_CommandHelper_getSyntaxHint(JNIEnv *env, jobject, jstring input, jint cursor) {
+    const char *input_str = env->GetStringUTFChars(input, nullptr);
+    auto result = CommandHelperJni::getSyntaxHint(std::string(input_str), cursor);
+    env->ReleaseStringUTFChars(input, input_str);
+    return env->NewStringUTF(result.c_str());
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_nexuscmd_CommandHelper_getParameterHint(JNIEnv *env, jobject, jstring command_name, jint param_index) {
+    const char *name = env->GetStringUTFChars(command_name, nullptr);
+    auto result = CommandHelperJni::getParameterHint(std::string(name), param_index);
+    env->ReleaseStringUTFChars(command_name, name);
+    return env->NewStringUTF(result.c_str());
+}
+
 }

@@ -123,4 +123,40 @@ std::string CommandHelperJni::getCommandInfo(const std::string& command_name) {
     return sb.GetString();
 }
 
+std::string CommandHelperJni::getSyntaxHint(const std::string& input, int cursor_position) {
+    if (!g_completion) return "{}";
+
+    auto template_result = g_completion->getSyntaxTemplate(input, static_cast<size_t>(cursor_position));
+
+    rapidjson::StringBuffer sb;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
+
+    writer.StartObject();
+    writer.Key("template"); writer.String(template_result.template_str.c_str());
+    writer.Key("activeParamStart"); writer.Int(template_result.active_param_start);
+    writer.Key("activeParamEnd"); writer.Int(template_result.active_param_end);
+    writer.Key("activeParamIndex"); writer.Int(template_result.active_param_index);
+    writer.Key("activeParamName"); writer.String(template_result.active_param_name.c_str());
+    writer.Key("activeParamHint"); writer.String(template_result.active_param_hint.c_str());
+    writer.Key("isOptional"); writer.Bool(template_result.is_optional);
+    writer.EndObject();
+
+    return sb.GetString();
+}
+
+std::string CommandHelperJni::getParameterHint(const std::string& command_name, int param_index) {
+    if (!g_completion) return "{}";
+
+    auto hint = g_completion->getParameterHint(command_name, static_cast<size_t>(param_index));
+
+    rapidjson::StringBuffer sb;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
+
+    writer.StartObject();
+    writer.Key("hint"); writer.String(hint.c_str());
+    writer.EndObject();
+
+    return sb.GetString();
+}
+
 } // namespace mcmd

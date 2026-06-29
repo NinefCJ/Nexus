@@ -14,6 +14,8 @@ class CommandHelper private constructor() {
     external fun getHighlights(input: String): String
     external fun validateCommand(input: String): String
     external fun getCommandInfo(commandName: String): String
+    external fun getSyntaxHint(input: String, cursor: Int): String
+    external fun getParameterHint(commandName: String, paramIndex: Int): String
 
     object Registry {
         private var instance: CommandHelper? = null
@@ -49,4 +51,18 @@ data class CommandInfo(
     val name: String,
     val syntax: String = "",
     val description: String = ""
+)
+
+data class SyntaxHint(
+    val template: String = "",
+    val activeParamStart: Int = 0,
+    val activeParamEnd: Int = 0,
+    val activeParamIndex: Int = 0,
+    val activeParamName: String = "",
+    val activeParamHint: String = "",
+    val isOptional: Boolean = false
+)
+
+data class ParameterHint(
+    val hint: String = ""
 )

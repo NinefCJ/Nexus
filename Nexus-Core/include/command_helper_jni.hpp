@@ -29,6 +29,12 @@ public:
 
     // Get command info
     static std::string getCommandInfo(const std::string& command_name);
+
+    // Get syntax hint (template with markers for current input position)
+    static std::string getSyntaxHint(const std::string& input, int cursor_position);
+
+    // Get parameter hint for specific command and parameter index
+    static std::string getParameterHint(const std::string& command_name, int param_index);
 };
 
 } // namespace mcmd

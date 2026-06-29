@@ -37,6 +37,9 @@ data class MainUiState(
     val currentCommandInfo: CommandInfo? = null,
     val quickCommands: List<Triple<String, String, ImageVector>> = emptyList(),
 
+    // Syntax hint for inline display
+    val syntaxHint: SyntaxHint? = null,
+
     // Favorites
     val favoriteCommands: List<SavedCommand> = emptyList(),
     val isCurrentCommandFavorite: Boolean = false,
@@ -164,7 +167,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 _uiState.value = _uiState.value.copy(
                     completions = emptyList(),
                     validation = null,
-                    currentCommandInfo = null
+                    currentCommandInfo = null,
+                    syntaxHint = null
                 )
                 return@launch
             }
@@ -177,11 +181,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val validation = parseValidation(validationJson)
 
             val commandInfo = extractCommandInfo(newText)
+            val syntaxHintJson = helper.getSyntaxHint(newText, cursorPos)
+            val syntaxHint = parseSyntaxHint(syntaxHintJson)
 
             _uiState.value = _uiState.value.copy(
                 completions = completions,
                 validation = validation,
-                currentCommandInfo = commandInfo
+                currentCommandInfo = commandInfo,
+                syntaxHint = syntaxHint
             )
         }
     }
@@ -493,6 +500,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             )
         } catch (e: Exception) {
             ValidationResult(hasError = true, message = e.message)
+        }
+    }
+
+    private fun parseSyntaxHint(json: String): SyntaxHint? {
+        return try {
+            val obj = JSONObject(json)
+            if (obj.has("template") && obj.getString("template").isNotEmpty()) {
+                SyntaxHint(
+                    template = obj.getString("template"),
+                    activeParamStart = obj.optInt("activeParamStart", 0),
+                    activeParamEnd = obj.optInt("activeParamEnd", 0),
+                    activeParamIndex = obj.optInt("activeParamIndex", 0),
+                    activeParamName = obj.optString("activeParamName", ""),
+                    activeParamHint = obj.optString("activeParamHint", ""),
+                    isOptional = obj.optBoolean("isOptional", false)
+                )
+            } else null
+        } catch (e: Exception) {
+            null
         }
     }
 
