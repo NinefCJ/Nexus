@@ -5954,28 +5954,6 @@ fun NexusSplashScreen(
         label = "text_alpha"
     )
 
-    // 副标题透明度
-    val subtitleAlpha = animateFloatAsState(
-        targetValue = 1f,
-        animationSpec = tween(
-            durationMillis = 800,
-            delayMillis = 900,
-            easing = LinearOutSlowInEasing
-        ),
-        label = "subtitle_alpha"
-    )
-
-    // 副标题偏移
-    val subtitleY = animateFloatAsState(
-        targetValue = 0f,
-        animationSpec = tween(
-            durationMillis = 800,
-            delayMillis = 900,
-            easing = FastOutSlowInEasing
-        ),
-        label = "subtitle_y"
-    )
-
     // 光晕脉冲
     val glowPulse = infiniteTransition.animateFloat(
         initialValue = 0.7f,
@@ -6126,21 +6104,6 @@ fun NexusSplashScreen(
                     }
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // 副标题
-            Text(
-                text = "MC 命令助手",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium,
-                color = Color.White.copy(alpha = 0.85f),
-                modifier = Modifier
-                    .graphicsLayer {
-                        alpha = subtitleAlpha.value
-                        translationY = subtitleY.value * 20.dp.toPx()
-                    }
-            )
-
             Spacer(modifier = Modifier.height(60.dp))
 
             // 底部加载指示器
@@ -6150,22 +6113,6 @@ fun NexusSplashScreen(
                 strokeWidth = 2.5.dp
             )
         }
-
-        // 底部装饰线
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 48.dp)
-                .width(80.dp)
-                .height(3.dp)
-                .graphicsLayer {
-                    alpha = subtitleAlpha.value * 0.6f
-                }
-                .background(
-                    color = Color.White.copy(alpha = 0.5f),
-                    shape = RoundedCornerShape(2.dp)
-                )
-        )
     }
 }
 
