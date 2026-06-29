@@ -70,7 +70,8 @@ class MainActivity : ComponentActivity() {
         CommandHelper.Registry.getInstance().initialize("")
 
         setContent {
-            MCCommandHelperTheme(theme = viewModel.uiState.value.currentTheme) {
+            val currentTheme by viewModel.uiState.collectAsState()
+            MCCommandHelperTheme(theme = currentTheme.currentTheme) {
                 MainScreen(
                     viewModel = viewModel,
                     onRequestFloatingPermission = { requestFloatingWindowPermission() },
