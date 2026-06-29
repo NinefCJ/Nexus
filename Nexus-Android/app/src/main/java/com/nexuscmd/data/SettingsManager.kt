@@ -61,6 +61,27 @@ class SettingsManager(context: Context) {
         get() = prefs.getBoolean(KEY_USE_CUSTOM_BG, false)
         set(value) = prefs.edit().putBoolean(KEY_USE_CUSTOM_BG, value).apply()
 
+    // UI Customization
+    var useGlassmorphism: Boolean
+        get() = prefs.getBoolean(KEY_USE_GLASS, true)
+        set(value) = prefs.edit().putBoolean(KEY_USE_GLASS, value).apply()
+
+    var glassmorphismIntensity: Float
+        get() = prefs.getFloat(KEY_GLASS_INTENSITY, 0.7f)
+        set(value) = prefs.edit().putFloat(KEY_GLASS_INTENSITY, value).apply()
+
+    var cardCornerRadius: Float
+        get() = prefs.getFloat(KEY_CARD_CORNER_RADIUS, 16f)
+        set(value) = prefs.edit().putFloat(KEY_CARD_CORNER_RADIUS, value).apply()
+
+    var useDynamicColor: Boolean
+        get() = prefs.getBoolean(KEY_DYNAMIC_COLOR, false)
+        set(value) = prefs.edit().putBoolean(KEY_DYNAMIC_COLOR, value).apply()
+
+    var useGradientAccents: Boolean
+        get() = prefs.getBoolean(KEY_USE_GRADIENT, false)
+        set(value) = prefs.edit().putBoolean(KEY_USE_GRADIENT, value).apply()
+
     fun clearAllData() {
         prefs.edit().clear().apply()
     }
@@ -76,5 +97,10 @@ class SettingsManager(context: Context) {
         private const val KEY_BG_OPACITY = "background_opacity"
         private const val KEY_CARD_OPACITY = "card_opacity"
         private const val KEY_USE_CUSTOM_BG = "use_custom_background"
+        private const val KEY_USE_GLASS = "use_glassmorphism"
+        private const val KEY_GLASS_INTENSITY = "glassmorphism_intensity"
+        private const val KEY_CARD_CORNER_RADIUS = "card_corner_radius"
+        private const val KEY_DYNAMIC_COLOR = "dynamic_color"
+        private const val KEY_USE_GRADIENT = "use_gradient_accents"
     }
 }

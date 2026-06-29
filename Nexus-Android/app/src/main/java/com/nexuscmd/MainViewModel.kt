@@ -61,6 +61,13 @@ data class MainUiState(
     val backgroundOpacity: Float = 0.85f,
     val cardOpacity: Float = 0.9f,
 
+    // UI Customization
+    val useGlassmorphism: Boolean = true,
+    val glassmorphismIntensity: Float = 0.7f,
+    val cardCornerRadius: Float = 16f,
+    val useDynamicColor: Boolean = false,
+    val useGradientAccents: Boolean = false,
+
     // Snackbar
     val snackbarMessage: String? = null,
 
@@ -150,7 +157,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 customBackgroundUri = settingsManager.customBackgroundUri,
                 useCustomBackground = settingsManager.useCustomBackground,
                 backgroundOpacity = settingsManager.backgroundOpacity,
-                cardOpacity = settingsManager.cardOpacity
+                cardOpacity = settingsManager.cardOpacity,
+                useGlassmorphism = settingsManager.useGlassmorphism,
+                glassmorphismIntensity = settingsManager.glassmorphismIntensity,
+                cardCornerRadius = settingsManager.cardCornerRadius,
+                useDynamicColor = settingsManager.useDynamicColor,
+                useGradientAccents = settingsManager.useGradientAccents
             )
         }
     }
@@ -329,6 +341,31 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun setCardOpacity(opacity: Float) {
         settingsManager.cardOpacity = opacity
         _uiState.value = _uiState.value.copy(cardOpacity = opacity)
+    }
+
+    fun setUseGlassmorphism(enabled: Boolean) {
+        settingsManager.useGlassmorphism = enabled
+        _uiState.value = _uiState.value.copy(useGlassmorphism = enabled)
+    }
+
+    fun setGlassmorphismIntensity(intensity: Float) {
+        settingsManager.glassmorphismIntensity = intensity
+        _uiState.value = _uiState.value.copy(glassmorphismIntensity = intensity)
+    }
+
+    fun setCardCornerRadius(radius: Float) {
+        settingsManager.cardCornerRadius = radius
+        _uiState.value = _uiState.value.copy(cardCornerRadius = radius)
+    }
+
+    fun setUseDynamicColor(enabled: Boolean) {
+        settingsManager.useDynamicColor = enabled
+        _uiState.value = _uiState.value.copy(useDynamicColor = enabled)
+    }
+
+    fun setUseGradientAccents(enabled: Boolean) {
+        settingsManager.useGradientAccents = enabled
+        _uiState.value = _uiState.value.copy(useGradientAccents = enabled)
     }
 
     fun setDarkTheme(isDark: Boolean) {

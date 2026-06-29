@@ -145,14 +145,20 @@ fun MainScreen(
                     isDark = uiState.isDarkTheme,
                     onRequestFloatingPermission = onRequestFloatingPermission,
                     onStartFloating = onStartFloating,
-                    cardOpacity = uiState.cardOpacity
+                    cardOpacity = uiState.cardOpacity,
+                    useGlassmorphism = uiState.useGlassmorphism,
+                    glassIntensity = uiState.glassmorphismIntensity,
+                    cardCornerRadius = uiState.cardCornerRadius
                 )
             },
             bottomBar = {
                 ModernBottomNavigation(
                     selectedTab = selectedTab,
                     onTabSelected = { selectedTab = it },
-                    cardOpacity = uiState.cardOpacity
+                    cardOpacity = uiState.cardOpacity,
+                    useGlassmorphism = uiState.useGlassmorphism,
+                    glassIntensity = uiState.glassmorphismIntensity,
+                    cardCornerRadius = uiState.cardCornerRadius
                 )
             }
         ) { padding ->
@@ -2102,7 +2108,9 @@ fun SettingsTab(
     var selectedSection by remember { mutableIntStateOf(0) }
 
     val sections = listOf(
-        Pair("外观", Icons.Default.Palette),
+        Pair("主题", Icons.Default.Palette),
+        Pair("背景", Icons.Default.Image),
+        Pair("效果", Icons.Default.AutoAwesome),
         Pair("悬浮窗", Icons.Default.PictureInPicture),
         Pair("拓展", Icons.Default.Extension),
         Pair("数据", Icons.Default.Storage),
@@ -2177,17 +2185,120 @@ fun SettingsTab(
 
         // Section content
         when (selectedSection) {
-            0 -> AppearanceSection(viewModel)
-            1 -> FloatingWindowSection(onRequestPermission, onStartFloating)
-            2 -> ExtensionSection(viewModel, onOpenAddons, onOpenCommandChains)
-            3 -> DataSection(viewModel) { showClearDataDialog = true }
-            4 -> AboutSection()
+            0 -> ThemeSection(viewModel)  // 主题选择
+            1 -> BackgroundSection(viewModel)  // 背景图片
+            2 -> EffectSection(viewModel)  // 毛玻璃等效果
+            3 -> FloatingWindowSection(onRequestPermission, onStartFloating)
+            4 -> ExtensionSection(viewModel, onOpenAddons, onOpenCommandChains)
+            5 -> DataSection(viewModel) { showClearDataDialog = true }
+            6 -> AboutSection()
         }
     }
 }
 
+/**
+ * 主题选择页面
+ */
 @Composable
-fun AppearanceSection(viewModel: MainViewModel) {
+fun ThemeSection(viewModel: MainViewModel) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    LazyColumn(
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Theme selection
+        item {
+            SectionTitle(title = "选择主题", icon = Icons.Default.Palette)
+        }
+
+        item {
+            GlassmorphicCard(
+                modifier = Modifier.fillMaxWidth(),
+                cornerRadius = uiState.cardCornerRadius,
+                glassIntensity = if (uiState.useGlassmorphism) uiState.glassmorphismIntensity else 0f
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "当前主题：${uiState.currentTheme.displayName}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "选择你喜欢的主题风格",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // 暗色/浅色主题分类
+                    Text(
+                        text = "🎨 浅色主题",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        items(com.nexuscmd.data.AppTheme.values().filter { !it.isDark && it != com.nexuscmd.data.AppTheme.FOLLOW_SYSTEM }) { theme ->
+                            EnhancedThemePreviewCard(
+                                theme = theme,
+                                isSelected = uiState.currentTheme == theme,
+                                onClick = { viewModel.setTheme(theme) },
+                                cornerRadius = uiState.cardCornerRadius
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "🌙 深色主题",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        items(com.nexuscmd.data.AppTheme.values().filter { it.isDark }) { theme ->
+                            EnhancedThemePreviewCard(
+                                theme = theme,
+                                isSelected = uiState.currentTheme == theme,
+                                onClick = { viewModel.setTheme(theme) },
+                                cornerRadius = uiState.cardCornerRadius
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "⚙️ 跟随系统",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        EnhancedThemePreviewCard(
+                            theme = com.nexuscmd.data.AppTheme.FOLLOW_SYSTEM,
+                            isSelected = uiState.currentTheme == com.nexuscmd.data.AppTheme.FOLLOW_SYSTEM,
+                            onClick = { viewModel.setTheme(com.nexuscmd.data.AppTheme.FOLLOW_SYSTEM) },
+                            cornerRadius = uiState.cardCornerRadius
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 背景设置页面
+ */
+@Composable
+fun BackgroundSection(viewModel: MainViewModel) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
@@ -2203,60 +2314,16 @@ fun AppearanceSection(viewModel: MainViewModel) {
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Theme selection
-        item {
-            SectionTitle(title = "主题", icon = Icons.Default.Palette)
-        }
-
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                )
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "选择主题风格",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "当前：${uiState.currentTheme.displayName}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        items(com.nexuscmd.data.AppTheme.values()) { theme ->
-                            val isSelected = uiState.currentTheme == theme
-                            ThemePreviewCard(
-                                theme = theme,
-                                isSelected = isSelected,
-                                onClick = { viewModel.setTheme(theme) }
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
         // Custom background
         item {
             SectionTitle(title = "自定义背景", icon = Icons.Default.Image)
         }
 
         item {
-            Card(
+            GlassmorphicCard(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                )
+                cornerRadius = uiState.cardCornerRadius,
+                glassIntensity = if (uiState.useGlassmorphism) uiState.glassmorphismIntensity else 0f
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(
@@ -2289,10 +2356,9 @@ fun AppearanceSection(viewModel: MainViewModel) {
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Background preview
                     if (uiState.useCustomBackground && uiState.customBackgroundUri != null) {
                         Surface(
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(uiState.cardCornerRadius.dp),
                             color = MaterialTheme.colorScheme.surface,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -2333,7 +2399,7 @@ fun AppearanceSection(viewModel: MainViewModel) {
                             ) {
                                 Icon(Icons.Default.PhotoLibrary, contentDescription = null)
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("更换图片")
+                                Text("更换")
                             }
                             OutlinedButton(
                                 onClick = {
@@ -2345,7 +2411,7 @@ fun AppearanceSection(viewModel: MainViewModel) {
                             ) {
                                 Icon(Icons.Default.Delete, contentDescription = null)
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("移除背景")
+                                Text("移除")
                             }
                         }
                     } else {
@@ -2364,21 +2430,18 @@ fun AppearanceSection(viewModel: MainViewModel) {
             }
         }
 
-        // Opacity settings
+        // Background opacity
         item {
-            SectionTitle(title = "透明度调节", icon = Icons.Default.Opacity)
+            SectionTitle(title = "背景透明度", icon = Icons.Default.Opacity)
         }
 
         item {
-            Card(
+            GlassmorphicCard(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                )
+                cornerRadius = uiState.cardCornerRadius,
+                glassIntensity = if (uiState.useGlassmorphism) uiState.glassmorphismIntensity else 0f
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    // Background opacity
                     Text(
                         text = "背景透明度",
                         style = MaterialTheme.typography.titleMedium,
@@ -2388,7 +2451,7 @@ fun AppearanceSection(viewModel: MainViewModel) {
                     Text(
                         text = "${(uiState.backgroundOpacity * 100).toInt()}%",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.primary
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Slider(
@@ -2400,20 +2463,131 @@ fun AppearanceSection(viewModel: MainViewModel) {
                             activeTrackColor = MaterialTheme.colorScheme.primary
                         )
                     )
+                }
+            }
+        }
+    }
+}
 
-                    Spacer(modifier = Modifier.height(16.dp))
+/**
+ * 效果设置页面 - 毛玻璃、圆角、渐变等
+ */
+@Composable
+fun EffectSection(viewModel: MainViewModel) {
+    val uiState by viewModel.uiState.collectAsState()
 
-                    // Card opacity
+    LazyColumn(
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Glassmorphism
+        item {
+            SectionTitle(title = "毛玻璃效果", icon = Icons.Default.BlurCircular)
+        }
+
+        item {
+            GlassmorphicCard(
+                modifier = Modifier.fillMaxWidth(),
+                cornerRadius = uiState.cardCornerRadius,
+                glassIntensity = if (uiState.useGlassmorphism) uiState.glassmorphismIntensity else 0f
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "启用毛玻璃效果",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = "为卡片和导航栏添加毛玻璃效果",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = uiState.useGlassmorphism,
+                            onCheckedChange = { viewModel.setUseGlassmorphism(it) }
+                        )
+                    }
+
+                    if (uiState.useGlassmorphism) {
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Text(
+                            text = "毛玻璃强度",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "${(uiState.glassmorphismIntensity * 100).toInt()}%",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Slider(
+                            value = uiState.glassmorphismIntensity,
+                            onValueChange = { viewModel.setGlassmorphismIntensity(it) },
+                            valueRange = 0.3f..1f,
+                            colors = SliderDefaults.colors(
+                                thumbColor = MaterialTheme.colorScheme.primary,
+                                activeTrackColor = MaterialTheme.colorScheme.primary
+                            )
+                        )
+                    }
+                }
+            }
+        }
+
+        // Card styling
+        item {
+            SectionTitle(title = "卡片样式", icon = Icons.Default.Dashboard)
+        }
+
+        item {
+            GlassmorphicCard(
+                modifier = Modifier.fillMaxWidth(),
+                cornerRadius = uiState.cardCornerRadius,
+                glassIntensity = if (uiState.useGlassmorphism) uiState.glassmorphismIntensity else 0f
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "卡片透明度",
+                        text = "卡片圆角",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
+                        text = "${uiState.cardCornerRadius.toInt()} dp",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Slider(
+                        value = uiState.cardCornerRadius,
+                        onValueChange = { viewModel.setCardCornerRadius(it) },
+                        valueRange = 0f..32f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = MaterialTheme.colorScheme.primary,
+                            activeTrackColor = MaterialTheme.colorScheme.primary
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "卡片透明度",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
                         text = "${(uiState.cardOpacity * 100).toInt()}%",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.primary
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Slider(
@@ -2425,6 +2599,108 @@ fun AppearanceSection(viewModel: MainViewModel) {
                             activeTrackColor = MaterialTheme.colorScheme.primary
                         )
                     )
+                }
+            }
+        }
+
+        // Gradient accents
+        item {
+            SectionTitle(title = "装饰效果", icon = Icons.Default.AutoAwesome)
+        }
+
+        item {
+            GlassmorphicCard(
+                modifier = Modifier.fillMaxWidth(),
+                cornerRadius = uiState.cardCornerRadius,
+                glassIntensity = if (uiState.useGlassmorphism) uiState.glassmorphismIntensity else 0f
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "渐变强调色",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = "为按钮和卡片添加渐变色",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = uiState.useGradientAccents,
+                            onCheckedChange = { viewModel.setUseGradientAccents(it) }
+                        )
+                    }
+
+                    if (uiState.useGradientAccents) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        // 渐变预览
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(60.dp)
+                                .clip(RoundedCornerShape(uiState.cardCornerRadius.dp))
+                                .background(
+                                    Brush.horizontalGradient(
+                                        colors = listOf(
+                                            com.nexuscmd.ui.theme.GradientStart,
+                                            com.nexuscmd.ui.theme.GradientEnd
+                                        )
+                                    )
+                                )
+                        ) {
+                            Text(
+                                text = "渐变预览",
+                                color = Color.White,
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.align(Alignment.Center)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Dynamic color (Android 12+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            item {
+                SectionTitle(title = "动态颜色", icon = Icons.Default.Palette)
+            }
+
+            item {
+                GlassmorphicCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    cornerRadius = uiState.cardCornerRadius,
+                    glassIntensity = if (uiState.useGlassmorphism) uiState.glassmorphismIntensity else 0f
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "使用动态颜色",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    text = "根据壁纸自动调整主题颜色（仅 Android 12+）",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Switch(
+                                checked = uiState.useDynamicColor,
+                                onCheckedChange = { viewModel.setUseDynamicColor(it) }
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -5120,12 +5396,22 @@ fun ModernTopAppBar(
     isDark: Boolean,
     onRequestFloatingPermission: () -> Unit,
     onStartFloating: () -> Unit,
-    cardOpacity: Float = 0.9f
+    cardOpacity: Float = 0.9f,
+    useGlassmorphism: Boolean = true,
+    glassIntensity: Float = 0.7f,
+    cardCornerRadius: Float = 16f
 ) {
+    val surfaceColor = if (useGlassmorphism) {
+        MaterialTheme.colorScheme.surface.copy(alpha = glassIntensity * 0.9f)
+    } else {
+        MaterialTheme.colorScheme.surface.copy(alpha = cardOpacity)
+    }
+    val borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (useGlassmorphism) 0.2f else 0.1f)
+
     Surface(
-        color = MaterialTheme.colorScheme.surface.copy(alpha = cardOpacity),
+        color = surfaceColor,
         tonalElevation = 0.dp,
-        shadowElevation = 0.dp
+        shadowElevation = if (useGlassmorphism) 0.dp else 2.dp
     ) {
         Column {
             Row(
@@ -5140,7 +5426,7 @@ fun ModernTopAppBar(
                 ) {
                     Surface(
                         color = MaterialTheme.colorScheme.primary,
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(cardCornerRadius.dp),
                         modifier = Modifier.size(36.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
@@ -5191,10 +5477,12 @@ fun ModernTopAppBar(
                     }
                 }
             }
-            Divider(
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
-                thickness = 0.5.dp
-            )
+            if (useGlassmorphism) {
+                Divider(
+                    color = borderColor,
+                    thickness = 0.5.dp
+                )
+            }
         }
     }
 }
@@ -5203,7 +5491,10 @@ fun ModernTopAppBar(
 fun ModernBottomNavigation(
     selectedTab: Int,
     onTabSelected: (Int) -> Unit,
-    cardOpacity: Float = 0.9f
+    cardOpacity: Float = 0.9f,
+    useGlassmorphism: Boolean = true,
+    glassIntensity: Float = 0.7f,
+    cardCornerRadius: Float = 16f
 ) {
     val tabs = listOf(
         Triple("编辑器", Icons.Default.Edit, 0),
@@ -5214,16 +5505,25 @@ fun ModernBottomNavigation(
         Triple("设置", Icons.Default.Settings, 5)
     )
 
+    val surfaceColor = if (useGlassmorphism) {
+        MaterialTheme.colorScheme.surface.copy(alpha = glassIntensity * 0.95f)
+    } else {
+        MaterialTheme.colorScheme.surface.copy(alpha = cardOpacity)
+    }
+    val borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (useGlassmorphism) 0.2f else 0.1f)
+
     Surface(
-        color = MaterialTheme.colorScheme.surface.copy(alpha = cardOpacity),
+        color = surfaceColor,
         tonalElevation = 0.dp,
-        shadowElevation = 0.dp
+        shadowElevation = if (useGlassmorphism) 0.dp else 2.dp
     ) {
         Column {
-            Divider(
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
-                thickness = 0.5.dp
-            )
+            if (useGlassmorphism) {
+                Divider(
+                    color = borderColor,
+                    thickness = 0.5.dp
+                )
+            }
             NavigationBar(
                 containerColor = Color.Transparent,
                 tonalElevation = 0.dp
@@ -5256,5 +5556,329 @@ fun ModernBottomNavigation(
                 }
             }
         }
+    }
+}
+
+// ============ Glassmorphism / Mica UI Components ============
+
+/**
+ * 毛玻璃卡片组件 - 提供现代化的毛玻璃效果
+ * 使用半透明背景、边框高光和可选的模糊效果模拟毛玻璃质感
+ */
+@Composable
+fun GlassmorphicCard(
+    modifier: Modifier = Modifier,
+    cornerRadius: Float = 16f,
+    glassIntensity: Float = 0.7f,
+    backgroundColor: Color = MaterialTheme.colorScheme.surface,
+    content: @Composable () -> Unit
+) {
+    val surfaceColor = backgroundColor.copy(alpha = glassIntensity * 0.85f)
+    val borderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(cornerRadius.dp),
+        color = surfaceColor,
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Box(
+            modifier = Modifier.drawBehind {
+                drawRect(
+                    color = borderColor,
+                    size = size,
+                    style = Stroke(width = 1.dp.toPx())
+                )
+            }
+        ) {
+            content()
+        }
+    }
+}
+
+/**
+ * 毛玻璃容器 - 用于包裹整个页面内容
+ */
+@Composable
+fun GlassmorphicContainer(
+    modifier: Modifier = Modifier,
+    cornerRadius: Float = 24f,
+    glassIntensity: Float = 0.7f,
+    showBorder: Boolean = true,
+    content: @Composable () -> Unit
+) {
+    val surfaceColor = MaterialTheme.colorScheme.surface.copy(alpha = glassIntensity * 0.75f)
+    val borderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
+
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(cornerRadius.dp),
+        color = surfaceColor,
+        tonalElevation = 0.dp,
+        shadowElevation = if (glassIntensity > 0.5f) 2.dp else 0.dp
+    ) {
+        if (showBorder) {
+            Box(
+                modifier = Modifier.drawBehind {
+                    drawRect(
+                        color = borderColor,
+                        size = size,
+                        style = Stroke(width = 1.dp.toPx())
+                    )
+                }
+            ) {
+                content()
+            }
+        } else {
+            content()
+        }
+    }
+}
+
+/**
+ * 顶部导航毛玻璃栏
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun GlassmorphicTopBar(
+    modifier: Modifier = Modifier,
+    cornerRadius: Float = 0f,
+    glassIntensity: Float = 0.7f,
+    title: @Composable () -> Unit,
+    actions: @Composable RowScope.() -> Unit = {}
+) {
+    val surfaceColor = MaterialTheme.colorScheme.surface.copy(alpha = glassIntensity * 0.9f)
+    val borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(cornerRadius.dp),
+        color = surfaceColor,
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Column {
+            TopAppBar(
+                title = title,
+                actions = actions,
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    actionIconContentColor = MaterialTheme.colorScheme.onSurface
+                )
+            )
+            if (cornerRadius == 0f) {
+                Divider(
+                    color = borderColor,
+                    thickness = 0.5.dp
+                )
+            }
+        }
+    }
+}
+
+/**
+ * 底部导航毛玻璃栏
+ */
+@Composable
+fun GlassmorphicBottomBar(
+    modifier: Modifier = Modifier,
+    cornerRadius: Float = 0f,
+    glassIntensity: Float = 0.7f,
+    content: @Composable () -> Unit
+) {
+    val surfaceColor = MaterialTheme.colorScheme.surface.copy(alpha = glassIntensity * 0.95f)
+    val borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(cornerRadius.dp),
+        color = surfaceColor,
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Column {
+            Divider(
+                color = borderColor,
+                thickness = 0.5.dp
+            )
+            content()
+        }
+    }
+}
+
+/**
+ * 渐变色按钮
+ */
+@Composable
+fun GradientButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    gradient: Brush = Brush.horizontalGradient(
+        colors = listOf(
+            com.nexuscmd.ui.theme.GradientStart,
+            com.nexuscmd.ui.theme.GradientEnd
+        )
+    ),
+    content: @Composable RowScope.() -> Unit
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier,
+        enabled = enabled,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color.Transparent,
+            contentColor = Color.White
+        ),
+        contentPadding = PaddingValues(0.dp),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .background(gradient, RoundedCornerShape(12.dp))
+                .then(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+                content = content
+            )
+        }
+    }
+}
+
+/**
+ * 渐变卡片
+ */
+@Composable
+fun GradientCard(
+    modifier: Modifier = Modifier,
+    gradient: Brush = Brush.horizontalGradient(
+        colors = listOf(
+            com.nexuscmd.ui.theme.GradientStart.copy(alpha = 0.8f),
+            com.nexuscmd.ui.theme.GradientEnd.copy(alpha = 0.8f)
+        )
+    ),
+    cornerRadius: Float = 16f,
+    content: @Composable () -> Unit
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(cornerRadius.dp),
+        color = Color.Transparent,
+        shadowElevation = 4.dp
+    ) {
+        Box(
+            modifier = Modifier.background(gradient, RoundedCornerShape(cornerRadius.dp))
+        ) {
+            content()
+        }
+    }
+}
+
+/**
+ * 主题预览卡片 - 增强版，显示更多信息
+ */
+@Composable
+fun EnhancedThemePreviewCard(
+    theme: com.nexuscmd.data.AppTheme,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    cornerRadius: Float = 12f
+) {
+    val colors = getThemeColors(theme)
+    val primaryColor = colors[0]
+    val surfaceColor = colors[2]
+
+    Card(
+        onClick = onClick,
+        shape = RoundedCornerShape(cornerRadius.dp),
+        border = if (isSelected)
+            BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+        else
+            BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+        modifier = Modifier.width(80.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // 主题预览
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(surfaceColor)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(12.dp)
+                        .background(primaryColor)
+                )
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(start = 6.dp, bottom = 6.dp)
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(colors[1])
+                )
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            // 主题名称
+            Text(
+                text = theme.displayName,
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+            )
+
+            // 暗色模式标识
+            if (theme.isDark) {
+                Text(
+                    text = "🌙",
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
+        }
+    }
+}
+
+private fun getThemeColors(theme: com.nexuscmd.data.AppTheme): List<Color> {
+    return when (theme) {
+        com.nexuscmd.data.AppTheme.FOLLOW_SYSTEM ->
+            listOf(Color(0xFF4A90D9), Color(0xFF1A1A2E), Color(0xFFF5F7FA))
+        com.nexuscmd.data.AppTheme.LIGHT ->
+            listOf(Color(0xFF4A90D9), Color(0xFFFFFFFF), Color(0xFFF5F7FA))
+        com.nexuscmd.data.AppTheme.DARK ->
+            listOf(Color(0xFF5C9CE6), Color(0xFF1E1E1E), Color(0xFF121212))
+        com.nexuscmd.data.AppTheme.MIDNIGHT ->
+            listOf(Color(0xFF7C8CF3), Color(0xFF1E293B), Color(0xFF0F172A))
+        com.nexuscmd.data.AppTheme.AMOLED ->
+            listOf(Color(0xFF818CF8), Color(0xFF0A0A0A), Color(0xFF000000))
+        com.nexuscmd.data.AppTheme.GREEN ->
+            listOf(Color(0xFF4CAF50), Color(0xFFE8F5E9), Color(0xFFF8FAF5))
+        com.nexuscmd.data.AppTheme.OCEAN ->
+            listOf(Color(0xFF0288D1), Color(0xFFE1F5FE), Color(0xFFF1F8FC))
+        com.nexuscmd.data.AppTheme.WARM ->
+            listOf(Color(0xFFE65100), Color(0xFFFFE0B2), Color(0xFFFBF5F0))
+        com.nexuscmd.data.AppTheme.MATCHA ->
+            listOf(Color(0xFF7CB342), Color(0xFFDCEDC8), Color(0xFFF7F9F0))
+        com.nexuscmd.data.AppTheme.DREAMY_PURPLE ->
+            listOf(Color(0xFF7C4DFF), Color(0xFFE1BEE7), Color(0xFFF8F5FF))
+        com.nexuscmd.data.AppTheme.SAKURA ->
+            listOf(Color(0xFFEC407A), Color(0xFFF8BBD0), Color(0xFFFFF5F8))
+        com.nexuscmd.data.AppTheme.ARCTIC ->
+            listOf(Color(0xFF1976D2), Color(0xFFBBDEFB), Color(0xFFF0F8FF))
     }
 }
