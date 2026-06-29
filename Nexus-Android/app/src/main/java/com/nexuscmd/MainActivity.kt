@@ -51,6 +51,8 @@ import com.nexuscmd.data.BlockLibrary
 import com.nexuscmd.data.Block
 import com.nexuscmd.data.ItemLibrary
 import com.nexuscmd.data.Item
+import com.nexuscmd.data.AnimationLibrary
+import com.nexuscmd.data.MCAnimation
 import com.nexuscmd.data.AddonPack
 import com.nexuscmd.data.AddonManager
 import com.nexuscmd.ui.components.SyntaxHighlightEditor
@@ -492,7 +494,7 @@ private fun QuickCommandCard(
 @Composable
 fun ResourceLibraryTab(viewModel: MainViewModel) {
     var selectedSubTab by remember { mutableIntStateOf(0) }
-    val subTabs = listOf("方块", "物品", "音效", "粒子")
+    val subTabs = listOf("方块", "物品", "音效", "粒子", "动画")
 
     Column(modifier = Modifier.fillMaxSize()) {
         TabRow(selectedTabIndex = selectedSubTab) {
@@ -510,6 +512,7 @@ fun ResourceLibraryTab(viewModel: MainViewModel) {
                 1 -> ItemLibraryTab(viewModel)
                 2 -> SoundEffectLibraryTab(viewModel)
                 3 -> ParticleLibraryTab(viewModel)
+                4 -> AnimationLibraryTab(viewModel)
             }
         }
     }
@@ -6246,5 +6249,262 @@ private fun FloatingParticle(
                     shape = CircleShape
                 )
         )
+    }
+}
+
+@Composable
+fun AnimationLibraryTab(viewModel: MainViewModel) {
+    var searchQuery by remember { mutableStateOf("") }
+    var debouncedQuery by remember { mutableStateOf("") }
+    var selectedCategory by remember { mutableStateOf<String?>(null) }
+    var displayCount by remember { mutableStateOf(30) }
+    var target by remember { mutableStateOf("@s") }
+    var nextState by remember { mutableStateOf("") }
+    var stopExpression by remember { mutableStateOf("") }
+    var controller by remember { mutableStateOf("") }
+    var blendOutTime by remember { mutableStateOf("0") }
+    var showParams by remember { mutableStateOf(false) }
+
+    val clipboardManager = LocalClipboardManager.current
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+
+    LaunchedEffect(searchQuery) {
+        kotlinx.coroutines.delay(150)
+        debouncedQuery = searchQuery
+    }
+
+    val displayedAnimations = remember(debouncedQuery, selectedCategory) {
+        AnimationLibrary.filter(debouncedQuery, selectedCategory)
+    }
+
+    val targetSelectors = remember { listOf("@s", "@p", "@a", "@e", "@r") }
+
+    LaunchedEffect(debouncedQuery, selectedCategory) {
+        displayCount = 30
+        listState.scrollToItem(0)
+    }
+
+    val showAnimations = displayedAnimations.take(displayCount)
+    val hasMore = displayCount < displayedAnimations.size
+
+    LazyColumn(
+        state = listState,
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(3.dp)
+    ) {
+        item {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("搜索动画ID、中文名或说明...") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(Icons.Default.Clear, contentDescription = "清除")
+                        }
+                    }
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        item {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                items(AnimationLibrary.categories, key = { it }) { category ->
+                    FilterChip(
+                        selected = selectedCategory == category || (category == "全部" && selectedCategory == null),
+                        onClick = {
+                            selectedCategory = if (category == "全部") null else category
+                        },
+                        label = { Text(category, style = MaterialTheme.typography.bodySmall) }
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+        }
+
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "共 ${displayedAnimations.size} 个动画",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                TextButton(onClick = { showParams = !showParams }) {
+                    Text(
+                        if (showParams) "隐藏参数" else "参数设置",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(2.dp))
+        }
+
+        if (showParams) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.2f)
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(10.dp)) {
+                        Text(
+                            text = "目标选择器",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            targetSelectors.forEach { selector ->
+                                FilterChip(
+                                    selected = target == selector,
+                                    onClick = { target = selector },
+                                    label = { Text(selector, style = MaterialTheme.typography.labelSmall) }
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            OutlinedTextField(
+                                value = nextState,
+                                onValueChange = { nextState = it },
+                                modifier = Modifier.weight(1f),
+                                label = { Text("下一个状态", style = MaterialTheme.typography.bodySmall) },
+                                singleLine = true
+                            )
+                            OutlinedTextField(
+                                value = blendOutTime,
+                                onValueChange = { blendOutTime = it },
+                                modifier = Modifier.weight(0.5f),
+                                label = { Text("淡出时间", style = MaterialTheme.typography.bodySmall) },
+                                singleLine = true
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        OutlinedTextField(
+                            value = stopExpression,
+                            onValueChange = { stopExpression = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            label = { Text("停止表达式 (可选)", style = MaterialTheme.typography.bodySmall) },
+                            singleLine = true
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        OutlinedTextField(
+                            value = controller,
+                            onValueChange = { controller = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            label = { Text("动画控制器 (可选)", style = MaterialTheme.typography.bodySmall) },
+                            singleLine = true
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+            }
+        }
+
+        items(showAnimations, key = { it.id }) { anim ->
+            val command = AnimationLibrary.buildPlayAnimationCommand(
+                animation = anim,
+                target = target,
+                nextState = nextState,
+                stopExpression = stopExpression,
+                controller = controller,
+                blendOutTime = blendOutTime
+            )
+            SimpleAnimationItem(
+                anim = anim,
+                onUse = {
+                    viewModel.onCommandTextChanged(command)
+                    viewModel.addToHistory(command)
+                },
+                onCopy = {
+                    clipboardManager.setText(AnnotatedString(command))
+                    viewModel.addToHistory(command)
+                }
+            )
+        }
+
+        if (hasMore) {
+            item {
+                TextButton(
+                    onClick = { displayCount += 40 },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("加载更多 (${displayedAnimations.size - displayCount} 个剩余)")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SimpleAnimationItem(
+    anim: MCAnimation,
+    onUse: () -> Unit,
+    onCopy: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.Default.DirectionsRun,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.tertiary,
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = anim.name,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                text = anim.id,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontFamily = FontFamily.Monospace
+            )
+        }
+        AssistChip(
+            onClick = {},
+            label = { Text(anim.category, style = MaterialTheme.typography.labelSmall) },
+            colors = AssistChipDefaults.assistChipColors(
+                labelColor = MaterialTheme.colorScheme.tertiary
+            )
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        IconButton(onClick = onCopy, modifier = Modifier.size(28.dp)) {
+            Icon(
+                Icons.Default.ContentCopy,
+                contentDescription = "复制",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+        IconButton(onClick = onUse, modifier = Modifier.size(28.dp)) {
+            Icon(
+                Icons.Default.Edit,
+                contentDescription = "使用",
+                tint = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier.size(18.dp)
+            )
+        }
     }
 }
