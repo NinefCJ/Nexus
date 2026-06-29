@@ -116,6 +116,7 @@ fun MainScreen(
     var showAddonPage by remember { mutableStateOf(false) }
     var showCommandChainPage by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
     // Handle snackbar messages
     LaunchedEffect(uiState.snackbarMessage) {
@@ -125,79 +126,40 @@ fun MainScreen(
         }
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Terminal,
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Nexus",
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                },
-                actions = {
-                    // Theme toggle
-                    IconButton(onClick = { viewModel.setDarkTheme(!uiState.isDarkTheme) }) {
-                        Icon(
-                            imageVector = if (uiState.isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
-                            contentDescription = "切换主题"
-                        )
-                    }
-                    // Floating window
-                    IconButton(onClick = onRequestFloatingPermission) {
-                        Icon(Icons.Default.PictureInPicture, contentDescription = "悬浮窗权限")
-                    }
-                    IconButton(onClick = onStartFloating) {
-                        Icon(Icons.Default.OpenInNew, contentDescription = "开启悬浮窗")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            // Tab selector
-            NavigationBar {
-                listOf("编辑器", "命令库", "速查", "资源库", "历史", "设置").forEachIndexed { index, title ->
-                    NavigationBarItem(
-                        selected = selectedTab == index,
-                        onClick = { selectedTab = index },
-                        icon = {
-                            Icon(
-                                imageVector = when (index) {
-                                    0 -> Icons.Default.Edit
-                                    1 -> Icons.Default.LibraryBooks
-                                    2 -> Icons.Default.Bolt
-                                    3 -> Icons.Default.GridView
-                                    4 -> Icons.Default.History
-                                    else -> Icons.Default.Settings
-                                },
-                                contentDescription = title
-                            )
-                        },
-                        label = { Text(title, style = MaterialTheme.typography.labelSmall) }
-                    )
-                }
-            }
+    // Modern background with custom image support
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Background layer
+        BackgroundLayer(
+            useCustomBackground = uiState.useCustomBackground,
+            customBackgroundUri = uiState.customBackgroundUri,
+            backgroundOpacity = uiState.backgroundOpacity
+        )
 
-            // Content
-            Box(modifier = Modifier.weight(1f)) {
+        Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            containerColor = Color.Transparent,
+            topBar = {
+                ModernTopAppBar(
+                    onToggleTheme = { viewModel.setDarkTheme(!uiState.isDarkTheme) },
+                    isDark = uiState.isDarkTheme,
+                    onRequestFloatingPermission = onRequestFloatingPermission,
+                    onStartFloating = onStartFloating,
+                    cardOpacity = uiState.cardOpacity
+                )
+            },
+            bottomBar = {
+                ModernBottomNavigation(
+                    selectedTab = selectedTab,
+                    onTabSelected = { selectedTab = it },
+                    cardOpacity = uiState.cardOpacity
+                )
+            }
+        ) { padding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            ) {
                 when (selectedTab) {
                     0 -> EditorTab(viewModel, uiState)
                     1 -> CommandLibraryTab(viewModel, uiState)
@@ -2136,6 +2098,15 @@ fun SettingsTab(
     onOpenCommandChains: () -> Unit
 ) {
     var showClearDataDialog by remember { mutableStateOf(false) }
+    var selectedSection by remember { mutableIntStateOf(0) }
+
+    val sections = listOf(
+        Pair("外观", Icons.Default.Palette),
+        Pair("悬浮窗", Icons.Default.PictureInPicture),
+        Pair("拓展", Icons.Default.Extension),
+        Pair("数据", Icons.Default.Storage),
+        Pair("关于", Icons.Default.Info)
+    )
 
     if (showClearDataDialog) {
         AlertDialog(
@@ -2160,59 +2131,108 @@ fun SettingsTab(
         )
     }
 
-    LazyColumn(
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        item {
-            Text(
-                text = "设置",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(12.dp))
+        // Section tabs
+        ScrollableTabRow(
+            selectedTabIndex = selectedSection,
+            containerColor = Color.Transparent,
+            edgePadding = 0.dp,
+            indicator = { tabPositions ->
+                TabRowDefaults.Indicator(
+                    modifier = Modifier.tabIndicatorOffset(tabPositions[selectedSection]),
+                    color = MaterialTheme.colorScheme.primary,
+                    height = 3.dp
+                )
+            },
+            divider = { Divider(color = Color.Transparent) }
+        ) {
+            sections.forEachIndexed { index, (title, icon) ->
+                Tab(
+                    selected = selectedSection == index,
+                    onClick = { selectedSection = index },
+                    text = {
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = if (selectedSection == index) FontWeight.SemiBold else FontWeight.Normal
+                        )
+                    },
+                    icon = {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = title
+                        )
+                    },
+                    selectedContentColor = MaterialTheme.colorScheme.primary,
+                    unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
 
-        // Appearance section
+        // Section content
+        when (selectedSection) {
+            0 -> AppearanceSection(viewModel)
+            1 -> FloatingWindowSection(onRequestPermission, onStartFloating)
+            2 -> ExtensionSection(viewModel, onOpenAddons, onOpenCommandChains)
+            3 -> DataSection(viewModel) { showClearDataDialog = true }
+            4 -> AboutSection()
+        }
+    }
+}
+
+@Composable
+fun AppearanceSection(viewModel: MainViewModel) {
+    val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+
+    val pickImageLauncher = rememberLauncherForImagePicker { uri ->
+        uri?.let {
+            val takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            context.contentResolver.takePersistableUriPermission(it, takeFlags)
+            viewModel.setCustomBackground(it.toString())
+            viewModel.setUseCustomBackground(true)
+        }
+    }
+
+    LazyColumn(
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Theme selection
         item {
-            Text(
-                text = "外观",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.height(4.dp))
+            SectionTitle(title = "主题", icon = Icons.Default.Palette)
         }
 
         item {
-            SettingItem(
-                icon = Icons.Default.Palette,
-                title = "主题",
-                description = viewModel.uiState.value.currentTheme.displayName,
-                onClick = {}
-            )
-        }
-
-        item {
-            var expanded by remember { mutableStateOf(false) }
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                )
             ) {
-                Column(modifier = Modifier.padding(12.dp)) {
+                Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "选择主题",
-                        style = MaterialTheme.typography.bodySmall,
+                        text = "选择主题风格",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "当前：${uiState.currentTheme.displayName}",
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                     LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         items(com.nexuscmd.data.AppTheme.values()) { theme ->
-                            val isSelected = viewModel.uiState.value.currentTheme == theme
+                            val isSelected = uiState.currentTheme == theme
                             ThemePreviewCard(
                                 theme = theme,
                                 isSelected = isSelected,
@@ -2224,139 +2244,544 @@ fun SettingsTab(
             }
         }
 
-        // Floating window section
+        // Custom background
         item {
-            Spacer(modifier = Modifier.height(8.dp))
+            SectionTitle(title = "自定义背景", icon = Icons.Default.Image)
+        }
+
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                )
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "使用自定义背景",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = "上传图片作为应用背景",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = uiState.useCustomBackground && uiState.customBackgroundUri != null,
+                            onCheckedChange = { enabled ->
+                                if (enabled && uiState.customBackgroundUri == null) {
+                                    pickImageLauncher()
+                                } else {
+                                    viewModel.setUseCustomBackground(enabled)
+                                }
+                            }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Background preview
+                    if (uiState.useCustomBackground && uiState.customBackgroundUri != null) {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surface,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(120.dp)
+                        ) {
+                            var bitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+                            LaunchedEffect(uiState.customBackgroundUri) {
+                                try {
+                                    val uri = android.net.Uri.parse(uiState.customBackgroundUri)
+                                    val pfd = context.contentResolver.openFileDescriptor(uri, "r")
+                                    pfd?.use {
+                                        bitmap = android.graphics.BitmapFactory.decodeFileDescriptor(it.fileDescriptor)
+                                    }
+                                } catch (e: Exception) {
+                                    bitmap = null
+                                }
+                            }
+                            bitmap?.let { bmp ->
+                                androidx.compose.foundation.Image(
+                                    bitmap = bmp.asImageBitmap(),
+                                    contentDescription = null,
+                                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedButton(
+                                onClick = { pickImageLauncher() },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Icon(Icons.Default.PhotoLibrary, contentDescription = null)
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("更换图片")
+                            }
+                            OutlinedButton(
+                                onClick = {
+                                    viewModel.setUseCustomBackground(false)
+                                    viewModel.setCustomBackground(null)
+                                },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Icon(Icons.Default.Delete, contentDescription = null)
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("移除背景")
+                            }
+                        }
+                    } else {
+                        Button(
+                            onClick = { pickImageLauncher() },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(10.dp),
+                            contentPadding = PaddingValues(vertical = 12.dp)
+                        ) {
+                            Icon(Icons.Default.AddPhotoAlternate, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("选择背景图片")
+                        }
+                    }
+                }
+            }
+        }
+
+        // Opacity settings
+        item {
+            SectionTitle(title = "透明度调节", icon = Icons.Default.Opacity)
+        }
+
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                )
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    // Background opacity
+                    Text(
+                        text = "背景透明度",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "${(uiState.backgroundOpacity * 100).toInt()}%",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Slider(
+                        value = uiState.backgroundOpacity,
+                        onValueChange = { viewModel.setBackgroundOpacity(it) },
+                        valueRange = 0.3f..1f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = MaterialTheme.colorScheme.primary,
+                            activeTrackColor = MaterialTheme.colorScheme.primary
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Card opacity
+                    Text(
+                        text = "卡片透明度",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "${(uiState.cardOpacity * 100).toInt()}%",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Slider(
+                        value = uiState.cardOpacity,
+                        onValueChange = { viewModel.setCardOpacity(it) },
+                        valueRange = 0.5f..1f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = MaterialTheme.colorScheme.primary,
+                            activeTrackColor = MaterialTheme.colorScheme.primary
+                        )
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun FloatingWindowSection(
+    onRequestPermission: () -> Unit,
+    onStartFloating: () -> Unit
+) {
+    LazyColumn(
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item {
+            SectionTitle(title = "悬浮窗设置", icon = Icons.Default.PictureInPicture)
+        }
+
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                )
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    SettingRow(
+                        icon = Icons.Default.PictureInPicture,
+                        title = "悬浮窗权限",
+                        description = "开启悬浮窗需要系统权限",
+                        onClick = onRequestPermission
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    SettingRow(
+                        icon = Icons.Default.OpenInNew,
+                        title = "开启悬浮窗",
+                        description = "在游戏中也能使用命令助手",
+                        onClick = onStartFloating
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ExtensionSection(
+    viewModel: MainViewModel,
+    onOpenAddons: () -> Unit,
+    onOpenCommandChains: () -> Unit
+) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    LazyColumn(
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item {
+            SectionTitle(title = "拓展功能", icon = Icons.Default.Extension)
+        }
+
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                )
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    SettingRow(
+                        icon = Icons.Default.Extension,
+                        title = "拓展包管理",
+                        description = "安装、管理自定义拓展包",
+                        onClick = onOpenAddons
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    SettingToggleRow(
+                        icon = Icons.Default.SwapVert,
+                        title = "拓展包补全优先",
+                        description = "开启后拓展包内容显示在原版之前",
+                        checked = uiState.addonCompletionsFirst,
+                        onCheckedChange = { viewModel.setAddonCompletionsFirst(it) }
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    SettingRow(
+                        icon = Icons.Default.Link,
+                        title = "命令方块链",
+                        description = "管理和编辑命令方块链",
+                        onClick = onOpenCommandChains
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DataSection(
+    viewModel: MainViewModel,
+    onClearAllData: () -> Unit
+) {
+    LazyColumn(
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item {
+            SectionTitle(title = "数据管理", icon = Icons.Default.Storage)
+        }
+
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                )
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    SettingRow(
+                        icon = Icons.Default.DeleteSweep,
+                        title = "清空所有数据",
+                        description = "清除收藏、历史记录和设置",
+                        onClick = onClearAllData,
+                        isDestructive = true
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AboutSection() {
+    val context = LocalContext.current
+    val packageManager = context.packageManager
+    val packageInfo = packageManager.getPackageInfo(context.packageName, 0)
+    val versionName = packageInfo.versionName ?: "1.0.0"
+
+    LazyColumn(
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item {
+            SectionTitle(title = "关于应用", icon = Icons.Default.Info)
+        }
+
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.primary,
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier.size(72.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.Terminal,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(36.dp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "Nexus",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "MC 命令助手 v$versionName",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "强大的 Minecraft 命令编辑工具",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                )
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    SettingRow(
+                        icon = Icons.Default.Code,
+                        title = "源代码",
+                        description = "GitHub: NinefCJ/Nexus",
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://github.com/NinefCJ/Nexus"))
+                            context.startActivity(intent)
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SectionTitle(title: String, icon: ImageVector) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(20.dp)
+        )
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
+}
+
+@Composable
+fun SettingRow(
+    icon: ImageVector,
+    title: String,
+    description: String,
+    onClick: () -> Unit,
+    isDestructive: Boolean = false
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(
+                    if (isDestructive)
+                        MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
+                    else
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = if (isDestructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+            )
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "悬浮窗",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+                color = if (isDestructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
             )
-            Spacer(modifier = Modifier.height(4.dp))
-        }
-
-        item {
-            SettingItem(
-                icon = Icons.Default.PictureInPicture,
-                title = "悬浮窗权限",
-                description = "开启悬浮窗需要系统权限",
-                onClick = onRequestPermission
-            )
-        }
-
-        item {
-            SettingItem(
-                icon = Icons.Default.OpenInNew,
-                title = "开启悬浮窗",
-                description = "在游戏中也能使用命令助手",
-                onClick = onStartFloating
-            )
-        }
-
-        // Addons section
-        item {
-            Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "拓展包",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-        }
-
-        item {
-            SettingItem(
-                icon = Icons.Default.Extension,
-                title = "拓展包管理",
-                description = "安装、管理自定义拓展包",
-                onClick = onOpenAddons
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+        Icon(
+            imageVector = Icons.Default.ChevronRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
 
-        item {
-            SettingToggleItem(
-                icon = Icons.Default.SwapVert,
-                title = "拓展包补全优先",
-                description = "开启后拓展包内容显示在原版之前",
-                checked = viewModel.uiState.value.addonCompletionsFirst,
-                onCheckedChange = { viewModel.setAddonCompletionsFirst(it) }
+@Composable
+fun SettingToggleRow(
+    icon: ImageVector,
+    title: String,
+    description: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
             )
         }
-
-        // Command chains section
-        item {
-            Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "命令链",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium
             )
-            Spacer(modifier = Modifier.height(4.dp))
-        }
-
-        item {
-            SettingItem(
-                icon = Icons.Default.Link,
-                title = "命令方块链",
-                description = "管理和编辑命令方块链",
-                onClick = onOpenCommandChains
-            )
-        }
-
-        // Data section
-        item {
-            Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "数据",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Spacer(modifier = Modifier.height(4.dp))
         }
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange
+        )
+    }
+}
 
-        item {
-            SettingItem(
-                icon = Icons.Default.DeleteSweep,
-                title = "清空所有数据",
-                description = "清除收藏、历史记录和设置",
-                onClick = { showClearDataDialog = true },
-                isDestructive = true
-            )
-        }
+@Composable
+fun rememberLauncherForImagePicker(
+    onResult: (android.net.Uri?) -> Unit
+): () -> Unit {
+    val context = LocalContext.current
+    var currentOnResult by remember { mutableStateOf(onResult) }
+    currentOnResult = onResult
 
-        // About section
-        item {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "关于",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-        }
+    val launcher = rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        currentOnResult(uri)
+    }
 
-        item {
-            SettingItem(
-                icon = Icons.Default.Info,
-                title = "版本",
-                description = "1.0.0",
-                onClick = {}
-            )
-        }
-
-        item {
-            SettingItem(
-                icon = Icons.Default.Code,
-                title = "源代码",
-                description = "GitHub: NinefCJ/Nexus",
-                onClick = {}
-            )
-        }
+    return {
+        launcher.launch(arrayOf("image/*"))
     }
 }
 
@@ -2414,6 +2839,30 @@ fun ThemePreviewCard(
                 androidx.compose.ui.graphics.Color(0xFFE65100),
                 androidx.compose.ui.graphics.Color(0xFFFFE0B2),
                 androidx.compose.ui.graphics.Color(0xFFFBF5F0)
+            )
+        com.nexuscmd.data.AppTheme.MATCHA ->
+            listOf(
+                androidx.compose.ui.graphics.Color(0xFF7CB342),
+                androidx.compose.ui.graphics.Color(0xFFDCEDC8),
+                androidx.compose.ui.graphics.Color(0xFFF7F9F0)
+            )
+        com.nexuscmd.data.AppTheme.DREAMY_PURPLE ->
+            listOf(
+                androidx.compose.ui.graphics.Color(0xFF7C4DFF),
+                androidx.compose.ui.graphics.Color(0xFFE1BEE7),
+                androidx.compose.ui.graphics.Color(0xFFF8F5FF)
+            )
+        com.nexuscmd.data.AppTheme.SAKURA ->
+            listOf(
+                androidx.compose.ui.graphics.Color(0xFFEC407A),
+                androidx.compose.ui.graphics.Color(0xFFF8BBD0),
+                androidx.compose.ui.graphics.Color(0xFFFFF5F8)
+            )
+        com.nexuscmd.data.AppTheme.ARCTIC ->
+            listOf(
+                androidx.compose.ui.graphics.Color(0xFF1976D2),
+                androidx.compose.ui.graphics.Color(0xFFBBDEFB),
+                androidx.compose.ui.graphics.Color(0xFFF0F8FF)
             )
     }
 
@@ -4606,4 +5055,205 @@ fun StepEditorDialog(
             }
         }
     )
+}
+
+// ============ Modern UI Components ============
+
+@Composable
+fun BackgroundLayer(
+    useCustomBackground: Boolean,
+    customBackgroundUri: String?,
+    backgroundOpacity: Float
+) {
+    val context = LocalContext.current
+
+    if (useCustomBackground && customBackgroundUri != null) {
+        var bitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+
+        LaunchedEffect(customBackgroundUri) {
+            try {
+                val uri = android.net.Uri.parse(customBackgroundUri)
+                val parcelFileDescriptor = context.contentResolver.openFileDescriptor(uri, "r")
+                parcelFileDescriptor?.use { pfd ->
+                    bitmap = android.graphics.BitmapFactory.decodeFileDescriptor(pfd.fileDescriptor)
+                }
+            } catch (e: Exception) {
+                bitmap = null
+            }
+        }
+
+        bitmap?.let { bmp ->
+            androidx.compose.foundation.Image(
+                bitmap = bmp.asImageBitmap(),
+                contentDescription = null,
+                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                modifier = Modifier.fillMaxSize().alpha(backgroundOpacity)
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.background.copy(alpha = 0.3f),
+                            MaterialTheme.colorScheme.background.copy(alpha = 0.6f)
+                        )
+                    )
+                )
+        )
+    } else {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ModernTopAppBar(
+    onToggleTheme: () -> Unit,
+    isDark: Boolean,
+    onRequestFloatingPermission: () -> Unit,
+    onStartFloating: () -> Unit,
+    cardOpacity: Float = 0.9f
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surface.copy(alpha = cardOpacity),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.primary,
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.Terminal,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = "Nexus",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "MC 命令助手",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    IconButton(onClick = onToggleTheme) {
+                        Icon(
+                            imageVector = if (isDark) Icons.Default.LightMode else Icons.Default.DarkMode,
+                            contentDescription = "切换主题",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    IconButton(onClick = onRequestFloatingPermission) {
+                        Icon(
+                            imageVector = Icons.Default.PictureInPicture,
+                            contentDescription = "悬浮窗权限",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    IconButton(onClick = onStartFloating) {
+                        Icon(
+                            imageVector = Icons.Default.OpenInNew,
+                            contentDescription = "开启悬浮窗",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+            }
+            Divider(
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                thickness = 0.5.dp
+            )
+        }
+    }
+}
+
+@Composable
+fun ModernBottomNavigation(
+    selectedTab: Int,
+    onTabSelected: (Int) -> Unit,
+    cardOpacity: Float = 0.9f
+) {
+    val tabs = listOf(
+        Triple("编辑器", Icons.Default.Edit, 0),
+        Triple("命令库", Icons.Default.LibraryBooks, 1),
+        Triple("速查", Icons.Default.Bolt, 2),
+        Triple("资源库", Icons.Default.GridView, 3),
+        Triple("历史", Icons.Default.History, 4),
+        Triple("设置", Icons.Default.Settings, 5)
+    )
+
+    Surface(
+        color = MaterialTheme.colorScheme.surface.copy(alpha = cardOpacity),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Column {
+            Divider(
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                thickness = 0.5.dp
+            )
+            NavigationBar(
+                containerColor = Color.Transparent,
+                tonalElevation = 0.dp
+            ) {
+                tabs.forEach { (title, icon, index) ->
+                    NavigationBarItem(
+                        selected = selectedTab == index,
+                        onClick = { onTabSelected(index) },
+                        icon = {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = title
+                            )
+                        },
+                        label = {
+                            Text(
+                                title,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Medium
+                            )
+                        },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = MaterialTheme.colorScheme.primary,
+                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                }
+            }
+        }
+    }
 }

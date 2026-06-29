@@ -55,6 +55,12 @@ data class MainUiState(
     val isDarkTheme: Boolean = false,
     val currentTheme: AppTheme = AppTheme.FOLLOW_SYSTEM,
 
+    // Custom background
+    val customBackgroundUri: String? = null,
+    val useCustomBackground: Boolean = false,
+    val backgroundOpacity: Float = 0.85f,
+    val cardOpacity: Float = 0.9f,
+
     // Snackbar
     val snackbarMessage: String? = null,
 
@@ -140,7 +146,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 addonCommands = addonCommands,
                 addonTemplates = addonTemplates,
                 addonCompletionsFirst = addonFirst,
-                commandChains = chains
+                commandChains = chains,
+                customBackgroundUri = settingsManager.customBackgroundUri,
+                useCustomBackground = settingsManager.useCustomBackground,
+                backgroundOpacity = settingsManager.backgroundOpacity,
+                cardOpacity = settingsManager.cardOpacity
             )
         }
     }
@@ -291,13 +301,34 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val isDark = when (theme) {
             AppTheme.FOLLOW_SYSTEM -> settingsManager.isDarkTheme
             AppTheme.LIGHT -> false
-            AppTheme.GREEN, AppTheme.OCEAN, AppTheme.WARM -> settingsManager.isDarkTheme
+            AppTheme.GREEN, AppTheme.OCEAN, AppTheme.WARM,
+            AppTheme.MATCHA, AppTheme.DREAMY_PURPLE, AppTheme.SAKURA, AppTheme.ARCTIC -> settingsManager.isDarkTheme
             else -> true
         }
         _uiState.value = _uiState.value.copy(
             currentTheme = theme,
             isDarkTheme = isDark
         )
+    }
+
+    fun setCustomBackground(uri: String?) {
+        settingsManager.customBackgroundUri = uri
+        _uiState.value = _uiState.value.copy(customBackgroundUri = uri)
+    }
+
+    fun setUseCustomBackground(enabled: Boolean) {
+        settingsManager.useCustomBackground = enabled
+        _uiState.value = _uiState.value.copy(useCustomBackground = enabled)
+    }
+
+    fun setBackgroundOpacity(opacity: Float) {
+        settingsManager.backgroundOpacity = opacity
+        _uiState.value = _uiState.value.copy(backgroundOpacity = opacity)
+    }
+
+    fun setCardOpacity(opacity: Float) {
+        settingsManager.cardOpacity = opacity
+        _uiState.value = _uiState.value.copy(cardOpacity = opacity)
     }
 
     fun setDarkTheme(isDark: Boolean) {

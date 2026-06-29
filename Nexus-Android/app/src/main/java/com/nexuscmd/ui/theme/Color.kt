@@ -106,6 +106,82 @@ val WarmDarkSurface = Color(0xFF2A1A15)
 val WarmDarkText = Color(0xFFFFCCBC)
 val WarmDarkTextSecondary = Color(0xFFBCAAA4)
 
+// 抹茶绿主题 - 浅色
+val MatchaLightPrimary = Color(0xFF7CB342)
+val MatchaLightAccent = Color(0xFF8D6E63)
+val MatchaLightTertiary = Color(0xFF5D4037)
+val MatchaLightBg = Color(0xFFF7F9F0)
+val MatchaLightSurface = Color(0xFFFFFFFF)
+val MatchaLightText = Color(0xFF558B2F)
+val MatchaLightTextSecondary = Color(0xFF818775)
+
+// 抹茶绿主题 - 深色
+val MatchaDarkPrimary = Color(0xFF9CCC65)
+val MatchaDarkAccent = Color(0xFFFFB74D)
+val MatchaDarkTertiary = Color(0xFF4FC3F7)
+val MatchaDarkBg = Color(0xFF0D160A)
+val MatchaDarkSurface = Color(0xFF1A2918)
+val MatchaDarkText = Color(0xFFDCEDC8)
+val MatchaDarkTextSecondary = Color(0xFF90A4AE)
+
+// 梦幻紫主题 - 浅色
+val DreamyPurpleLightPrimary = Color(0xFF7C4DFF)
+val DreamyPurpleLightAccent = Color(0xFFFF4081)
+val DreamyPurpleLightTertiary = Color(0xFF00BCD4)
+val DreamyPurpleLightBg = Color(0xFFF8F5FF)
+val DreamyPurpleLightSurface = Color(0xFFFFFFFF)
+val DreamyPurpleLightText = Color(0xFF512DA8)
+val DreamyPurpleLightTextSecondary = Color(0xFF9575CD)
+
+// 梦幻紫主题 - 深色
+val DreamyPurpleDarkPrimary = Color(0xFFB39DDB)
+val DreamyPurpleDarkAccent = Color(0xFFF48FB1)
+val DreamyPurpleDarkTertiary = Color(0xFF80DEEA)
+val DreamyPurpleDarkBg = Color(0xFF1A0F2E)
+val DreamyPurpleDarkSurface = Color(0xFF2D1B4E)
+val DreamyPurpleDarkText = Color(0xFFE1BEE7)
+val DreamyPurpleDarkTextSecondary = Color(0xFFB39DDB)
+
+// 樱花粉主题 - 浅色
+val SakuraLightPrimary = Color(0xFFEC407A)
+val SakuraLightAccent = Color(0xFF7E57C2)
+val SakuraLightTertiary = Color(0xFFFFA726)
+val SakuraLightBg = Color(0xFFFFF5F8)
+val SakuraLightSurface = Color(0xFFFFFFFF)
+val SakuraLightText = Color(0xFFAD1457)
+val SakuraLightTextSecondary = Color(0xFFC2185B)
+
+// 樱花粉主题 - 深色
+val SakuraDarkPrimary = Color(0xFFF48FB1)
+val SakuraDarkAccent = Color(0xFFCE93D8)
+val SakuraDarkTertiary = Color(0xFFFFCC80)
+val SakuraDarkBg = Color(0xFF1F1018)
+val SakuraDarkSurface = Color(0xFF331D2A)
+val SakuraDarkText = Color(0xFFF8BBD0)
+val SakuraDarkTextSecondary = Color(0xFFF48FB1)
+
+// 北极蓝主题 - 浅色
+val ArcticLightPrimary = Color(0xFF1976D2)
+val ArcticLightAccent = Color(0xFF00BCD4)
+val ArcticLightTertiary = Color(0xFF7C4DFF)
+val ArcticLightBg = Color(0xFFF0F8FF)
+val ArcticLightSurface = Color(0xFFFFFFFF)
+val ArcticLightText = Color(0xFF0D47A1)
+val ArcticLightTextSecondary = Color(0xFF54728A)
+
+// 北极蓝主题 - 深色
+val ArcticDarkPrimary = Color(0xFF64B5F6)
+val ArcticDarkAccent = Color(0xFF4DD0E1)
+val ArcticDarkTertiary = Color(0xFFB39DDB)
+val ArcticDarkBg = Color(0xFF0A1929)
+val ArcticDarkSurface = Color(0xFF132F4C)
+val ArcticDarkText = Color(0xFFBBDEFB)
+val ArcticDarkTextSecondary = Color(0xFF90CAF9)
+
+// 渐变颜色 (用于按钮、卡片等装饰)
+val GradientStart = Color(0xFF667eea)
+val GradientEnd = Color(0xFF764ba2)
+
 // 语法高亮颜色
 val SyntaxKeyword = Color(0xFFC678DD)
 val SyntaxString = Color(0xFF98C379)

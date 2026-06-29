@@ -173,6 +173,130 @@ private val WarmDarkColorScheme = darkColorScheme(
     onSurfaceVariant = WarmDarkTextSecondary
 )
 
+// 抹茶绿主题
+private val MatchaLightColorScheme = lightColorScheme(
+    primary = MatchaLightPrimary,
+    secondary = MatchaLightAccent,
+    tertiary = MatchaLightTertiary,
+    background = MatchaLightBg,
+    surface = MatchaLightSurface,
+    onPrimary = ColorWhite,
+    onSecondary = ColorWhite,
+    onTertiary = ColorWhite,
+    onBackground = MatchaLightText,
+    onSurface = MatchaLightText,
+    surfaceVariant = MatchaLightPrimary.copy(alpha = 0.12f),
+    onSurfaceVariant = MatchaLightTextSecondary
+)
+
+private val MatchaDarkColorScheme = darkColorScheme(
+    primary = MatchaDarkPrimary,
+    secondary = MatchaDarkAccent,
+    tertiary = MatchaDarkTertiary,
+    background = MatchaDarkBg,
+    surface = MatchaDarkSurface,
+    onPrimary = ColorWhite,
+    onSecondary = ColorWhite,
+    onTertiary = ColorWhite,
+    onBackground = MatchaDarkText,
+    onSurface = MatchaDarkText,
+    surfaceVariant = MatchaDarkPrimary.copy(alpha = 0.25f),
+    onSurfaceVariant = MatchaDarkTextSecondary
+)
+
+// 梦幻紫主题
+private val DreamyPurpleLightColorScheme = lightColorScheme(
+    primary = DreamyPurpleLightPrimary,
+    secondary = DreamyPurpleLightAccent,
+    tertiary = DreamyPurpleLightTertiary,
+    background = DreamyPurpleLightBg,
+    surface = DreamyPurpleLightSurface,
+    onPrimary = ColorWhite,
+    onSecondary = ColorWhite,
+    onTertiary = ColorWhite,
+    onBackground = DreamyPurpleLightText,
+    onSurface = DreamyPurpleLightText,
+    surfaceVariant = DreamyPurpleLightPrimary.copy(alpha = 0.12f),
+    onSurfaceVariant = DreamyPurpleLightTextSecondary
+)
+
+private val DreamyPurpleDarkColorScheme = darkColorScheme(
+    primary = DreamyPurpleDarkPrimary,
+    secondary = DreamyPurpleDarkAccent,
+    tertiary = DreamyPurpleDarkTertiary,
+    background = DreamyPurpleDarkBg,
+    surface = DreamyPurpleDarkSurface,
+    onPrimary = ColorWhite,
+    onSecondary = ColorWhite,
+    onTertiary = ColorWhite,
+    onBackground = DreamyPurpleDarkText,
+    onSurface = DreamyPurpleDarkText,
+    surfaceVariant = DreamyPurpleDarkPrimary.copy(alpha = 0.25f),
+    onSurfaceVariant = DreamyPurpleDarkTextSecondary
+)
+
+// 樱花粉主题
+private val SakuraLightColorScheme = lightColorScheme(
+    primary = SakuraLightPrimary,
+    secondary = SakuraLightAccent,
+    tertiary = SakuraLightTertiary,
+    background = SakuraLightBg,
+    surface = SakuraLightSurface,
+    onPrimary = ColorWhite,
+    onSecondary = ColorWhite,
+    onTertiary = ColorWhite,
+    onBackground = SakuraLightText,
+    onSurface = SakuraLightText,
+    surfaceVariant = SakuraLightPrimary.copy(alpha = 0.12f),
+    onSurfaceVariant = SakuraLightTextSecondary
+)
+
+private val SakuraDarkColorScheme = darkColorScheme(
+    primary = SakuraDarkPrimary,
+    secondary = SakuraDarkAccent,
+    tertiary = SakuraDarkTertiary,
+    background = SakuraDarkBg,
+    surface = SakuraDarkSurface,
+    onPrimary = ColorWhite,
+    onSecondary = ColorWhite,
+    onTertiary = ColorWhite,
+    onBackground = SakuraDarkText,
+    onSurface = SakuraDarkText,
+    surfaceVariant = SakuraDarkPrimary.copy(alpha = 0.25f),
+    onSurfaceVariant = SakuraDarkTextSecondary
+)
+
+// 北极蓝主题
+private val ArcticLightColorScheme = lightColorScheme(
+    primary = ArcticLightPrimary,
+    secondary = ArcticLightAccent,
+    tertiary = ArcticLightTertiary,
+    background = ArcticLightBg,
+    surface = ArcticLightSurface,
+    onPrimary = ColorWhite,
+    onSecondary = ColorWhite,
+    onTertiary = ColorWhite,
+    onBackground = ArcticLightText,
+    onSurface = ArcticLightText,
+    surfaceVariant = ArcticLightPrimary.copy(alpha = 0.12f),
+    onSurfaceVariant = ArcticLightTextSecondary
+)
+
+private val ArcticDarkColorScheme = darkColorScheme(
+    primary = ArcticDarkPrimary,
+    secondary = ArcticDarkAccent,
+    tertiary = ArcticDarkTertiary,
+    background = ArcticDarkBg,
+    surface = ArcticDarkSurface,
+    onPrimary = ColorWhite,
+    onSecondary = ColorWhite,
+    onTertiary = ColorWhite,
+    onBackground = ArcticDarkText,
+    onSurface = ArcticDarkText,
+    surfaceVariant = ArcticDarkPrimary.copy(alpha = 0.25f),
+    onSurfaceVariant = ArcticDarkTextSecondary
+)
+
 @Composable
 fun MCCommandHelperTheme(
     theme: AppTheme = AppTheme.FOLLOW_SYSTEM,
@@ -199,6 +323,10 @@ fun MCCommandHelperTheme(
         AppTheme.GREEN -> if (systemDark) GreenDarkColorScheme else GreenLightColorScheme
         AppTheme.OCEAN -> if (systemDark) OceanDarkColorScheme else OceanLightColorScheme
         AppTheme.WARM -> if (systemDark) WarmDarkColorScheme else WarmLightColorScheme
+        AppTheme.MATCHA -> if (systemDark) MatchaDarkColorScheme else MatchaLightColorScheme
+        AppTheme.DREAMY_PURPLE -> if (systemDark) DreamyPurpleDarkColorScheme else DreamyPurpleLightColorScheme
+        AppTheme.SAKURA -> if (systemDark) SakuraDarkColorScheme else SakuraLightColorScheme
+        AppTheme.ARCTIC -> if (systemDark) ArcticDarkColorScheme else ArcticLightColorScheme
     }
 
     val isDark = when (theme) {
@@ -207,6 +335,10 @@ fun MCCommandHelperTheme(
         AppTheme.GREEN -> systemDark
         AppTheme.OCEAN -> systemDark
         AppTheme.WARM -> systemDark
+        AppTheme.MATCHA -> systemDark
+        AppTheme.DREAMY_PURPLE -> systemDark
+        AppTheme.SAKURA -> systemDark
+        AppTheme.ARCTIC -> systemDark
         else -> true
     }
 
