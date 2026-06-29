@@ -72,11 +72,19 @@ class MainActivity : ComponentActivity() {
         setContent {
             val currentTheme by viewModel.uiState.collectAsState()
             MCCommandHelperTheme(theme = currentTheme.currentTheme) {
-                MainScreen(
-                    viewModel = viewModel,
-                    onRequestFloatingPermission = { requestFloatingWindowPermission() },
-                    onStartFloating = { startFloatingWindow() }
-                )
+                var showSplash by remember { mutableStateOf(true) }
+
+                if (showSplash) {
+                    NexusSplashScreen(
+                        onAnimationFinished = { showSplash = false }
+                    )
+                } else {
+                    MainScreen(
+                        viewModel = viewModel,
+                        onRequestFloatingPermission = { requestFloatingWindowPermission() },
+                        onStartFloating = { startFloatingWindow() }
+                    )
+                }
             }
         }
     }
@@ -5880,5 +5888,384 @@ private fun getThemeColors(theme: com.nexuscmd.data.AppTheme): List<Color> {
             listOf(Color(0xFFEC407A), Color(0xFFF8BBD0), Color(0xFFFFF5F8))
         com.nexuscmd.data.AppTheme.ARCTIC ->
             listOf(Color(0xFF1976D2), Color(0xFFBBDEFB), Color(0xFFF0F8FF))
+    }
+}
+
+// ============ Splash Screen ============
+
+/**
+ * Nexus 艺术开屏动画
+ * 包含：渐变背景、漂浮粒子、光晕效果、文字缩放淡入、副标题浮现
+ */
+@Composable
+fun NexusSplashScreen(
+    onAnimationFinished: () -> Unit,
+    durationMillis: Int = 2200
+) {
+    val isDark = isSystemInDarkTheme()
+
+    // 动画状态
+    val infiniteTransition = rememberInfiniteTransition(label = "splash_infinite")
+
+    // 粒子浮动动画
+    val particles = remember {
+        List(24) { index ->
+            ParticleData(
+                id = index,
+                startX = Math.random().toFloat(),
+                startY = Math.random().toFloat(),
+                size = (8f + Math.random() * 24f).toFloat(),
+                speed = (0.4f + Math.random() * 0.8f).toFloat(),
+                delay = (Math.random() * 1f).toFloat()
+            )
+        }
+    }
+
+    // Logo 缩放动画
+    val logoScale = animateFloatAsState(
+        targetValue = 1f,
+        animationSpec = tween(
+            durationMillis = 800,
+            delayMillis = 200,
+            easing = FastOutSlowInEasing
+        ),
+        label = "logo_scale"
+    )
+
+    // Logo 透明度
+    val logoAlpha = animateFloatAsState(
+        targetValue = 1f,
+        animationSpec = tween(
+            durationMillis = 900,
+            delayMillis = 100,
+            easing = LinearOutSlowInEasing
+        ),
+        label = "logo_alpha"
+    )
+
+    // 文字透明度
+    val textAlpha = animateFloatAsState(
+        targetValue = 1f,
+        animationSpec = tween(
+            durationMillis = 1000,
+            delayMillis = 500,
+            easing = LinearOutSlowInEasing
+        ),
+        label = "text_alpha"
+    )
+
+    // 副标题透明度
+    val subtitleAlpha = animateFloatAsState(
+        targetValue = 1f,
+        animationSpec = tween(
+            durationMillis = 800,
+            delayMillis = 900,
+            easing = LinearOutSlowInEasing
+        ),
+        label = "subtitle_alpha"
+    )
+
+    // 副标题偏移
+    val subtitleY = animateFloatAsState(
+        targetValue = 0f,
+        animationSpec = tween(
+            durationMillis = 800,
+            delayMillis = 900,
+            easing = FastOutSlowInEasing
+        ),
+        label = "subtitle_y"
+    )
+
+    // 光晕脉冲
+    val glowPulse = infiniteTransition.animateFloat(
+        initialValue = 0.7f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "glow_pulse"
+    )
+
+    // 结束动画 - 整体淡出
+    val exitAlpha = animateFloatAsState(
+        targetValue = 0f,
+        animationSpec = tween(
+            durationMillis = 400,
+            delayMillis = durationMillis - 400,
+            easing = FastOutLinearInEasing
+        ),
+        label = "exit_alpha"
+    )
+
+    // 结束时回调
+    LaunchedEffect(Unit) {
+        delay(durationMillis.toLong())
+        onAnimationFinished()
+    }
+
+    // 背景渐变色
+    val gradientColors = if (isDark) {
+        listOf(
+            Color(0xFF0F0C29),
+            Color(0xFF1A1B3A),
+            Color(0xFF24243E)
+        )
+    } else {
+        listOf(
+            Color(0xFF667eea),
+            Color(0xFF764ba2),
+            Color(0xFFf093fb)
+        )
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colors = gradientColors
+                )
+            )
+            .alpha(exitAlpha.value)
+    ) {
+        // 漂浮粒子层
+        particles.forEach { particle ->
+            FloatingParticle(
+                particle = particle,
+                isDark = isDark,
+                index = particle.id
+            )
+        }
+
+        // 中心内容
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(48.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            // Logo 光晕效果
+            Box(
+                modifier = Modifier.size(120.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                // 外层光晕
+                Box(
+                    modifier = Modifier
+                        .size(140.dp)
+                        .graphicsLayer {
+                            alpha = 0.3f * glowPulse.value
+                        }
+                        .background(
+                            brush = Brush.radialGradient(
+                                colors = listOf(
+                                    Color.White.copy(alpha = 0.6f),
+                                    Color.White.copy(alpha = 0f)
+                                )
+                            ),
+                            shape = CircleShape
+                        )
+                )
+
+                // 中层光晕
+                Box(
+                    modifier = Modifier
+                        .size(100.dp)
+                        .graphicsLayer {
+                            alpha = 0.5f * glowPulse.value
+                        }
+                        .background(
+                            brush = Brush.radialGradient(
+                                colors = listOf(
+                                    Color.White.copy(alpha = 0.8f),
+                                    Color.White.copy(alpha = 0f)
+                                )
+                            ),
+                            shape = CircleShape
+                        )
+                )
+
+                // Logo 图标
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .graphicsLayer {
+                            scaleX = logoScale.value
+                            scaleY = logoScale.value
+                            alpha = logoAlpha.value
+                        }
+                        .background(
+                            color = Color.White.copy(alpha = 0.95f),
+                            shape = RoundedCornerShape(20.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Terminal,
+                        contentDescription = null,
+                        tint = Color(0xFF667eea),
+                        modifier = Modifier.size(44.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // 主标题 Nexus
+            Text(
+                text = "Nexus",
+                style = MaterialTheme.typography.displayMedium,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color.White,
+                modifier = Modifier
+                    .graphicsLayer {
+                        alpha = textAlpha.value
+                        translationY = (1 - textAlpha.value) * -20.dp.toPx()
+                    }
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // 副标题
+            Text(
+                text = "MC 命令助手",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Medium,
+                color = Color.White.copy(alpha = 0.85f),
+                modifier = Modifier
+                    .graphicsLayer {
+                        alpha = subtitleAlpha.value
+                        translationY = subtitleY.value * 20.dp.toPx()
+                    }
+            )
+
+            Spacer(modifier = Modifier.height(60.dp))
+
+            // 底部加载指示器
+            CircularProgressIndicator(
+                modifier = Modifier.size(28.dp),
+                color = Color.White.copy(alpha = 0.7f),
+                strokeWidth = 2.5.dp
+            )
+        }
+
+        // 底部装饰线
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 48.dp)
+                .width(80.dp)
+                .height(3.dp)
+                .graphicsLayer {
+                    alpha = subtitleAlpha.value * 0.6f
+                }
+                .background(
+                    color = Color.White.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(2.dp)
+                )
+        )
+    }
+}
+
+/**
+ * 漂浮粒子数据
+ */
+private data class ParticleData(
+    val id: Int,
+    val startX: Float,
+    val startY: Float,
+    val size: Float,
+    val speed: Float,
+    val delay: Float
+)
+
+/**
+ * 漂浮粒子组件
+ */
+@Composable
+private fun FloatingParticle(
+    particle: ParticleData,
+    isDark: Boolean,
+    index: Int
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "particle_$index")
+
+    // 垂直浮动
+    val offsetY = infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = -1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = (4000 + particle.delay * 3000).toInt(),
+                easing = LinearEasing
+            ),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "particle_y_$index"
+    )
+
+    // 水平轻微摆动
+    val offsetX = infiniteTransition.animateFloat(
+        initialValue = -0.02f,
+        targetValue = 0.02f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = (3000 + particle.delay * 2000).toInt(),
+                easing = FastOutSlowInEasing
+            ),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "particle_x_$index"
+    )
+
+    // 透明度闪烁
+    val alpha = infiniteTransition.animateFloat(
+        initialValue = 0.2f,
+        targetValue = 0.7f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = (2500 + particle.delay * 2000).toInt(),
+                easing = FastOutSlowInEasing
+            ),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "particle_alpha_$index"
+    )
+
+    // 颜色 - 白色发光粒子
+    val particleColor = if (isDark) {
+        Color.White
+    } else {
+        Color.White
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .offset {
+                IntOffset(
+                    x = ((particle.startX + offsetX.value) * size.width).toInt(),
+                    y = ((particle.startY + offsetY.value) * size.height).toInt()
+                )
+            }
+    ) {
+        Box(
+            modifier = Modifier
+                .size(particle.size.dp)
+                .graphicsLayer {
+                    this.alpha = alpha.value
+                }
+                .background(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            particleColor.copy(alpha = 0.9f),
+                            particleColor.copy(alpha = 0f)
+                        )
+                    ),
+                    shape = CircleShape
+                )
+        )
     }
 }
