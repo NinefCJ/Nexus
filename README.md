@@ -798,9 +798,9 @@ See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
 
 ## 联系方式
 
-- **作者**: Nexus Team
-- **邮箱**: contact@nexuscmd.com
-- **网站**: https://nexuscmd.com
+- **作者**: NexusTeam(氿九Ninef)
+- **邮箱**: 2395953343@qq.com
+- **网站**: 无
 
 ---
 
