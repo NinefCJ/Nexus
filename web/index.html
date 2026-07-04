@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nexus — Minecraft 命令助手</title>
+  <meta name="description" content="专为 Minecraft 基岩版设计的跨平台命令辅助工具，提供智能语法提示、实时命令补全、完整 ID 翻译库等强大功能。">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#030308;--bg-2:#07070f;--bg-3:#0c0c18;
+      --bg-card:rgba(16,16,28,.55);--bg-card-solid:#12121e;--bg-card-hover:rgba(24,24,40,.8);
+      --border:rgba(90,90,140,.18);--border-strong:rgba(120,120,180,.35);
+      --text:#eef0ff;--text-muted:#9ca0c0;--text-dim:#60608a;
+      --accent:#06b6d4;--accent-2:#3b82f6;--accent-3:#0891b2;
+      --accent-light:#67e8f9;--accent-glow:rgba(6,182,212,.3);
+      --purple:#8b5cf6;--purple-light:#c4b5fd;
+      --green:#34d399;--green-light:#6ee7b7;
+      --orange:#fbbf24;--orange-light:#fcd34d;
+      --pink:#f472b6;--pink-light:#f9a8d4;
+      --rose:#fb7185;--rose-light:#fda4af;
+      --radius:20px;--radius-sm:14px;--radius-lg:32px;--radius-xl:48px;
+      --max-w:1280px;--nav-h:72px;
+    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      background:var(--bg);color:var(--text);
+      font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',system-ui,sans-serif;
+      line-height:1.7;overflow-x:hidden;-webkit-font-smoothing:antialiased;
+    }
+    a{color:inherit;text-decoration:none}img{max-width:100%;display:block}
+    button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+    ::selection{background:rgba(6,182,212,.35);color:#fff}
+    ::-webkit-scrollbar{width:10px;height:10px}
+    ::-webkit-scrollbar-track{background:var(--bg-2)}
+    ::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--border-strong),var(--text-dim));border-radius:5px}
+    ::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,var(--accent),var(--purple))}
+
+    /* 背景艺术效果 */
+    .bg-noise{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.03;
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")}
+    .bg-grid{position:fixed;inset:0;z-index:0;pointer-events:none;
+      background-image:linear-gradient(rgba(6,182,212,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(6,182,212,.03) 1px,transparent 1px);
+      background-size:56px 56px;
+      mask-image:radial-gradient(ellipse 90% 70% at 50% 25%,black 20%,transparent 75%);
+      -webkit-mask-image:radial-gradient(ellipse 90% 70% at 50% 25%,black 20%,transparent 75%)}
+    .bg-gradient-orbs{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+    .bg-orb{position:absolute;border-radius:50%;filter:blur(100px);opacity:.35;animation:orbFloat 20s ease-in-out infinite alternate}
+    .orb-1{width:600px;height:600px;top:-200px;left:-150px;background:radial-gradient(circle,var(--accent),transparent 60%);animation-duration:25s}
+    .orb-2{width:500px;height:500px;top:150px;right:-100px;background:radial-gradient(circle,var(--purple),transparent 60%);animation-duration:22s;animation-delay:-7s}
+    .orb-3{width:450px;height:450px;bottom:-100px;left:30%;background:radial-gradient(circle,var(--pink),transparent 60%);animation-duration:28s;animation-delay:-14s}
+    .orb-4{width:350px;height:350px;top:50%;left:50%;background:radial-gradient(circle,var(--green),transparent 60%);animation-duration:18s;animation-delay:-10s;opacity:.2}
+    @keyframes orbFloat{0%{transform:translate(0,0) scale(1)}33%{transform:translate(40px,-30px) scale(1.08)}66%{transform:translate(-30px,20px) scale(.95)}100%{transform:translate(20px,-40px) scale(1.05)}}
+
+    .cursor-spotlight{position:fixed;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(6,182,212,.12),transparent 65%);pointer-events:none;z-index:1;transform:translate(-50%,-50%);transition:opacity .4s;opacity:0;mix-blend-mode:screen}
+    @media (hover:hover){.cursor-spotlight{opacity:1}}
+
+    .scroll-progress{position:fixed;top:0;left:0;height:2px;z-index:1001;background:linear-gradient(90deg,var(--accent),var(--purple),var(--pink),var(--accent));background-size:300% 100%;width:0%;transition:width .1s;animation:progressShine 3s linear infinite}
+    @keyframes progressShine{to{background-position:300% 0}}
+
+    /* 玻璃拟态 */
+    .glass{background:var(--bg-card);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border:1px solid var(--border);border-radius:var(--radius);position:relative}
+    .glass::before{content:'';position:absolute;inset:0;border-radius:inherit;padding:1px;background:linear-gradient(135deg,rgba(255,255,255,.06),transparent 40%,transparent 60%,rgba(6,182,212,.1));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+    .glass-hover{background:var(--bg-card);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border:1px solid var(--border);border-radius:var(--radius);transition:all .4s cubic-bezier(.2,.7,.3,1);position:relative;overflow:hidden}
+    .glass-hover::before{content:'';position:absolute;inset:0;border-radius:inherit;padding:1px;background:linear-gradient(135deg,rgba(255,255,255,.08),transparent 40%,transparent 60%,rgba(6,182,212,.15));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;transition:all .4s;opacity:.6}
+    .glass-hover:hover{background:var(--bg-card-hover);border-color:var(--border-strong);transform:translateY(-6px);box-shadow:0 24px 60px -20px rgba(6,182,212,.25),0 0 0 1px rgba(6,182,212,.1)}
+    .glass-hover:hover::before{opacity:1}
+    .glass-hover:hover .feature-icon{transform:scale(1.12) rotate(-6deg)}
+    .glass-hover::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(6,182,212,.4),transparent);opacity:0;transition:opacity .4s}
+    .glass-hover:hover::after{opacity:1}
+
+    /* 导航栏 */
+    .nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:var(--nav-h);backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);background:rgba(3,3,10,.6);border-bottom:1px solid var(--border);transition:all .35s cubic-bezier(.2,.7,.3,1)}
+    .nav.scrolled{background:rgba(3,3,10,.85);box-shadow:0 8px 40px rgba(0,0,0,.4);border-bottom-color:var(--border-strong)}
+    .nav-inner{max-width:var(--max-w);margin:0 auto;height:100%;padding:0 32px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+    .nav-brand{display:flex;align-items:center;gap:12px;font-weight:700;font-size:16px;letter-spacing:-.01em}
+    .nav-brand-icon{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent-2),var(--purple));background-size:200% 200%;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 24px var(--accent-glow),0 0 0 1px rgba(255,255,255,.1) inset;transition:all .4s cubic-bezier(.2,.7,.3,1);animation:iconShine 5s ease-in-out infinite}
+    @keyframes iconShine{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+    .nav-brand:hover .nav-brand-icon{transform:rotate(-12deg) scale(1.08);box-shadow:0 8px 32px var(--accent-glow),0 0 0 1px rgba(255,255,255,.15) inset}
+    .nav-brand span{background:linear-gradient(135deg,var(--text),var(--text-muted));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .nav-links{display:flex;align-items:center;gap:4px}
+    .nav-link{padding:8px 16px;font-size:13.5px;font-weight:500;color:var(--text-muted);border-radius:10px;transition:all .25s;position:relative}
+    .nav-link:hover{color:var(--text);background:rgba(120,120,180,.08)}
+    .nav-link::after{content:'';position:absolute;bottom:4px;left:50%;transform:translateX(-50%) scaleX(0);width:24px;height:2px;background:linear-gradient(90deg,var(--accent),var(--purple));border-radius:2px;transition:transform .35s cubic-bezier(.2,.7,.3,1)}
+    .nav-link:hover::after{transform:translateX(-50%) scaleX(1)}
+    .nav-cta{display:flex;align-items:center;gap:14px}
+    .btn-ghost{padding:9px 20px;font-size:13.5px;font-weight:500;color:var(--text-muted);border:1px solid var(--border);border-radius:11px;transition:all .25s;display:inline-flex;align-items:center;gap:8px}
+    .btn-ghost:hover{color:var(--text);border-color:var(--border-strong);background:rgba(120,120,180,.06)}
+    .mobile-menu-btn{display:none;width:40px;height:40px;border-radius:10px;align-items:center;justify-content:center;font-size:20px;background:var(--bg-card-solid);border:1px solid var(--border)}
+    .mobile-menu{display:none;position:fixed;top:var(--nav-h);left:0;right:0;background:rgba(3,3,10,.95);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);border-bottom:1px solid var(--border);padding:16px;z-index:999;transform:translateY(-10px);opacity:0;pointer-events:none;transition:all .3s}
+    .mobile-menu.open{transform:translateY(0);opacity:1;pointer-events:auto}
+    .mobile-menu a{display:block;padding:12px 16px;font-size:14px;color:var(--text-muted);border-radius:10px;transition:all .2s}
+    .mobile-menu a:hover{color:var(--text);background:rgba(120,120,180,.06)}
+
+    /* 通用区块 */
+    .section{position:relative;z-index:1;max-width:var(--max-w);margin:0 auto;padding:140px 32px}
+    .section-sm{padding:80px 32px 140px}
+    .section-label{display:inline-flex;align-items:center;gap:10px;padding:7px 18px;border-radius:999px;background:linear-gradient(135deg,rgba(6,182,212,.12),rgba(139,92,246,.08));border:1px solid rgba(6,182,212,.3);font-size:12.5px;font-weight:600;color:var(--accent-light);backdrop-filter:blur(12px);letter-spacing:.02em;position:relative;overflow:hidden}
+    .section-title{font-size:clamp(34px,5vw,58px);font-weight:800;letter-spacing:-.035em;line-height:1.08;margin-bottom:18px}
+    .section-title .grad{background:linear-gradient(135deg,var(--accent-light),var(--purple-light) 50%,var(--pink-light));background-size:200% 200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:titleShine 6s ease-in-out infinite}
+    @keyframes titleShine{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+    .section-desc{font-size:17px;color:var(--text-muted);max-width:640px;line-height:1.75}
+    .section-head-center{text-align:center}.section-head-center .section-desc{margin:0 auto}
+
+    /* 滚动渐入 */
+    .reveal{opacity:0;transform:translateY(40px);transition:opacity .9s cubic-bezier(.2,.7,.3,1),transform .9s cubic-bezier(.2,.7,.3,1)}
+    .reveal.visible{opacity:1;transform:translateY(0)}
+    .reveal-delay-1{transition-delay:.08s}.reveal-delay-2{transition-delay:.16s}.reveal-delay-3{transition-delay:.24s}
+    .reveal-delay-4{transition-delay:.32s}.reveal-delay-5{transition-delay:.40s}.reveal-delay-6{transition-delay:.48s}
+
+    /* Hero */
+    .hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:calc(var(--nav-h) + 60px) 32px 100px;position:relative;overflow:hidden}
+    .hero-eyebrow{display:inline-flex;align-items:center;gap:12px;padding:9px 22px;border-radius:999px;background:linear-gradient(135deg,rgba(20,20,35,.8),rgba(15,15,28,.9));border:1px solid var(--border-strong);font-size:13px;color:var(--text-muted);margin-bottom:36px;position:relative;z-index:2;backdrop-filter:blur(16px);animation:fadeUp .9s cubic-bezier(.2,.7,.3,1) both;box-shadow:0 4px 24px rgba(0,0,0,.3)}
+    .hero-eyebrow .dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 12px var(--green),0 0 24px rgba(52,211,153,.5);animation:pulse 2.5s ease-in-out infinite}
+    @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.2)}}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+    .hero h1{font-size:clamp(44px,8vw,92px);font-weight:800;letter-spacing:-.04em;line-height:1.02;margin-bottom:28px;position:relative;z-index:2;max-width:960px;animation:fadeUp .9s cubic-bezier(.2,.7,.3,1) .1s both}
+    .hero h1 .line-1{display:block}
+    .hero h1 .line-2{display:block;background:linear-gradient(135deg,var(--accent-light),var(--purple-light) 40%,var(--pink-light) 80%);background-size:250% 250%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:titleShine 7s ease-in-out infinite}
+    .hero p.hero-desc{font-size:clamp(16px,2vw,20px);color:var(--text-muted);max-width:700px;margin-bottom:48px;position:relative;z-index:2;line-height:1.75;animation:fadeUp .9s cubic-bezier(.2,.7,.3,1) .2s both}
+    .hero-actions{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;position:relative;z-index:2;animation:fadeUp .9s cubic-bezier(.2,.7,.3,1) .3s both}
+    .btn{display:inline-flex;align-items:center;gap:10px;padding:15px 32px;border-radius:14px;font-size:15px;font-weight:600;transition:all .3s cubic-bezier(.2,.7,.3,1);position:relative;overflow:hidden;letter-spacing:-.01em}
+    .btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.18),transparent 50%);opacity:0;transition:opacity .3s}
+    .btn:hover::before{opacity:1}
+    .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-2),var(--purple));background-size:200% 200%;color:#fff;box-shadow:0 4px 24px var(--accent-glow),0 0 0 1px rgba(255,255,255,.1) inset;animation:btnShine 5s ease-in-out infinite}
+    @keyframes btnShine{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+    .btn-primary:hover{transform:translateY(-3px);box-shadow:0 12px 48px var(--accent-glow),0 0 0 1px rgba(255,255,255,.15) inset}
+    .btn-secondary{background:rgba(20,20,35,.7);color:var(--text);border:1px solid var(--border-strong);backdrop-filter:blur(16px)}
+    .btn-secondary:hover{background:var(--bg-card-hover);border-color:var(--text-dim);transform:translateY(-3px);box-shadow:0 8px 32px rgba(0,0,0,.3)}
+    .btn-arrow{display:inline-flex;transition:transform .3s}
+    .btn:hover .btn-arrow{transform:translateX(4px)}
+
+    .hero-trust{margin-top:60px;display:flex;align-items:center;gap:24px;font-size:13px;color:var(--text-dim);position:relative;z-index:2;animation:fadeUp .9s cubic-bezier(.2,.7,.3,1) .4s both;flex-wrap:wrap;justify-content:center}
+    .hero-trust-item{display:flex;align-items:center;gap:8px}
+
+    /* 浮动卡片 */
+    .float-cards{position:absolute;inset:0;pointer-events:none;z-index:1}
+    .float-card{position:absolute;width:240px;padding:18px;background:linear-gradient(135deg,rgba(18,18,32,.9),rgba(12,12,24,.95));border:1px solid var(--border-strong);border-radius:var(--radius-sm);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);animation:floatCard 9s ease-in-out infinite;box-shadow:0 16px 48px -12px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.03) inset}
+    .float-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent)}
+    .fc-1{top:22%;left:4%;animation-delay:0s;transform:rotate(-2deg)}
+    .fc-2{top:58%;right:6%;animation-delay:-2.5s;transform:rotate(1.5deg)}
+    .fc-3{top:18%;right:8%;animation-delay:-5s;width:280px;transform:rotate(2deg)}
+    .fc-4{bottom:22%;left:8%;animation-delay:-7.5s;transform:rotate(-1deg)}
+    @keyframes floatCard{0%,100%{transform:translateY(0) rotate(var(--rot,0deg))}50%{transform:translateY(-24px) rotate(calc(var(--rot,0deg) + 1.5deg))}}
+    .fc-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px;position:relative}
+    .fc-icon::after{content:'';position:absolute;inset:-2px;border-radius:inherit;background:inherit;filter:blur(8px);opacity:.4;z-index:-1}
+    .fc-title{font-size:13.5px;font-weight:600;margin-bottom:5px}
+    .fc-desc{font-size:11.5px;color:var(--text-muted);line-height:1.45}
+    .fc-code{font-family:'JetBrains Mono',Consolas,monospace;font-size:11px;color:var(--accent-light);margin-top:10px;padding:8px 12px;background:rgba(0,0,0,.4);border-radius:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:1px solid var(--border)}
+
+    /* 统计数据 */
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;max-width:var(--max-w);margin:-80px auto 0;padding:0 32px;position:relative;z-index:3}
+    .stat-card{padding:36px 28px;text-align:center;position:relative;overflow:hidden;cursor:default}
+    .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),var(--purple),transparent);opacity:.5}
+    .stat-card::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,rgba(6,182,212,.06),transparent 60%);opacity:0;transition:opacity .4s}
+    .stat-card:hover::after{opacity:1}
+    .stat-card:hover .stat-num{transform:scale(1.06)}
+    .stat-num{font-size:46px;font-weight:800;letter-spacing:-.025em;margin-bottom:10px;background:linear-gradient(135deg,var(--accent-light),var(--purple-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;transition:transform .4s cubic-bezier(.2,.7,.3,1);position:relative;z-index:1}
+    .stat-label{font-size:13.5px;color:var(--text-muted);font-weight:500;position:relative;z-index:1}
+
+    /* 功能卡片 */
+    .features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:64px}
+    .feature-card{padding:36px 30px;position:relative;overflow:hidden}
+    .feature-icon{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:22px;position:relative;transition:all .4s cubic-bezier(.2,.7,.3,1)}
+    .feature-icon::after{content:'';position:absolute;inset:-4px;border-radius:inherit;background:inherit;filter:blur(12px);opacity:.3;z-index:-1;transition:opacity .4s}
+    .feature-card:hover .feature-icon::after{opacity:.5}
+    .feature-card h3{font-size:17.5px;font-weight:700;margin-bottom:12px;letter-spacing:-.01em;background:linear-gradient(135deg,var(--text),var(--text-muted));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .feature-card p{font-size:14px;color:var(--text-muted);line-height:1.7}
+    .feature-tag{display:inline-block;margin-top:18px;padding:4px 10px;font-size:11px;font-weight:600;border-radius:999px;background:rgba(6,182,212,.1);color:var(--accent-light);border:1px solid rgba(6,182,212,.25)}
+
+    /* 技术栈 */
+    .tech-stack{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-top:48px}
+    .tech-card{padding:28px 20px;text-align:center;position:relative;overflow:hidden}
+    .tech-icon{font-size:36px;margin-bottom:14px;transition:transform .4s}
+    .tech-card:hover .tech-icon{transform:scale(1.15)}
+    .tech-name{font-size:15px;font-weight:600;margin-bottom:6px}
+    .tech-desc{font-size:12.5px;color:var(--text-muted)}
+
+    /* 架构分层 */
+    .architecture-section{margin-top:64px;padding:48px 40px;background:linear-gradient(135deg,rgba(6,182,212,.06),rgba(139,92,246,.04));border-radius:var(--radius-lg);border:1px solid var(--border);position:relative;overflow:hidden}
+    .architecture-section::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(6,182,212,.3),transparent)}
+    .architecture-title{font-size:24px;font-weight:700;margin-bottom:32px;text-align:center}
+    .architecture-stack{display:flex;flex-direction:column;gap:16px}
+    .arch-layer{display:flex;align-items:center;gap:24px;padding:20px 24px;background:var(--bg-card);border-radius:var(--radius-sm);border:1px solid var(--border);backdrop-filter:blur(12px);transition:all .3s}
+    .arch-layer:hover{border-color:var(--border-strong);transform:translateX(4px)}
+    .layer-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+    .layer-info{flex:1}
+    .layer-title{font-size:16px;font-weight:600;margin-bottom:4px}
+    .layer-desc{font-size:13px;color:var(--text-muted)}
+    .layer-tech{font-size:12px;color:var(--accent-light);font-weight:600;padding:4px 12px;border-radius:999px;background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.2)}
+
+    /* 快速开始 */
+    .workflow-section{position:relative;z-index:1;max-width:var(--max-w);margin:0 auto;padding:80px 32px 140px}
+    .workflow-timeline{position:relative;margin-top:72px;padding:24px 0}
+    .workflow-timeline::before{content:'';position:absolute;top:50%;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--border-strong),var(--border-strong),transparent);transform:translateY(-50%)}
+    .workflow-steps{display:grid;grid-template-columns:repeat(5,1fr);gap:24px;position:relative}
+    .wf-step{text-align:center;position:relative;cursor:default}
+    .wf-step-num{width:52px;height:52px;border-radius:50%;margin:0 auto 20px;background:var(--bg-card-solid);border:2px solid var(--border-strong);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--text-muted);transition:all .4s cubic-bezier(.2,.7,.3,1);position:relative;z-index:1}
+    .wf-step:hover .wf-step-num{background:linear-gradient(135deg,var(--accent),var(--purple));border-color:transparent;color:#fff;transform:scale(1.15);box-shadow:0 10px 32px var(--accent-glow),0 0 0 4px rgba(6,182,212,.15)}
+    .wf-step-icon{font-size:28px;margin-bottom:14px;transition:transform .4s}
+    .wf-step:hover .wf-step-icon{transform:scale(1.15)}
+    .wf-step h4{font-size:15px;font-weight:600;margin-bottom:8px;letter-spacing:-.01em}
+    .wf-step p{font-size:13px;color:var(--text-muted);line-height:1.55}
+
+    /* 代码演示 */
+    .code-demo{background:#0d0d14;border-radius:var(--radius);border:1px solid var(--border);overflow:hidden;margin:48px 0;box-shadow:0 24px 60px -20px rgba(0,0,0,.5)}
+    .code-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:var(--bg-card);border-bottom:1px solid var(--border)}
+    .code-header-left{display:flex;align-items:center;gap:12px}
+    .code-dots{display:flex;gap:8px}
+    .code-dot{width:12px;height:12px;border-radius:50%}
+    .code-dot.red{background:#ff5f57}.code-dot.yellow{background:#febc2e}.code-dot.green{background:#28c840}
+    .code-lang{font-size:12.5px;color:var(--text-muted);font-weight:500;font-family:'JetBrains Mono',monospace}
+    .copy-btn{background:rgba(255,255,255,.08);border:none;color:var(--text-muted);padding:8px 16px;border-radius:8px;font-size:13px;cursor:pointer;transition:all .2s ease;display:flex;align-items:center;gap:8px}
+    .copy-btn:hover{background:rgba(255,255,255,.12);color:var(--text)}
+    .code-content{padding:24px;font-family:'JetBrains Mono','Fira Code',monospace;font-size:13px;line-height:1.7;overflow-x:auto}
+    .code-content code{color:var(--text)}
+    .code-keyword{color:#c678dd}
+    .code-string{color:#98c379}
+    .code-function{color:#61afef}
+    .code-number{color:#d19a66}
+    .code-comment{color:#5c6370;font-style:italic}
+    .code-type{color:#e5c07b}
+    .code-operator{color:#56b6c2}
+
+    /* 模块卡片 */
+    .module-section{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:64px}
+    .module-card{padding:40px 36px;position:relative;overflow:hidden}
+    .module-header{display:flex;align-items:center;gap:16px;margin-bottom:24px}
+    .module-icon{width:60px;height:60px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:30px;position:relative;flex-shrink:0}
+    .module-icon::after{content:'';position:absolute;inset:-4px;border-radius:inherit;background:inherit;filter:blur(12px);opacity:.3;z-index:-1}
+    .module-title{font-size:22px;font-weight:700;margin-bottom:4px}
+    .module-desc{font-size:13px;color:var(--text-muted)}
+    .module-features{list-style:none;margin-top:20px}
+    .module-features li{padding:10px 0;font-size:14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+    .module-features li:last-child{border-bottom:none}
+    .module-features li::before{content:'✓';color:var(--green);font-weight:bold;font-size:14px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(52,211,153,.1);flex-shrink:0}
+
+    /* FAQ */
+    .faq-section{max-width:800px;margin:64px auto 0}
+    .faq-item{margin-bottom:14px}
+    .faq-question{padding:20px 24px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-size:15.5px;font-weight:600;transition:all .3s;gap:16px}
+    .faq-question:hover{border-color:var(--border-strong)}
+    .faq-question .faq-icon{font-size:18px;color:var(--accent-light);transition:transform .35s cubic-bezier(.2,.7,.3,1);flex-shrink:0}
+    .faq-item.open .faq-question .faq-icon{transform:rotate(180deg)}
+    .faq-answer{max-height:0;overflow:hidden;transition:max-height .4s cubic-bezier(.2,.7,.3,1),padding .4s cubic-bezier(.2,.7,.3,1);padding:0 24px;border-top:1px solid transparent}
+    .faq-item.open .faq-answer{max-height:400px;padding:20px 24px;border-top-color:var(--border)}
+    .faq-answer p{font-size:14px;color:var(--text-muted);line-height:1.75}
+
+    /* CTA */
+    .cta-section{text-align:center;padding:120px 32px;position:relative;z-index:1}
+    .cta-content{padding:72px 48px;max-width:720px;margin:0 auto;position:relative;overflow:hidden}
+    .cta-content::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(6,182,212,.1),transparent 60%);pointer-events:none}
+    .cta-content h3{font-size:36px;font-weight:800;letter-spacing:-.02em;margin-bottom:16px;position:relative;z-index:1}
+    .cta-content p{font-size:17px;color:var(--text-muted);margin-bottom:36px;position:relative;z-index:1}
+    .cta-buttons{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;position:relative;z-index:1}
+
+    /* Footer */
+    footer{background:linear-gradient(180deg,var(--bg-2),var(--bg));padding:60px 32px 32px;border-top:1px solid var(--border);position:relative;z-index:1}
+    .footer-content{max-width:var(--max-w);margin:0 auto}
+    .footer-top{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;margin-bottom:48px}
+    .footer-brand{max-width:320px}
+    .footer-logo{display:flex;align-items:center;gap:12px;font-weight:700;font-size:18px;margin-bottom:16px}
+    .footer-logo-icon{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-size:20px}
+    .footer-desc{font-size:14px;color:var(--text-muted);line-height:1.7}
+    .footer-col h4{font-size:14px;font-weight:600;margin-bottom:18px;color:var(--text)}
+    .footer-col ul{list-style:none}
+    .footer-col ul li{margin-bottom:10px}
+    .footer-col ul li a{font-size:13.5px;color:var(--text-muted);transition:color .2s}
+    .footer-col ul li a:hover{color:var(--accent-light)}
+    .footer-bottom{border-top:1px solid var(--border);padding-top:28px;text-align:center;font-size:13px;color:var(--text-dim)}
+
+    /* 响应式 */
+    @media(max-width:1024px){
+      .stats{grid-template-columns:repeat(2,1fr)}
+      .features-grid{grid-template-columns:repeat(2,1fr)}
+      .tech-stack{grid-template-columns:repeat(2,1fr)}
+      .workflow-steps{grid-template-columns:repeat(3,1fr);gap:16px}
+      .workflow-timeline::before{display:none}
+      .module-section{grid-template-columns:1fr}
+      .footer-top{grid-template-columns:1fr 1fr;gap:32px}
+    }
+    @media(max-width:768px){
+      .nav-links{display:none}
+      .mobile-menu-btn{display:flex}
+      .mobile-menu{display:block}
+      .hero h1{font-size:44px}
+      .float-cards{display:none}
+      .stats{grid-template-columns:repeat(2,1fr)}
+      .features-grid{grid-template-columns:1fr}
+      .tech-stack{grid-template-columns:repeat(2,1fr)}
+      .workflow-steps{grid-template-columns:1fr 1fr}
+      .architecture-section{padding:32px 20px}
+      .arch-layer{flex-direction:column;text-align:center}
+      .footer-top{grid-template-columns:1fr;text-align:center}
+      .footer-brand{max-width:none;margin:0 auto}
+      .cta-content{padding:48px 24px}
+      .cta-content h3{font-size:28px}
+    }
+    @media(max-width:480px){
+      .hero h1{font-size:36px}
+      .stats{grid-template-columns:1fr}
+      .tech-stack{grid-template-columns:1fr}
+      .workflow-steps{grid-template-columns:1fr}
+      .stat-num{font-size:36px}
+      .section-title{font-size:32px}
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-noise"></div>
+  <div class="bg-grid"></div>
+  <div class="bg-gradient-orbs">
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+    <div class="bg-orb orb-3"></div>
+    <div class="bg-orb orb-4"></div>
+  </div>
+  <div class="cursor-spotlight" id="cursorSpotlight"></div>
+  <div class="scroll-progress" id="scrollProgress"></div>
+
+  <!-- 导航栏 -->
+  <nav class="nav" id="navbar">
+    <div class="nav-inner">
+      <a href="#" class="nav-brand">
+        <div class="nav-brand-icon">⚡</div>
+        <span>Nexus</span>
+      </a>
+      <div class="nav-links">
+        <a href="#features" class="nav-link">功能特性</a>
+        <a href="#tech" class="nav-link">技术架构</a>
+        <a href="#quickstart" class="nav-link">快速开始</a>
+        <a href="#modules" class="nav-link">模块详解</a>
+        <a href="#faq" class="nav-link">常见问题</a>
+      </div>
+      <div class="nav-cta">
+        <a href="https://github.com/NinefCJ/Nexus" target="_blank" class="btn btn-primary">
+          <span>GitHub</span>
+          <span class="btn-arrow">→</span>
+        </a>
+        <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+      </div>
+    </div>
+  </nav>
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="#features">功能特性</a>
+    <a href="#tech">技术架构</a>
+    <a href="#quickstart">快速开始</a>
+    <a href="#modules">模块详解</a>
+    <a href="#faq">常见问题</a>
+    <a href="https://github.com/NinefCJ/Nexus" target="_blank">GitHub</a>
+  </div>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="float-cards">
+      <div class="float-card fc-1">
+        <div class="fc-icon" style="background:rgba(6,182,212,.15);color:var(--accent)">⚡</div>
+        <div class="fc-title">实时命令补全</div>
+        <div class="fc-desc">智能上下文感知提示</div>
+        <div class="fc-code">/give @p diamond_...</div>
+      </div>
+      <div class="float-card fc-2">
+        <div class="fc-icon" style="background:rgba(139,92,246,.15);color:var(--purple)">🎨</div>
+        <div class="fc-title">语法高亮</div>
+        <div class="fc-desc">彩色命令结构显示</div>
+      </div>
+      <div class="float-card fc-3">
+        <div class="fc-icon" style="background:rgba(52,211,153,.15);color:var(--green)">📚</div>
+        <div class="fc-title">完整 ID 翻译库</div>
+        <div class="fc-desc">2000+ 中文翻译</div>
+      </div>
+      <div class="float-card fc-4">
+        <div class="fc-icon" style="background:rgba(244,114,182,.15);color:var(--pink)">🪟</div>
+        <div class="fc-title">悬浮窗模式</div>
+        <div class="fc-desc">游戏中实时使用</div>
+      </div>
+    </div>
+
+    <div class="hero-eyebrow">
+      <span class="dot"></span>
+      <span>v1.2.0 已发布 · 支持拓展包系统</span>
+    </div>
+    <h1>
+      <span class="line-1">Minecraft 命令助手</span>
+      <span class="line-2">Nexus</span>
+    </h1>
+    <p class="hero-desc">
+      专为 Minecraft 基岩版设计的跨平台命令辅助工具，提供智能语法提示、实时命令补全、完整 ID 翻译库，让命令编写更高效。
+    </p>
+    <div class="hero-actions">
+      <a href="#quickstart" class="btn btn-primary">
+        <span>快速开始</span>
+        <span class="btn-arrow">→</span>
+      </a>
+      <a href="https://github.com/NinefCJ/Nexus" target="_blank" class="btn btn-secondary">
+        <span>查看源码</span>
+      </a>
+    </div>
+    <div class="hero-trust">
+      <div class="hero-trust-item">⭐ 开源免费</div>
+      <div class="hero-trust-item">🔒 无广告</div>
+      <div class="hero-trust-item">🌍 中文支持</div>
+      <div class="hero-trust-item">⚡ 高性能 C++ 内核</div>
+    </div>
+  </section>
+
+  <!-- 统计数据 -->
+  <div class="stats">
+    <div class="stat-card glass-hover reveal">
+      <div class="stat-num">55+</div>
+      <div class="stat-label">命令模板</div>
+    </div>
+    <div class="stat-card glass-hover reveal reveal-delay-1">
+      <div class="stat-num">2000+</div>
+      <div class="stat-label">ID 翻译</div>
+    </div>
+    <div class="stat-card glass-hover reveal reveal-delay-2">
+      <div class="stat-num">8</div>
+      <div class="stat-label">预设主题</div>
+    </div>
+    <div class="stat-card glass-hover reveal reveal-delay-3">
+      <div class="stat-num">0</div>
+      <div class="stat-label">广告干扰</div>
+    </div>
+  </div>
+
+  <!-- 功能特性 -->
+  <section class="section" id="features">
+    <div class="section-head-center reveal">
+      <div class="section-label">✨ 功能特性</div>
+      <h2 class="section-title">全方位的 <span class="grad">命令辅助能力</span></h2>
+      <p class="section-desc">从语法补全到 ID 翻译，从错误检测到模板生成，Nexus 提供完整的命令编写体验</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card glass-hover reveal">
+        <div class="feature-icon" style="background:rgba(6,182,212,.15);color:var(--accent)">⚡</div>
+        <h3>智能命令补全</h3>
+        <p>基于上下文的实时语法提示和自动补全，支持命令、参数、ID、选择器等多种补全类型。</p>
+        <span class="feature-tag">实时补全</span>
+      </div>
+      <div class="feature-card glass-hover reveal reveal-delay-1">
+        <div class="feature-icon" style="background:rgba(139,92,246,.15);color:var(--purple)">🎨</div>
+        <h3>语法高亮显示</h3>
+        <p>命令结构用不同颜色区分，关键字、参数、字符串、数字一目了然，可读性更强。</p>
+        <span class="feature-tag">彩色显示</span>
+      </div>
+      <div class="feature-card glass-hover reveal reveal-delay-2">
+        <div class="feature-icon" style="background:rgba(52,211,153,.15);color:var(--green)">✅</div>
+        <h3>实时错误检测</h3>
+        <p>即时检测命令语法错误，提供清晰的错误提示和修复建议，帮助快速定位问题。</p>
+        <span class="feature-tag">即时反馈</span>
+      </div>
+      <div class="feature-card glass-hover reveal reveal-delay-3">
+        <div class="feature-icon" style="background:rgba(96,165,250,.15);color:#60a5fa">📖</div>
+        <h3>完整 ID 翻译库</h3>
+        <p>包含方块(456)、物品(336)、音效(918)、粒子(400+)、动画(200+)的完整中文翻译。</p>
+        <span class="feature-tag">中文翻译</span>
+      </div>
+      <div class="feature-card glass-hover reveal reveal-delay-4">
+        <div class="feature-icon" style="background:rgba(251,191,36,.15);color:var(--orange)">📋</div>
+        <h3>命令模板库</h3>
+        <p>55+ 常用命令模板快速生成，支持自定义模板，一键生成复杂命令结构。</p>
+        <span class="feature-tag">快速生成</span>
+      </div>
+      <div class="feature-card glass-hover reveal reveal-delay-5">
+        <div class="feature-icon" style="background:rgba(244,114,182,.15);color:var(--pink)">🪟</div>
+        <h3>悬浮窗模式</h3>
+        <p>游戏中也能实时使用命令助手，支持最小化/展开模式，快速复制到剪贴板。</p>
+        <span class="feature-tag">游戏中使用</span>
+      </div>
+      <div class="feature-card glass-hover reveal">
+        <div class="feature-icon" style="background:rgba(251,113,133,.15);color:var(--rose)">🎭</div>
+        <h3>主题系统</h3>
+        <p>8种预设主题 + 自定义背景图片，支持毛玻璃效果，打造个性化界面。</p>
+        <span class="feature-tag">8种主题</span>
+      </div>
+      <div class="feature-card glass-hover reveal reveal-delay-1">
+        <div class="feature-icon" style="background:rgba(6,182,212,.15);color:var(--accent)">🔧</div>
+        <h3>拓展包支持</h3>
+        <p>支持 JSON 格式自定义拓展包，轻松扩展命令库和 ID 翻译，热加载即用。</p>
+        <span class="feature-tag">JSON 拓展</span>
+      </div>
+      <div class="feature-card glass-hover reveal reveal-delay-2">
+        <div class="feature-icon" style="background:rgba(139,92,246,.15);color:var(--purple)">💾</div>
+        <h3>历史记录</h3>
+        <p>自动保存命令历史，支持搜索和收藏，快速复用常用命令，提高效率。</p>
+        <span class="feature-tag">自动保存</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 技术架构 -->
+  <section class="section" id="tech">
+    <div class="section-head-center reveal">
+      <div class="section-label">🏗️ 技术架构</div>
+      <h2 class="section-title">高性能的 <span class="grad">分层架构设计</span></h2>
+      <p class="section-desc">采用 C++ 核心 + Kotlin UI 的混合架构，兼顾性能与开发效率</p>
+    </div>
+    <div class="tech-stack">
+      <div class="tech-card glass-hover reveal">
+        <div class="tech-icon">📱</div>
+        <div class="tech-name">Jetpack Compose</div>
+        <div class="tech-desc">现代声明式 UI</div>
+      </div>
+      <div class="tech-card glass-hover reveal reveal-delay-1">
+        <div class="tech-icon">🎨</div>
+        <div class="tech-name">Material3</div>
+        <div class="tech-desc">设计系统</div>
+      </div>
+      <div class="tech-card glass-hover reveal reveal-delay-2">
+        <div class="tech-icon">💎</div>
+        <div class="tech-name">Kotlin</div>
+        <div class="tech-desc">Android 开发</div>
+      </div>
+      <div class="tech-card glass-hover reveal reveal-delay-3">
+        <div class="tech-icon">⚡</div>
+        <div class="tech-name">C++17</div>
+        <div class="tech-desc">高性能核心</div>
+      </div>
+      <div class="tech-card glass-hover reveal">
+        <div class="tech-icon">🔗</div>
+        <div class="tech-name">JNI</div>
+        <div class="tech-desc">跨语言桥接</div>
+      </div>
+      <div class="tech-card glass-hover reveal reveal-delay-1">
+        <div class="tech-icon">📊</div>
+        <div class="tech-name">RapidJSON</div>
+        <div class="tech-desc">高效 JSON</div>
+      </div>
+      <div class="tech-card glass-hover reveal reveal-delay-2">
+        <div class="tech-icon">🔄</div>
+        <div class="tech-name">Coroutines</div>
+        <div class="tech-desc">异步操作</div>
+      </div>
+      <div class="tech-card glass-hover reveal reveal-delay-3">
+        <div class="tech-icon">🧪</div>
+        <div class="tech-name">JUnit</div>
+        <div class="tech-desc">单元测试</div>
+      </div>
+    </div>
+
+    <div class="architecture-section reveal">
+      <h3 class="architecture-title">架构分层</h3>
+      <div class="architecture-stack">
+        <div class="arch-layer">
+          <div class="layer-icon" style="background:rgba(244,114,182,.15);color:var(--pink)">🎨</div>
+          <div class="layer-info">
+            <div class="layer-title">Android UI Layer</div>
+            <div class="layer-desc">Jetpack Compose + Material3 构建现代化用户界面</div>
+          </div>
+          <div class="layer-tech">UI</div>
+        </div>
+        <div class="arch-layer">
+          <div class="layer-icon" style="background:rgba(96,165,250,.15);color:#60a5fa">🧠</div>
+          <div class="layer-info">
+            <div class="layer-title">ViewModel Layer</div>
+            <div class="layer-desc">StateFlow + Coroutines 响应式状态管理</div>
+          </div>
+          <div class="layer-tech">状态管理</div>
+        </div>
+        <div class="arch-layer">
+          <div class="layer-icon" style="background:rgba(52,211,153,.15);color:var(--green)">📦</div>
+          <div class="layer-info">
+            <div class="layer-title">Repository Layer</div>
+            <div class="layer-desc">CommandRepo / Settings / AddonManager 数据层</div>
+          </div>
+          <div class="layer-tech">数据层</div>
+        </div>
+        <div class="arch-layer">
+          <div class="layer-icon" style="background:rgba(251,191,36,.15);color:var(--orange)">🔗</div>
+          <div class="layer-info">
+            <div class="layer-title">JNI Bridge Layer</div>
+            <div class="layer-desc">Kotlin ←→ C++ 跨语言互操作桥接</div>
+          </div>
+          <div class="layer-tech">跨语言</div>
+        </div>
+        <div class="arch-layer">
+          <div class="layer-icon" style="background:rgba(6,182,212,.15);color:var(--accent)">⚡</div>
+          <div class="layer-info">
+            <div class="layer-title">C++ Core Library</div>
+            <div class="layer-desc">Tokenizer → Parser → Completion Engine 高性能核心</div>
+          </div>
+          <div class="layer-tech">核心引擎</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 快速开始 -->
+  <section class="workflow-section" id="quickstart">
+    <div class="section-head-center reveal">
+      <div class="section-label">🚀 快速开始</div>
+      <h2 class="section-title">五分钟 <span class="grad">搭建开发环境</span></h2>
+      <p class="section-desc">按照以下步骤快速搭建开发环境并运行 Nexus 项目</p>
+    </div>
+    <div class="workflow-timeline">
+      <div class="workflow-steps">
+        <div class="wf-step reveal">
+          <div class="wf-step-num">1</div>
+          <div class="wf-step-icon">📥</div>
+          <h4>克隆项目</h4>
+          <p>从 GitHub 克隆最新代码仓库</p>
+        </div>
+        <div class="wf-step reveal reveal-delay-1">
+          <div class="wf-step-num">2</div>
+          <div class="wf-step-icon">⚙️</div>
+          <h4>配置 SDK</h4>
+          <p>设置 Android SDK 与 NDK 路径</p>
+        </div>
+        <div class="wf-step reveal reveal-delay-2">
+          <div class="wf-step-num">3</div>
+          <div class="wf-step-icon">🔨</div>
+          <h4>构建 Debug</h4>
+          <p>编译调试版本 APK</p>
+        </div>
+        <div class="wf-step reveal reveal-delay-3">
+          <div class="wf-step-num">4</div>
+          <div class="wf-step-icon">🔐</div>
+          <h4>构建 Release</h4>
+          <p>配置签名编译发布版本</p>
+        </div>
+        <div class="wf-step reveal reveal-delay-4">
+          <div class="wf-step-num">5</div>
+          <div class="wf-step-icon">🧪</div>
+          <h4>运行测试</h4>
+          <p>执行单元测试验证</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="code-demo reveal">
+      <div class="code-header">
+        <div class="code-header-left">
+          <div class="code-dots">
+            <span class="code-dot red"></span>
+            <span class="code-dot yellow"></span>
+            <span class="code-dot green"></span>
+          </div>
+          <span class="code-lang">bash</span>
+        </div>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <span>📋</span>
+          <span class="copy-text">复制</span>
+        </button>
+      </div>
+      <div class="code-content">
+        <code><span class="code-comment"># 1. 克隆项目</span><br>
+git clone https://github.com/NinefCJ/Nexus.git<br>
+cd Nexus<br><br>
+<span class="code-comment"># 2. 构建 Debug 版本</span><br>
+cd Nexus-Android<br>
+./gradlew assembleDebug<br><br>
+<span class="code-comment"># 3. 构建 Release 版本</span><br>
+./gradlew assembleRelease<br><br>
+<span class="code-comment"># 4. 运行测试</span><br>
+./gradlew testDebugUnitTest<br></code>
+      </div>
+    </div>
+  </section>
+
+  <!-- 模块详解 -->
+  <section class="section" id="modules">
+    <div class="section-head-center reveal">
+      <div class="section-label">📦 模块详解</div>
+      <h2 class="section-title">核心模块 <span class="grad">功能介绍</span></h2>
+      <p class="section-desc">两大核心模块协同工作，提供完整的命令辅助能力</p>
+    </div>
+    <div class="module-section">
+      <div class="module-card glass-hover reveal">
+        <div class="module-header">
+          <div class="module-icon" style="background:rgba(6,182,212,.15);color:var(--accent)">📱</div>
+          <div>
+            <h3 class="module-title">Android 模块</h3>
+            <p class="module-desc">Nexus-Android</p>
+          </div>
+        </div>
+        <ul class="module-features">
+          <li>MainActivity - 应用入口和主界面管理</li>
+          <li>MainViewModel - 状态管理和业务逻辑</li>
+          <li>FloatingWindowService - 悬浮窗服务</li>
+          <li>CommandHelper - JNI 调用封装</li>
+          <li>ID 翻译库 - 方块/物品/音效/粒子/动画</li>
+          <li>主题系统 - 8种预设主题 + 自定义</li>
+        </ul>
+      </div>
+      <div class="module-card glass-hover reveal reveal-delay-1">
+        <div class="module-header">
+          <div class="module-icon" style="background:rgba(139,92,246,.15);color:var(--purple)">⚡</div>
+          <div>
+            <h3 class="module-title">C++ 核心模块</h3>
+            <p class="module-desc">Nexus-Core</p>
+          </div>
+        </div>
+        <ul class="module-features">
+          <li>Tokenizer - 词法分析器，分解命令 Token</li>
+          <li>Parser - 语法解析器，构建语法树</li>
+          <li>Completion - 智能补全引擎</li>
+          <li>Command Registry - 命令注册表</li>
+          <li>Highlighter - 语法高亮引擎</li>
+          <li>RapidJSON - 高效 JSON 解析</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="code-demo reveal">
+      <div class="code-header">
+        <div class="code-header-left">
+          <div class="code-dots">
+            <span class="code-dot red"></span>
+            <span class="code-dot yellow"></span>
+            <span class="code-dot green"></span>
+          </div>
+          <span class="code-lang">kotlin</span>
+        </div>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <span>📋</span>
+          <span class="copy-text">复制</span>
+        </button>
+      </div>
+      <div class="code-content">
+        <code><span class="code-keyword">class</span> <span class="code-function">CommandHelper</span> {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">fun</span> <span class="code-function">initialize</span>(packPath: <span class="code-type">String</span>): <span class="code-type">Boolean</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">fun</span> <span class="code-function">getCompletions</span>(command: <span class="code-type">String</span>, cursor: <span class="code-type">Int</span>): <span class="code-type">List</span>&lt;<span class="code-type">CompletionItem</span>&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">fun</span> <span class="code-function">validateCommand</span>(command: <span class="code-type">String</span>): <span class="code-type">ValidationResult</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">fun</span> <span class="code-function">getSyntaxHint</span>(command: <span class="code-type">String</span>, cursor: <span class="code-type">Int</span>): <span class="code-type">SyntaxHint</span>?<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">fun</span> <span class="code-function">dispose</span>()<br>
+}</code>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section-sm" id="faq">
+    <div class="section-head-center reveal">
+      <div class="section-label">❓ 常见问题</div>
+      <h2 class="section-title">你可能想 <span class="grad">了解的问题</span></h2>
+      <p class="section-desc">遇到问题？这里可能有你想要的答案</p>
+    </div>
+    <div class="faq-section">
+      <div class="faq-item glass reveal">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <span>Nexus 支持哪些 Minecraft 版本？</span>
+          <span class="faq-icon">▼</span>
+        </div>
+        <div class="faq-answer">
+          <p>Nexus 专为 Minecraft 基岩版 (Bedrock Edition) 设计，支持 1.18+ 版本。Java 版的命令语法有所不同，暂不支持。</p>
+        </div>
+      </div>
+      <div class="faq-item glass reveal reveal-delay-1">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <span>如何在游戏中使用悬浮窗？</span>
+          <span class="faq-icon">▼</span>
+        </div>
+        <div class="faq-answer">
+          <p>在设置中开启悬浮窗权限后，点击悬浮窗按钮即可显示。悬浮窗支持最小化/展开模式，可以在游戏中实时输入命令并复制到剪贴板。</p>
+        </div>
+      </div>
+      <div class="faq-item glass reveal reveal-delay-2">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <span>如何添加自定义命令模板？</span>
+          <span class="faq-icon">▼</span>
+        </div>
+        <div class="faq-answer">
+          <p>通过拓展包功能添加自定义命令模板。创建 JSON 格式的拓展包文件，按照 Nexus Addon Spec 规范定义命令模板，然后在应用中导入即可。</p>
+        </div>
+      </div>
+      <div class="faq-item glass reveal reveal-delay-3">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <span>ID 翻译库会更新吗？</span>
+          <span class="faq-icon">▼</span>
+        </div>
+        <div class="faq-answer">
+          <p>是的，我们会定期更新 ID 翻译库以支持新版本的 Minecraft。你也可以通过拓展包自行添加或修改翻译内容。</p>
+        </div>
+      </div>
+      <div class="faq-item glass reveal reveal-delay-4">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <span>Nexus 是开源的吗？</span>
+          <span class="faq-icon">▼</span>
+        </div>
+        <div class="faq-answer">
+          <p>是的，Nexus 采用 MIT 许可证开源。你可以在 GitHub 上查看完整源码，也欢迎贡献代码或提交 Issue。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <div class="cta-content glass reveal">
+      <h3>开始使用 Nexus</h3>
+      <p>加入 Minecraft 命令爱好者社区，让命令编写更高效</p>
+      <div class="cta-buttons">
+        <a href="https://github.com/NinefCJ/Nexus" target="_blank" class="btn btn-primary">
+          <span>查看源码</span>
+          <span class="btn-arrow">→</span>
+        </a>
+        <a href="#features" class="btn btn-secondary">
+          <span>了解更多</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-content">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <div class="footer-logo">
+            <div class="footer-logo-icon">⚡</div>
+            <span>Nexus</span>
+          </div>
+          <p class="footer-desc">专为 Minecraft 基岩版设计的跨平台命令辅助工具，提供智能语法提示、实时命令补全、完整 ID 翻译库。</p>
+        </div>
+        <div class="footer-col">
+          <h4>项目</h4>
+          <ul>
+            <li><a href="#features">功能特性</a></li>
+            <li><a href="#tech">技术架构</a></li>
+            <li><a href="#modules">模块详解</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>资源</h4>
+          <ul>
+            <li><a href="#quickstart">快速开始</a></li>
+            <li><a href="#faq">常见问题</a></li>
+            <li><a href="https://github.com/NinefCJ/Nexus-Addon-Spec" target="_blank">拓展包规范</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>联系</h4>
+          <ul>
+            <li><a href="mailto:2395953343@qq.com">邮箱</a></li>
+            <li><a href="https://github.com/NinefCJ" target="_blank">作者</a></li>
+            <li><a href="https://github.com/NinefCJ/Nexus" target="_blank">GitHub</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>Made with ❤️ for Minecraft Community · MIT License</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // 导航栏滚动效果
+    const navbar = document.getElementById('navbar');
+    const scrollProgress = document.getElementById('scrollProgress');
+    const cursorSpotlight = document.getElementById('cursorSpotlight');
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+
+    window.addEventListener('scroll', () => {
+      navbar.classList.toggle('scrolled', window.scrollY > 50);
+      const scrollPercent = (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100;
+      scrollProgress.style.width = scrollPercent + '%';
+    });
+
+    // 光标追踪
+    document.addEventListener('mousemove', (e) => {
+      cursorSpotlight.style.left = e.clientX + 'px';
+      cursorSpotlight.style.top = e.clientY + 'px';
+    });
+
+    // 移动端菜单
+    mobileMenuBtn.addEventListener('click', () => {
+      mobileMenu.classList.toggle('open');
+    });
+    mobileMenu.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => mobileMenu.classList.remove('open'));
+    });
+
+    // FAQ 折叠
+    function toggleFaq(el) {
+      const item = el.closest('.faq-item');
+      const allItems = document.querySelectorAll('.faq-item');
+      allItems.forEach(i => {
+        if (i !== item) i.classList.remove('open');
+      });
+      item.classList.toggle('open');
+    }
+
+    // 复制代码
+    function copyCode(btn) {
+      const codeContent = btn.closest('.code-demo').querySelector('.code-content').innerText;
+      navigator.clipboard.writeText(codeContent).then(() => {
+        const text = btn.querySelector('.copy-text');
+        const original = text.innerText;
+        text.innerText = '已复制';
+        btn.style.color = 'var(--green)';
+        setTimeout(() => {
+          text.innerText = original;
+          btn.style.color = '';
+        }, 2000);
+      });
+    }
+
+    // 滚动渐入动画
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // 导航栏链接激活状态
+    const sections = document.querySelectorAll('section[id], .workflow-section[id]');
+    const navLinks = document.querySelectorAll('.nav-link');
+
+    window.addEventListener('scroll', () => {
+      let current = '';
+      sections.forEach(section => {
+        const sectionTop = section.offsetTop - 150;
+        if (window.scrollY >= sectionTop) {
+          current = section.getAttribute('id');
+        }
+      });
+      navLinks.forEach(link => {
+        link.classList.toggle('active', link.getAttribute('href') === '#' + current);
+      });
+    });
+  </script>
+</body>
+</html>
