@@ -61,6 +61,9 @@ class CommandCompletionEnhancer(
                     if (currentArgIndex >= 0) getParticleSuggestions(currentArg)
                     else baseCompletions.map { EnhancedSuggestion(it, it, SuggestionType.COMMAND) }
                 }
+                "hud" -> {
+                    getHudSuggestions(currentArgIndex, currentArg, baseCompletions)
+                }
                 "summon", "effect" -> {
                     if (currentArgIndex >= 0) baseCompletions.map { EnhancedSuggestion(it, it, SuggestionType.COMMAND) }
                     else baseCompletions.map { EnhancedSuggestion(it, it, SuggestionType.COMMAND) }
@@ -170,6 +173,35 @@ class CommandCompletionEnhancer(
         return if (addonFirst) addonSoundSuggestions + vanillaSuggestions
                else vanillaSuggestions + addonSoundSuggestions
     }
+
+    private fun getHudSuggestions(argIndex: Int, currentArg: String, baseCompletions: List<String>): List<EnhancedSuggestion> {
+        val normalized = currentArg.trim().lowercase()
+        return when (argIndex) {
+            0 -> selectors.filter { it.text.lowercase().contains(normalized) }
+            1 -> listOf(
+                EnhancedSuggestion("hide", "hide (隐藏)", SuggestionType.COMMAND, "隐藏指定的HUD元素"),
+                EnhancedSuggestion("show", "show (显示)", SuggestionType.COMMAND, "显示指定的HUD元素")
+            ).filter { it.text.lowercase().contains(normalized) }
+            2 -> hudElements.filter { it.text.lowercase().contains(normalized) || it.displayText.lowercase().contains(normalized) }
+            else -> baseCompletions.map { EnhancedSuggestion(it, it, SuggestionType.COMMAND) }
+        }
+    }
+
+    private val hudElements = listOf(
+        EnhancedSuggestion("all", "all (全部)", SuggestionType.COMMAND, "所有HUD元素"),
+        EnhancedSuggestion("paperdoll", "paperdoll (纸娃娃)", SuggestionType.COMMAND, "玩家纸娃娃显示"),
+        EnhancedSuggestion("armor", "armor (盔甲值)", SuggestionType.COMMAND, "盔甲值显示"),
+        EnhancedSuggestion("tooltips", "tooltips (物品提示)", SuggestionType.COMMAND, "物品提示信息"),
+        EnhancedSuggestion("touch_controls", "touch_controls (触控按钮)", SuggestionType.COMMAND, "触控控制按钮"),
+        EnhancedSuggestion("crosshair", "crosshair (十字准星)", SuggestionType.COMMAND, "十字准星显示"),
+        EnhancedSuggestion("hotbar", "hotbar (快捷栏)", SuggestionType.COMMAND, "物品快捷栏"),
+        EnhancedSuggestion("health", "health (生命值)", SuggestionType.COMMAND, "生命值显示"),
+        EnhancedSuggestion("progress", "progress (进度条)", SuggestionType.COMMAND, "进度条（如跳跃蓄力）"),
+        EnhancedSuggestion("food", "food (饥饿值)", SuggestionType.COMMAND, "饥饿值显示"),
+        EnhancedSuggestion("air", "air (氧气值)", SuggestionType.COMMAND, "氧气值显示"),
+        EnhancedSuggestion("horse_health", "horse_health (坐骑生命)", SuggestionType.COMMAND, "坐骑生命值"),
+        EnhancedSuggestion("mount_hotbar", "mount_hotbar (坐骑快捷栏)", SuggestionType.COMMAND, "坐骑物品快捷栏")
+    )
 
     private fun getParticleSuggestions(query: String): List<EnhancedSuggestion> {
         val normalized = query.trim().lowercase()

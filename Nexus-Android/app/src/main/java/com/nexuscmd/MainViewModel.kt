@@ -694,7 +694,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         CommandLibraryItem("gametest", "GameTest 测试", "/gametest <运行|创建|清除>", "开发", Icons.Default.BugReport),
         CommandLibraryItem("give", "给予玩家特定物品", "/give <玩家> <物品名称> [数量] [数据值]", "物品", Icons.Default.CardGiftcard),
         CommandLibraryItem("help", "显示命令帮助", "/help [页数|命令]", "帮助", Icons.Default.Help),
-        CommandLibraryItem("hud", "修改HUD的可见性", "/hud <玩家> <修改> [HUD元素]", "基岩版独有", Icons.Default.Visibility),
+        CommandLibraryItem("hud", "控制玩家HUD元素的显示与隐藏", "/hud <目标: target> <hide|show> <hud_element: HUDSetElement>", "基岩版独有", Icons.Default.Visibility),
         CommandLibraryItem("inputpermission", "对玩家的权限状态进行指定操作", "/inputpermission <查询|设置> <玩家>", "基岩版独有", Icons.Default.TouchApp),
         CommandLibraryItem("kick", "踢出特定玩家", "/kick <玩家> <原因>", "管理员", Icons.Default.ExitToApp),
         CommandLibraryItem("kill", "击杀或移除实体", "/kill <目标>", "实体", Icons.Default.Gradient),
@@ -782,6 +782,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         CommandLibraryItem("给予命令方块", "获得命令方块", "/give @s command_block 1", "物品", Icons.Default.Terminal),
         CommandLibraryItem("给予结构方块", "获得结构方块", "/give @s structure_block 1", "物品", Icons.Default.Apartment),
         
+        // ============ HUD控制 ============
+        CommandLibraryItem("隐藏全部HUD", "隐藏所有HUD元素", "/hud @s hide all", "HUD", Icons.Default.VisibilityOff),
+        CommandLibraryItem("显示全部HUD", "显示所有HUD元素", "/hud @s show all", "HUD", Icons.Default.Visibility),
+        CommandLibraryItem("隐藏快捷栏", "隐藏物品快捷栏", "/hud @s hide hotbar", "HUD", Icons.Default.Inventory2),
+        CommandLibraryItem("隐藏十字准星", "隐藏十字准星", "/hud @s hide crosshair", "HUD", Icons.Default.Crop),
+        CommandLibraryItem("隐藏生命值", "隐藏生命值显示", "/hud @s hide health", "HUD", Icons.Default.FavoriteBorder),
+        CommandLibraryItem("截屏模式", "隐藏HUD用于截屏", "/hud @s hide all", "HUD", Icons.Default.CameraAlt),
+
         // ============ 其他常用 ============
         CommandLibraryItem("白天", "设置为白天", "/time set day", "其他", Icons.Default.LightMode),
         CommandLibraryItem("夜晚", "设置为夜晚", "/time set night", "其他", Icons.Default.DarkMode),
