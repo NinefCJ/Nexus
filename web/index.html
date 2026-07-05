@@ -250,6 +250,53 @@
     .faq-item.open .faq-answer{max-height:400px;padding:20px 24px;border-top-color:var(--border)}
     .faq-answer p{font-size:14px;color:var(--text-muted);line-height:1.75}
 
+    /* 命令编辑器 */
+    .cmd-editor-section{max-width:720px;margin:80px auto 0;padding:0 32px}
+    .cmd-editor{background:#0d0d14;border-radius:24px;border:1px solid var(--border);overflow:hidden;box-shadow:0 32px 80px -24px rgba(0,0,0,.55);position:relative}
+    .cmd-editor::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(6,182,212,.4),rgba(139,92,246,.4),transparent)}
+    .cmd-editor-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:rgba(255,255,255,.03);border-bottom:1px solid var(--border)}
+    .cmd-editor-title{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--text-muted)}
+    .cmd-editor-title .cmd-logo{width:24px;height:24px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;font-weight:bold}
+    .cmd-editor-status{font-size:11.5px;color:var(--green);display:flex;align-items:center;gap:6px}
+    .cmd-editor-status::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green)}
+    .cmd-syntax-hint{padding:20px 24px;background:rgba(6,182,212,.04);border-bottom:1px solid var(--border)}
+    .cmd-syntax-hint.hidden{display:none}
+    .cmd-syntax-title{font-size:12px;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+    .cmd-syntax-content{font-family:'JetBrains Mono',monospace;font-size:14px;line-height:1.6;color:#61afef}
+    .cmd-syntax-param{color:#e5c07b;font-style:italic}
+    .cmd-syntax-description{font-size:13px;color:#98c379;margin-top:8px;font-style:normal}
+    .cmd-completion-list{max-height:320px;overflow-y:auto;background:#0d0d14;padding:8px 0}
+    .cmd-completion-list.hidden{display:none}
+    .cmd-completion-item{display:flex;align-items:center;gap:14px;padding:12px 24px;cursor:pointer;transition:all .2s;border-bottom:1px solid rgba(255,255,255,.03)}
+    .cmd-completion-item:last-child{border-bottom:none}
+    .cmd-completion-item:hover,.cmd-completion-item.active{background:rgba(6,182,212,.1)}
+    .cmd-completion-item.active{border-left:3px solid var(--accent)}
+    .cmd-completion-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;background:rgba(255,255,255,.06)}
+    .cmd-completion-text{flex:1}
+    .cmd-completion-value{font-family:'JetBrains Mono',monospace;font-size:14px;color:#fff;font-weight:500}
+    .cmd-completion-label{font-size:12px;color:#5c6370;margin-top:2px}
+    .cmd-completion-arrow{color:#5c6370;font-size:14px}
+    .cmd-input-bar{display:flex;align-items:center;gap:12px;padding:14px 20px;background:rgba(255,255,255,.03);border-top:1px solid var(--border)}
+    .cmd-input-prefix{font-family:'JetBrains Mono',monospace;font-size:15px;color:var(--accent);font-weight:600;flex-shrink:0}
+    .cmd-input{flex:1;background:transparent;border:none;color:#fff;font-family:'JetBrains Mono',monospace;font-size:15px;outline:none;letter-spacing:-.01em}
+    .cmd-input::placeholder{color:#5c6370}
+    .cmd-input-actions{display:flex;align-items:center;gap:8px}
+    .cmd-action-btn{width:36px;height:36px;border-radius:10px;border:none;background:rgba(255,255,255,.06);color:var(--text-muted);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;font-size:14px}
+    .cmd-action-btn:hover{background:rgba(6,182,212,.15);color:var(--accent)}
+    .cmd-action-btn.copy{background:rgba(52,211,153,.1);color:var(--green)}
+    .cmd-action-btn.copy:hover{background:rgba(52,211,153,.18)}
+    .cmd-history-header{padding:16px 24px;background:rgba(255,255,255,.03);border-bottom:1px solid var(--border);font-size:13px;color:#5c6370;font-weight:600}
+    .cmd-history-list{max-height:400px;overflow-y:auto}
+    .cmd-history-item{display:flex;align-items:center;gap:12px;padding:14px 24px;border-bottom:1px solid rgba(255,255,255,.03);cursor:pointer;transition:all .2s}
+    .cmd-history-item:last-child{border-bottom:none}
+    .cmd-history-item:hover{background:rgba(255,255,255,.04)}
+    .cmd-history-icon{width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:13px;color:#d19a66}
+    .cmd-history-content{flex:1;min-width:0}
+    .cmd-history-command{font-family:'JetBrains Mono',monospace;font-size:13.5px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .cmd-history-time{font-size:11.5px;color:#5c6370;margin-top:2px}
+    .cmd-history-copy{color:#5c6370;font-size:16px}
+    .cmd-history-item:hover .cmd-history-copy{color:var(--green)}
+
     /* CTA */
     .cta-section{text-align:center;padding:120px 32px;position:relative;z-index:1}
     .cta-content{padding:72px 48px;max-width:720px;margin:0 auto;position:relative;overflow:hidden}
@@ -721,6 +768,42 @@ cd Nexus-Android<br>
     </div>
   </section>
 
+  <!-- 命令编辑器演示 -->
+  <section class="section" id="command-editor">
+    <div class="section-head-center reveal">
+      <div class="section-label">🎯 命令编辑器</div>
+      <h2 class="section-title">智能语法 <span class="grad">实时补全</span></h2>
+      <p class="section-desc">输入 "/" 开始体验智能命令补全，未输入 "/" 时显示历史记录</p>
+    </div>
+    <div class="cmd-editor-section">
+      <div class="cmd-editor reveal">
+        <div class="cmd-editor-header">
+          <div class="cmd-editor-title">
+            <div class="cmd-logo">N</div>
+            <span>Nexus Command Assistant</span>
+          </div>
+          <div class="cmd-editor-status">Ready</div>
+        </div>
+        <div class="cmd-syntax-hint hidden" id="cmdSyntaxHint">
+          <div class="cmd-syntax-title">Syntax</div>
+          <div class="cmd-syntax-content" id="cmdSyntaxContent"></div>
+          <div class="cmd-syntax-description" id="cmdSyntaxDesc"></div>
+        </div>
+        <div class="cmd-history-header hidden" id="cmdHistoryHeader">历史</div>
+        <div class="cmd-completion-list" id="cmdCompletionList"></div>
+        <div class="cmd-history-list hidden" id="cmdHistoryList"></div>
+        <div class="cmd-input-bar">
+          <span class="cmd-input-prefix">/</span>
+          <input type="text" class="cmd-input" id="cmdInput" placeholder="输入命令..." autocomplete="off">
+          <div class="cmd-input-actions">
+            <button class="cmd-action-btn" onclick="clearCmdInput()">⌫</button>
+            <button class="cmd-action-btn copy" onclick="copyCmdInput()">📋</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- 模块详解 -->
   <section class="section" id="modules">
     <div class="section-head-center reveal">
@@ -1005,6 +1088,374 @@ cd Nexus-Android<br>
         link.classList.toggle('active', link.getAttribute('href') === '#' + current);
       });
     });
+
+    // 命令编辑器逻辑
+    const cmdInput = document.getElementById('cmdInput');
+    const cmdSyntaxHint = document.getElementById('cmdSyntaxHint');
+    const cmdSyntaxContent = document.getElementById('cmdSyntaxContent');
+    const cmdSyntaxDesc = document.getElementById('cmdSyntaxDesc');
+    const cmdCompletionList = document.getElementById('cmdCompletionList');
+    const cmdHistoryHeader = document.getElementById('cmdHistoryHeader');
+    const cmdHistoryList = document.getElementById('cmdHistoryList');
+    let selectedIndex = -1;
+    let isCommandMode = false;
+
+    const minecraftCommands = {
+      'scoreboard': {
+        syntax: '/scoreboard <objectives|players> <操作> <参数> ...',
+        description: '管理记分板系统',
+        subcommands: ['objectives', 'players']
+      },
+      'scoreboard objectives': {
+        syntax: '/scoreboard objectives <add|remove|list|setdisplay> ...',
+        description: '管理记分板目标',
+        subcommands: ['add', 'remove', 'list', 'setdisplay']
+      },
+      'scoreboard players': {
+        syntax: '/scoreboard players <add|remove|set|list|operation|random> <选择器> <记分项> <分数>',
+        description: '修改记分板对象的分数',
+        subcommands: ['add', 'remove', 'set', 'list', 'operation', 'random']
+      },
+      'execute': {
+        syntax: '/execute <位置参数> <条件参数> <命令>',
+        description: '执行条件命令',
+        subcommands: ['as', 'at', 'positioned', 'facing', 'aligned', 'if', 'unless']
+      },
+      'give': {
+        syntax: '/give <目标> <物品> [数量] [数据值] [NBT]',
+        description: '给予玩家物品',
+        subcommands: ['@p', '@a', '@r', '@e', '@s']
+      },
+      'summon': {
+        syntax: '/summon <实体类型> [位置] [NBT]',
+        description: '召唤实体',
+        subcommands: ['minecraft:']
+      },
+      'tp': {
+        syntax: '/tp <目标> <位置|目标>',
+        description: '传送实体',
+        subcommands: ['@p', '@a', '@r', '@e', '@s']
+      },
+      'kill': {
+        syntax: '/kill <目标>',
+        description: '杀死实体',
+        subcommands: ['@p', '@a', '@r', '@e', '@s']
+      },
+      'effect': {
+        syntax: '/effect <目标> <效果> [持续时间] [等级] [隐藏粒子]',
+        description: '管理状态效果',
+        subcommands: ['@p', '@a', '@r', '@e', '@s', 'clear']
+      },
+      'say': {
+        syntax: '/say <消息>',
+        description: '发送消息',
+        subcommands: []
+      },
+      'tell': {
+        syntax: '/tell <目标> <消息>',
+        description: '发送私密消息',
+        subcommands: ['@p', '@a', '@r', '@e', '@s']
+      },
+      'fill': {
+        syntax: '/fill <位置1> <位置2> <方块> [替换模式] [方块状态]',
+        description: '填充区域',
+        subcommands: ['minecraft:', 'replace', 'destroy', 'keep', 'hollow', 'outline']
+      },
+      'setblock': {
+        syntax: '/setblock <位置> <方块> [方块状态] [替换模式]',
+        description: '设置方块',
+        subcommands: ['minecraft:', 'replace', 'destroy', 'keep']
+      },
+      'particle': {
+        syntax: '/particle <粒子类型> <位置> <偏移> <速度> <数量> [模式] [玩家]',
+        description: '生成粒子效果',
+        subcommands: ['minecraft:', 'force', 'normal']
+      },
+      'playsound': {
+        syntax: '/playsound <音效> <玩家> [位置] [音量] [音调] [最小音量]',
+        description: '播放音效',
+        subcommands: ['minecraft:', '@p', '@a', '@r', '@e', '@s']
+      },
+      'time': {
+        syntax: '/time <set|add|query> <值>',
+        description: '管理游戏时间',
+        subcommands: ['set', 'add', 'query', 'day', 'night', 'noon', 'midnight']
+      },
+      'weather': {
+        syntax: '/weather <clear|rain|thunder> [持续时间]',
+        description: '管理天气',
+        subcommands: ['clear', 'rain', 'thunder']
+      },
+      'difficulty': {
+        syntax: '/difficulty <peaceful|easy|normal|hard>',
+        description: '设置难度',
+        subcommands: ['peaceful', 'easy', 'normal', 'hard']
+      },
+      'gamemode': {
+        syntax: '/gamemode <survival|creative|adventure|spectator> [目标]',
+        description: '设置游戏模式',
+        subcommands: ['survival', 'creative', 'adventure', 'spectator', 's', 'c', 'a', 'sp']
+      },
+      'gamerule': {
+        syntax: '/gamerule <规则> [值]',
+        description: '设置游戏规则',
+        subcommands: ['doDaylightCycle', 'doMobSpawning', 'doFireTick', 'keepInventory']
+      },
+      'kick': {
+        syntax: '/kick <玩家> [原因]',
+        description: '踢出玩家',
+        subcommands: []
+      },
+      'ban': {
+        syntax: '/ban <玩家> [原因]',
+        description: '封禁玩家',
+        subcommands: []
+      },
+      'banlist': {
+        syntax: '/banlist [ips|players]',
+        description: '查看封禁列表',
+        subcommands: ['ips', 'players']
+      },
+      'pardon': {
+        syntax: '/pardon <玩家>',
+        description: '解封玩家',
+        subcommands: []
+      },
+      'op': {
+        syntax: '/op <玩家>',
+        description: '授予管理员权限',
+        subcommands: []
+      },
+      'deop': {
+        syntax: '/deop <玩家>',
+        description: '撤销管理员权限',
+        subcommands: []
+      },
+      'help': {
+        syntax: '/help [命令]',
+        description: '显示帮助',
+        subcommands: []
+      }
+    };
+
+    const commandList = Object.keys(minecraftCommands).filter(k => !k.includes(' '));
+    const historyCommands = [
+      { cmd: '/scoreboard players add @s points 1', time: '刚刚' },
+      { cmd: '/give @p minecraft:diamond 64', time: '2分钟前' },
+      { cmd: '/execute as @a at @s run tp @s 0 64 0', time: '5分钟前' },
+      { cmd: '/effect @s saturation infinite 255 true', time: '10分钟前' },
+      { cmd: '/summon minecraft:wither ~ ~10 ~', time: '15分钟前' },
+      { cmd: '/fill ~-5 ~ ~-5 ~5 ~10 ~5 minecraft:diamond_block', time: '30分钟前' },
+      { cmd: '/particle minecraft:heart ~ ~1 ~ 0 0 0 1 10', time: '1小时前' },
+      { cmd: '/time set day', time: '2小时前' }
+    ];
+
+    function renderHistory() {
+      cmdHistoryList.innerHTML = historyCommands.map((h, i) => `
+        <div class="cmd-history-item" onclick="selectHistory('${h.cmd.replace(/'/g, "\\'")}')">
+          <div class="cmd-history-icon">${['⚡', '🎁', '🔄', '✨', '👾', '🧱', '💫', '🌞'][i % 8]}</div>
+          <div class="cmd-history-content">
+            <div class="cmd-history-command">${h.cmd}</div>
+            <div class="cmd-history-time">${h.time}</div>
+          </div>
+          <div class="cmd-history-copy">📋</div>
+        </div>
+      `).join('');
+    }
+
+    function selectHistory(cmd) {
+      cmdInput.value = cmd.substring(1);
+      isCommandMode = true;
+      updateCompletion();
+    }
+
+    function updateCompletion() {
+      const input = cmdInput.value.trim();
+      const parts = input.split(' ');
+      const currentPart = parts[parts.length - 1];
+      const fullCommand = parts.join(' ');
+
+      cmdSyntaxHint.classList.add('hidden');
+      cmdHistoryHeader.classList.add('hidden');
+      cmdHistoryList.classList.add('hidden');
+      cmdCompletionList.classList.remove('hidden');
+
+      let completions = [];
+      let syntaxInfo = null;
+
+      if (!input) {
+        completions = commandList.map(c => ({
+          icon: '⚡', value: c, label: minecraftCommands[c].description
+        }));
+      } else {
+        const partialMatch = commandList.filter(c => c.startsWith(currentPart));
+        if (partialMatch.length > 0 && parts.length === 1) {
+          completions = partialMatch.map(c => ({
+            icon: '⚡', value: c, label: minecraftCommands[c].description
+          }));
+        } else {
+          const baseCmd = parts[0];
+          const cmdKey = parts.length > 1 ? `${baseCmd} ${parts[1]}` : baseCmd;
+          if (minecraftCommands[cmdKey]) {
+            syntaxInfo = minecraftCommands[cmdKey];
+            const subcmds = syntaxInfo.subcommands || [];
+            const filteredSubcmds = subcmds.filter(s => s.startsWith(currentPart));
+            if (filteredSubcmds.length > 0) {
+              completions = filteredSubcmds.map(s => ({
+                icon: '📋', value: s, label: ''
+              }));
+            }
+          } else if (minecraftCommands[baseCmd]) {
+            syntaxInfo = minecraftCommands[baseCmd];
+            const subcmds = syntaxInfo.subcommands || [];
+            const filteredSubcmds = subcmds.filter(s => s.startsWith(currentPart));
+            if (filteredSubcmds.length > 0) {
+              completions = filteredSubcmds.map(s => ({
+                icon: '📋', value: s, label: ''
+              }));
+            }
+          }
+
+          if (currentPart.startsWith('@')) {
+            completions = [
+              { icon: '👤', value: '@p', label: '最近的玩家' },
+              { icon: '👥', value: '@a', label: '所有玩家' },
+              { icon: '🎲', value: '@r', label: '随机玩家' },
+              { icon: '👾', value: '@e', label: '所有实体' },
+              { icon: '🙋', value: '@s', label: '自己' }
+            ].filter(c => c.value.startsWith(currentPart));
+          } else if (currentPart.startsWith('minecraft:')) {
+            completions = [
+              { icon: '🧱', value: 'minecraft:diamond_block', label: '钻石方块' },
+              { icon: '🎁', value: 'minecraft:diamond', label: '钻石' },
+              { icon: '⚔️', value: 'minecraft:diamond_sword', label: '钻石剑' },
+              { icon: '🏠', value: 'minecraft:bedrock', label: '基岩' },
+              { icon: '🔥', value: 'minecraft:fire', label: '火' },
+              { icon: '💧', value: 'minecraft:water', label: '水' }
+            ].filter(c => c.value.startsWith(currentPart));
+          }
+        }
+      }
+
+      if (syntaxInfo) {
+        cmdSyntaxHint.classList.remove('hidden');
+        cmdSyntaxContent.innerHTML = syntaxInfo.syntax.replace(/<([^>]+)>/g, '<span class="cmd-syntax-param">&lt;$1&gt;</span>');
+        cmdSyntaxDesc.innerText = syntaxInfo.description;
+      }
+
+      if (completions.length === 0) {
+        cmdCompletionList.classList.add('hidden');
+        return;
+      }
+
+      cmdCompletionList.innerHTML = completions.map((c, i) => `
+        <div class="cmd-completion-item ${i === selectedIndex ? 'active' : ''}" 
+             onclick="selectCompletion('${c.value}')" 
+             onmouseenter="selectedIndex=${i};updateSelection()">
+          <div class="cmd-completion-icon">${c.icon}</div>
+          <div class="cmd-completion-text">
+            <div class="cmd-completion-value">${c.value}</div>
+            ${c.label ? `<div class="cmd-completion-label">${c.label}</div>` : ''}
+          </div>
+          <div class="cmd-completion-arrow">→</div>
+        </div>
+      `).join('');
+    }
+
+    function selectCompletion(value) {
+      const input = cmdInput.value.trim();
+      const parts = input.split(' ');
+      parts[parts.length - 1] = value;
+      cmdInput.value = parts.join(' ') + ' ';
+      selectedIndex = -1;
+      updateCompletion();
+      cmdInput.focus();
+    }
+
+    function updateSelection() {
+      const items = cmdCompletionList.querySelectorAll('.cmd-completion-item');
+      items.forEach((item, i) => {
+        item.classList.toggle('active', i === selectedIndex);
+      });
+    }
+
+    function clearCmdInput() {
+      cmdInput.value = '';
+      selectedIndex = -1;
+      isCommandMode = false;
+      cmdSyntaxHint.classList.add('hidden');
+      cmdCompletionList.classList.add('hidden');
+      cmdHistoryHeader.classList.remove('hidden');
+      cmdHistoryList.classList.remove('hidden');
+      renderHistory();
+    }
+
+    function copyCmdInput() {
+      const text = '/' + cmdInput.value;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.querySelector('.cmd-action-btn.copy');
+        const original = btn.innerHTML;
+        btn.innerHTML = '✓';
+        setTimeout(() => {
+          btn.innerHTML = original;
+        }, 2000);
+      });
+    }
+
+    cmdInput.addEventListener('input', () => {
+      const val = cmdInput.value.trim();
+      if (val) {
+        isCommandMode = true;
+        selectedIndex = -1;
+        updateCompletion();
+      } else {
+        isCommandMode = false;
+        cmdSyntaxHint.classList.add('hidden');
+        cmdCompletionList.classList.add('hidden');
+        cmdHistoryHeader.classList.remove('hidden');
+        cmdHistoryList.classList.remove('hidden');
+        renderHistory();
+      }
+    });
+
+    cmdInput.addEventListener('keydown', (e) => {
+      if (!isCommandMode) return;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const items = cmdCompletionList.querySelectorAll('.cmd-completion-item');
+        if (items.length > 0) {
+          selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+          updateSelection();
+          items[selectedIndex]?.scrollIntoView({ block: 'nearest' });
+        }
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        selectedIndex = Math.max(selectedIndex - 1, 0);
+        updateSelection();
+      } else if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault();
+        const items = cmdCompletionList.querySelectorAll('.cmd-completion-item');
+        if (items.length > 0) {
+          const idx = selectedIndex >= 0 ? selectedIndex : 0;
+          const value = items[idx].querySelector('.cmd-completion-value').innerText;
+          selectCompletion(value);
+        }
+      } else if (e.key === 'Escape') {
+        clearCmdInput();
+      }
+    });
+
+    cmdInput.addEventListener('focus', () => {
+      if (!cmdInput.value.trim()) {
+        isCommandMode = false;
+        cmdHistoryHeader.classList.remove('hidden');
+        cmdHistoryList.classList.remove('hidden');
+        renderHistory();
+      }
+    });
+
+    renderHistory();
   </script>
 </body>
 </html>
