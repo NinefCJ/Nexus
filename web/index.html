@@ -1535,9 +1535,34 @@ cd Nexus-Android<br>
       'title': {
         syntaxes: [
           {
-            syntax: '/title <玩家:目标> <title|subtitle|actionbar|clear|reset|times> ...',
-            description: '向玩家显示标题',
-            args: ['player', 'subcommand']
+            syntax: '/title <玩家:目标> title <标题:字符串>',
+            description: '显示主标题（纯文本）',
+            args: ['player', 'string']
+          },
+          {
+            syntax: '/title <玩家:目标> subtitle <副标题:字符串>',
+            description: '显示副标题（纯文本）',
+            args: ['player', 'string']
+          },
+          {
+            syntax: '/title <玩家:目标> actionbar <消息:字符串>',
+            description: '在快捷栏上方显示消息',
+            args: ['player', 'string']
+          },
+          {
+            syntax: '/title <玩家:目标> clear',
+            description: '清除屏幕上的标题',
+            args: ['player']
+          },
+          {
+            syntax: '/title <玩家:目标> reset',
+            description: '重置标题设置为默认值',
+            args: ['player']
+          },
+          {
+            syntax: '/title <玩家:目标> times <淡入:整数> <保持:整数> <淡出:整数>',
+            description: '设置标题的淡入、保持和淡出时间（单位：tick）',
+            args: ['player', 'int', 'int', 'int']
           }
         ],
         description: '显示标题',
@@ -1723,23 +1748,76 @@ cd Nexus-Android<br>
       'tellraw': {
         syntaxes: [
           {
-            syntax: '/tellraw <目标:玩家> <rawtext:JSON>',
-            description: '向玩家发送 rawtext JSON 格式的消息',
-            args: ['player', 'json']
+            syntax: '/tellraw <目标:玩家> {"rawtext":[{"text":"文本"}]}',
+            description: '发送纯文本消息',
+            args: ['player', 'rawtext_text']
+          },
+          {
+            syntax: '/tellraw <目标:玩家> {"rawtext":[{"translate":"翻译键"}]}',
+            description: '发送翻译键消息',
+            args: ['player', 'rawtext_translate']
+          },
+          {
+            syntax: '/tellraw <目标:玩家> {"rawtext":[{"score":{"name":"目标","objective":"记分项"}}]}',
+            description: '发送分数显示',
+            args: ['player', 'rawtext_score']
+          },
+          {
+            syntax: '/tellraw <目标:玩家> {"rawtext":[{"selector":"选择器"}]}',
+            description: '发送选择器实体名',
+            args: ['player', 'rawtext_selector']
           }
         ],
-        description: '发送 JSON 消息'
+        description: '发送 JSON 消息',
+        rawtextTemplates: [
+          { name: '纯文本', template: '{"rawtext":[{"text":"<text>"}]}', desc: '最简单的文本消息' },
+          { name: '翻译键', template: '{"rawtext":[{"translate":"<key>"}]}', desc: '使用语言文件翻译' },
+          { name: '分数', template: '{"rawtext":[{"score":{"name":"<target>","objective":"<objective>"}}]}', desc: '显示记分板分数' },
+          { name: '选择器', template: '{"rawtext":[{"selector":"<selector>"}]}', desc: '显示实体名称' },
+          { name: '混合文本', template: '{"rawtext":[{"text":"你好 "},{"selector":"@p"},{"text":"，欢迎！"}]}', desc: '多种元素组合' }
+        ]
       },
       'titleraw': {
         syntaxes: [
           {
-            syntax: '/titleraw <玩家:目标> <title|subtitle|actionbar|clear|reset|times> ...',
-            description: '用 rawtext JSON 向玩家显示标题',
-            args: ['player', 'subcommand']
+            syntax: '/titleraw <玩家:目标> title {"rawtext":[{"text":"标题"}]}',
+            description: '显示主标题',
+            args: ['player', 'rawtext_text']
+          },
+          {
+            syntax: '/titleraw <玩家:目标> subtitle {"rawtext":[{"text":"副标题"}]}',
+            description: '显示副标题',
+            args: ['player', 'rawtext_text']
+          },
+          {
+            syntax: '/titleraw <玩家:目标> actionbar {"rawtext":[{"text":"消息"}]}',
+            description: '在快捷栏上方显示消息',
+            args: ['player', 'rawtext_text']
+          },
+          {
+            syntax: '/titleraw <玩家:目标> clear',
+            description: '清除屏幕上的标题',
+            args: ['player']
+          },
+          {
+            syntax: '/titleraw <玩家:目标> reset',
+            description: '重置标题设置为默认值',
+            args: ['player']
+          },
+          {
+            syntax: '/titleraw <玩家:目标> times <淡入:整数> <保持:整数> <淡出:整数>',
+            description: '设置标题的淡入、保持和淡出时间（单位：tick）',
+            args: ['player', 'int', 'int', 'int']
           }
         ],
         description: 'JSON 标题',
-        subcommands: ['title', 'subtitle', 'actionbar', 'clear', 'reset', 'times']
+        subcommands: ['title', 'subtitle', 'actionbar', 'clear', 'reset', 'times'],
+        rawtextTemplates: [
+          { name: '纯文本', template: '{"rawtext":[{"text":"<text>"}]}', desc: '纯文本标题' },
+          { name: '翻译键', template: '{"rawtext":[{"translate":"<key>"}]}', desc: '翻译键标题' },
+          { name: '分数', template: '{"rawtext":[{"score":{"name":"<target>","objective":"<objective>"}}]}', desc: '分数显示' },
+          { name: '选择器', template: '{"rawtext":[{"selector":"<selector>"}]}', desc: '实体名显示' }
+        ]
       },
       'tag': {
         syntaxes: [
@@ -2128,6 +2206,14 @@ cd Nexus-Android<br>
               completions = cmd.gamerules
                 .filter(m => m.startsWith(currentPart))
                 .map(m => ({ icon: '⚙️', value: m, label: '' }));
+            } else if ((ctxType === 'rawtext_text' || ctxType === 'rawtext_translate' || ctxType === 'rawtext_score' || ctxType === 'rawtext_selector' || ctxType === 'json') && cmd.rawtextTemplates) {
+              completions = cmd.rawtextTemplates
+                .filter(t => !currentPart || t.template.startsWith(currentPart) || t.name.includes(currentPart))
+                .map(t => ({
+                  icon: '📝',
+                  value: t.template,
+                  label: t.name + ' — ' + t.desc
+                }));
             }
 
             if ((ctxType === 'entity' || ctxType === 'player' || ctxType === 'position_entity') && !currentPart.startsWith('@') && currentPart.length > 0) {
@@ -2308,6 +2394,10 @@ cd Nexus-Android<br>
       'string?': '可选字符串',
       'bool?': '可选布尔值（true/false）',
       'json': 'JSON 格式数据',
+      'rawtext_text': 'rawtext JSON（文本类型）',
+      'rawtext_translate': 'rawtext JSON（翻译键类型）',
+      'rawtext_score': 'rawtext JSON（分数类型）',
+      'rawtext_selector': 'rawtext JSON（选择器类型）',
       'block': '方块 ID（如 minecraft:stone）',
       'item': '物品 ID（如 minecraft:diamond）',
       'effect': '状态效果名称',
