@@ -297,6 +297,70 @@
     .cmd-history-copy{color:#5c6370;font-size:16px}
     .cmd-history-item:hover .cmd-history-copy{color:var(--green)}
 
+    /* 参数提示 */
+    .cmd-param-hint{padding:12px 24px;background:rgba(251,191,36,.06);border-bottom:1px solid var(--border);font-size:13px;color:#e5c07b;display:flex;align-items:center;gap:8px}
+    .cmd-param-hint.hidden{display:none}
+    .cmd-param-hint-icon{font-size:14px}
+    .cmd-param-hint-text{flex:1}
+    .cmd-param-hint-name{font-family:'JetBrains Mono',monospace;color:#61afef;font-weight:600}
+
+    /* 错误检查 */
+    .cmd-errors{padding:12px 24px;background:rgba(251,113,133,.06);border-bottom:1px solid var(--border)}
+    .cmd-errors.hidden{display:none}
+    .cmd-error-item{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:#fb7185;line-height:1.5;padding:4px 0}
+    .cmd-error-icon{font-size:14px;flex-shrink:0;margin-top:1px}
+    .cmd-error-text{flex:1}
+    .cmd-error-pos{font-family:'JetBrains Mono',monospace;font-size:11px;color:#5c6370;margin-left:6px}
+
+    /* 多语法展示 */
+    .cmd-syntax-variants{padding:16px 24px;background:rgba(139,92,246,.04);border-bottom:1px solid var(--border)}
+    .cmd-syntax-variants.hidden{display:none}
+    .cmd-variants-title{font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-bottom:10px}
+    .cmd-variant-item{padding:8px 12px;margin-bottom:6px;background:rgba(255,255,255,.03);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12.5px;color:#abb2bf;cursor:pointer;transition:all .2s;border-left:2px solid transparent}
+    .cmd-variant-item:hover{background:rgba(139,92,246,.08);border-left-color:var(--purple)}
+    .cmd-variant-item.active{background:rgba(139,92,246,.1);border-left-color:var(--purple)}
+    .cmd-variant-desc{font-size:11.5px;color:#98c379;margin-top:4px;font-family:system-ui,sans-serif}
+
+    /* 命令结构树 */
+    .cmd-structure{padding:16px 24px;background:rgba(6,182,212,.04);border-bottom:1px solid var(--border)}
+    .cmd-structure.hidden{display:none}
+    .cmd-structure-title{font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-bottom:10px}
+    .cmd-structure-tree{font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.7;color:#abb2bf}
+    .cmd-structure-node{padding:2px 0}
+    .cmd-structure-required{color:#61afef}
+    .cmd-structure-optional{color:#98c379;font-style:italic}
+    .cmd-structure-literal{color:#c678dd;font-weight:600}
+    .cmd-structure-branch{color:#5c6370}
+
+    /* ID 浏览器 */
+    .id-browser-section{max-width:1000px;margin:80px auto 0;padding:0 32px}
+    .id-browser{background:#0d0d14;border-radius:24px;border:1px solid var(--border);overflow:hidden;box-shadow:0 32px 80px -24px rgba(0,0,0,.55)}
+    .id-browser-tabs{display:flex;gap:4px;padding:16px 20px;background:rgba(255,255,255,.03);border-bottom:1px solid var(--border);overflow-x:auto}
+    .id-tab{padding:8px 18px;border-radius:10px;font-size:13px;font-weight:600;color:var(--text-muted);cursor:pointer;transition:all .2s;white-space:nowrap;border:1px solid transparent}
+    .id-tab:hover{background:rgba(255,255,255,.06);color:var(--text)}
+    .id-tab.active{background:rgba(6,182,212,.12);color:var(--accent);border-color:rgba(6,182,212,.3)}
+    .id-search-bar{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border)}
+    .id-search-input{flex:1;background:rgba(255,255,255,.06);border:1px solid var(--border);color:#fff;font-size:14px;padding:10px 16px;border-radius:10px;outline:none;transition:border-color .2s}
+    .id-search-input:focus{border-color:var(--accent)}
+    .id-search-count{font-size:12px;color:var(--text-muted);white-space:nowrap}
+    .id-list{max-height:400px;overflow-y:auto;padding:8px 0}
+    .id-item{display:flex;align-items:center;gap:14px;padding:10px 20px;border-bottom:1px solid rgba(255,255,255,.03);transition:background .2s}
+    .id-item:hover{background:rgba(255,255,255,.04)}
+    .id-item-icon{width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+    .id-item-name{font-family:'JetBrains Mono',monospace;font-size:13px;color:#fff;font-weight:500}
+    .id-item-desc{font-size:12px;color:var(--text-muted);margin-top:2px}
+
+    /* Rawtext 编辑器 */
+    .rawtext-section{max-width:720px;margin:80px auto 0;padding:0 32px}
+    .rawtext-editor{background:#0d0d14;border-radius:24px;border:1px solid var(--border);overflow:hidden;box-shadow:0 32px 80px -24px rgba(0,0,0,.55)}
+    .rawtext-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:rgba(255,255,255,.03);border-bottom:1px solid var(--border)}
+    .rawtext-title{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--text-muted)}
+    .rawtext-preview{padding:20px 24px;background:rgba(0,0,0,.3);min-height:60px;font-size:14px;color:#fff;line-height:1.6}
+    .rawtext-actions{display:flex;gap:8px;padding:16px 20px;border-top:1px solid var(--border);flex-wrap:wrap}
+    .rawtext-btn{padding:8px 16px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--text);font-size:13px;cursor:pointer;transition:all .2s}
+    .rawtext-btn:hover{background:rgba(6,182,212,.12);border-color:var(--accent)}
+    .rawtext-output{padding:16px 20px;background:rgba(0,0,0,.3);font-family:'JetBrains Mono',monospace;font-size:12.5px;color:#98c379;line-height:1.6;max-height:200px;overflow-y:auto;word-break:break-all}
+
     /* CTA */
     .cta-section{text-align:center;padding:120px 32px;position:relative;z-index:1}
     .cta-content{padding:72px 48px;max-width:720px;margin:0 auto;position:relative;overflow:hidden}
@@ -379,6 +443,9 @@
       <div class="nav-links">
         <a href="#features" class="nav-link">功能特性</a>
         <a href="#tech" class="nav-link">技术架构</a>
+        <a href="#command-editor" class="nav-link">命令编辑器</a>
+        <a href="#id-browser" class="nav-link">ID 库</a>
+        <a href="#rawtext-editor" class="nav-link">Rawtext</a>
         <a href="#quickstart" class="nav-link">快速开始</a>
         <a href="#modules" class="nav-link">模块详解</a>
         <a href="#faq" class="nav-link">常见问题</a>
@@ -773,7 +840,7 @@ cd Nexus-Android<br>
     <div class="section-head-center reveal">
       <div class="section-label">🎯 命令编辑器</div>
       <h2 class="section-title">智能语法 <span class="grad">实时补全</span></h2>
-      <p class="section-desc">输入 "/" 开始体验智能命令补全，未输入 "/" 时显示历史记录</p>
+      <p class="section-desc">参考 CHelper 架构，集成语法提示、错误检查、结构展示、参数提示于一体</p>
     </div>
     <div class="cmd-editor-section">
       <div class="cmd-editor reveal">
@@ -789,6 +856,19 @@ cd Nexus-Android<br>
           <div class="cmd-syntax-content" id="cmdSyntaxContent"></div>
           <div class="cmd-syntax-description" id="cmdSyntaxDesc"></div>
         </div>
+        <div class="cmd-syntax-variants hidden" id="cmdSyntaxVariants">
+          <div class="cmd-variants-title">语法变体 (点击切换)</div>
+          <div id="cmdVariantsList"></div>
+        </div>
+        <div class="cmd-param-hint hidden" id="cmdParamHint">
+          <span class="cmd-param-hint-icon">💡</span>
+          <span class="cmd-param-hint-text" id="cmdParamHintText"></span>
+        </div>
+        <div class="cmd-structure hidden" id="cmdStructure">
+          <div class="cmd-structure-title">Command Structure</div>
+          <div class="cmd-structure-tree" id="cmdStructureTree"></div>
+        </div>
+        <div class="cmd-errors hidden" id="cmdErrors"></div>
         <div class="cmd-history-header hidden" id="cmdHistoryHeader">历史</div>
         <div class="cmd-completion-list" id="cmdCompletionList"></div>
         <div class="cmd-history-list hidden" id="cmdHistoryList"></div>
@@ -800,6 +880,55 @@ cd Nexus-Android<br>
             <button class="cmd-action-btn copy" onclick="copyCmdInput()">📋</button>
           </div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ID 浏览器 -->
+  <section class="section" id="id-browser">
+    <div class="section-head-center reveal">
+      <div class="section-label">📚 ID 翻译库</div>
+      <h2 class="section-title">ID 枚举 <span class="grad">浏览器</span></h2>
+      <p class="section-desc">查阅基岩版全量 ID 翻译库，支持搜索和分类浏览</p>
+    </div>
+    <div class="id-browser-section">
+      <div class="id-browser reveal">
+        <div class="id-browser-tabs" id="idTabs"></div>
+        <div class="id-search-bar">
+          <input type="text" class="id-search-input" id="idSearch" placeholder="搜索 ID..." autocomplete="off">
+          <span class="id-search-count" id="idCount">0 项</span>
+        </div>
+        <div class="id-list" id="idList"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Rawtext 编辑器 -->
+  <section class="section" id="rawtext-editor">
+    <div class="section-head-center reveal">
+      <div class="section-label">📝 Rawtext 编辑器</div>
+      <h2 class="section-title">JSON 文本 <span class="grad">可视化编辑</span></h2>
+      <p class="section-desc">为 tellraw / titleraw 命令生成 rawtext JSON，支持翻译键、分数、选择器</p>
+    </div>
+    <div class="rawtext-section">
+      <div class="rawtext-editor reveal">
+        <div class="rawtext-header">
+          <div class="rawtext-title">
+            <span>📝 Rawtext Builder</span>
+          </div>
+          <span style="font-size:11.5px;color:var(--green)">实时预览</span>
+        </div>
+        <div class="rawtext-preview" id="rawtextPreview">点击下方按钮添加 rawtext 元素...</div>
+        <div class="rawtext-actions">
+          <button class="rawtext-btn" onclick="addRawtextItem('text')">💬 文本</button>
+          <button class="rawtext-btn" onclick="addRawtextItem('translate')">🌐 翻译键</button>
+          <button class="rawtext-btn" onclick="addRawtextItem('score')">📊 分数</button>
+          <button class="rawtext-btn" onclick="addRawtextItem('selector')">🎯 选择器</button>
+          <button class="rawtext-btn" onclick="addRawtextItem('newline')">↵ 换行</button>
+          <button class="rawtext-btn" onclick="clearRawtext()">🗑️ 清空</button>
+          <button class="rawtext-btn" onclick="copyRawtext()" style="background:rgba(52,211,153,.1);color:var(--green);border-color:rgba(52,211,153,.3)">📋 复制</button>
+        </div>
+        <div class="rawtext-output" id="rawtextOutput">{"rawtext":[]}</div>
       </div>
     </div>
   </section>
@@ -1590,6 +1719,206 @@ cd Nexus-Android<br>
         ],
         description: '管理经验',
         subcommands: ['add', 'set', 'query']
+      },
+      'tellraw': {
+        syntaxes: [
+          {
+            syntax: '/tellraw <目标:玩家> <rawtext:JSON>',
+            description: '向玩家发送 rawtext JSON 格式的消息',
+            args: ['player', 'json']
+          }
+        ],
+        description: '发送 JSON 消息'
+      },
+      'titleraw': {
+        syntaxes: [
+          {
+            syntax: '/titleraw <玩家:目标> <title|subtitle|actionbar|clear|reset|times> ...',
+            description: '用 rawtext JSON 向玩家显示标题',
+            args: ['player', 'subcommand']
+          }
+        ],
+        description: 'JSON 标题',
+        subcommands: ['title', 'subtitle', 'actionbar', 'clear', 'reset', 'times']
+      },
+      'tag': {
+        syntaxes: [
+          {
+            syntax: '/tag <目标:实体> <add|remove|list> <标签:字符串>',
+            description: '管理实体标签',
+            args: ['entity', 'subcommand', 'string?']
+          }
+        ],
+        description: '管理标签',
+        subcommands: ['add', 'remove', 'list']
+      },
+      'stopsound': {
+        syntaxes: [
+          {
+            syntax: '/stopsound <玩家:目标> [声音:字符串]',
+            description: '停止播放音效',
+            args: ['player', 'string?']
+          }
+        ],
+        description: '停止音效'
+      },
+      'structure': {
+        syntaxes: [
+          {
+            syntax: '/structure <load|save|delete> <名称:字符串> ...',
+            description: '管理结构',
+            args: ['subcommand', 'string']
+          }
+        ],
+        description: '管理结构',
+        subcommands: ['load', 'save', 'delete']
+      },
+      'tickingarea': {
+        syntaxes: [
+          {
+            syntax: '/tickingarea <add|remove|list> ...',
+            description: '管理常加载区域',
+            args: ['subcommand']
+          }
+        ],
+        description: '常加载区域',
+        subcommands: ['add', 'remove', 'list', 'remove_all']
+      },
+      'volumearea': {
+        syntaxes: [
+          {
+            syntax: '/volumearea <add|remove|list> ...',
+            description: '管理卷区域',
+            args: ['subcommand']
+          }
+        ],
+        description: '管理卷区域',
+        subcommands: ['add', 'remove', 'list', 'remove_all']
+      },
+      'camera': {
+        syntaxes: [
+          {
+            syntax: '/camera <玩家:目标> <set|clear> ...',
+            description: '设置摄像机视角',
+            args: ['player', 'subcommand']
+          }
+        ],
+        description: '摄像机控制',
+        subcommands: ['set', 'clear']
+      },
+      'dialogue': {
+        syntaxes: [
+          {
+            syntax: '/dialogue <open|change> <NPC:实体> <玩家:目标> [场景:字符串]',
+            description: '打开 NPC 对话框',
+            args: ['subcommand', 'entity', 'player', 'string?']
+          }
+        ],
+        description: 'NPC 对话',
+        subcommands: ['open', 'change']
+      },
+      'event': {
+        syntaxes: [
+          {
+            syntax: '/event entity <目标:实体> <事件:字符串>',
+            description: '触发实体事件',
+            args: ['entity', 'string']
+          }
+        ],
+        description: '触发事件',
+        subcommands: ['entity']
+      },
+      'damage': {
+        syntaxes: [
+          {
+            syntax: '/damage <目标:实体> <伤害:整数> [伤害类型:字符串] [来源:实体]',
+            description: '对实体造成伤害',
+            args: ['entity', 'int', 'string?', 'entity?']
+          }
+        ],
+        description: '造成伤害'
+      },
+      'ride': {
+        syntaxes: [
+          {
+            syntax: '/ride <乘客:实体> <start_riding|stop_riding|evict_riders|summon_ride> ...',
+            description: '管理骑乘关系',
+            args: ['entity', 'subcommand']
+          }
+        ],
+        description: '骑乘管理',
+        subcommands: ['start_riding', 'stop_riding', 'evict_riders', 'summon_ride']
+      },
+      'replaceitem': {
+        syntaxes: [
+          {
+            syntax: '/replaceitem <block|entity> ... <槽位:字符串> <物品:字符串> [数量:整数] [数据值:整数]',
+            description: '替换物品栏中的物品',
+            args: ['subcommand']
+          }
+        ],
+        description: '替换物品',
+        subcommands: ['block', 'entity']
+      },
+      'setmaxplayers': {
+        syntaxes: [
+          {
+            syntax: '/setmaxplayers <最大玩家数:整数>',
+            description: '设置服务器最大玩家数',
+            args: ['int']
+          }
+        ],
+        description: '设置最大玩家数'
+      },
+      'list': {
+        syntaxes: [
+          {
+            syntax: '/list',
+            description: '列出在线玩家',
+            args: []
+          }
+        ],
+        description: '列出玩家'
+      },
+      'listd': {
+        syntaxes: [
+          {
+            syntax: '/listd',
+            description: '列出在线玩家（含详细信息）',
+            args: []
+          }
+        ],
+        description: '列出玩家详情'
+      },
+      'toggledownfall': {
+        syntaxes: [
+          {
+            syntax: '/toggledownfall',
+            description: '切换天气（晴/雨）',
+            args: []
+          }
+        ],
+        description: '切换天气'
+      },
+      'alwaysday': {
+        syntaxes: [
+          {
+            syntax: '/alwaysday [lock:布尔]',
+            description: '锁定或解锁时间为白天',
+            args: ['bool?']
+          }
+        ],
+        description: '锁定白天'
+      },
+      'mobevent': {
+        syntaxes: [
+          {
+            syntax: '/mobevent <事件:字符串> [值:布尔]',
+            description: '控制生物事件',
+            args: ['string', 'bool?']
+          }
+        ],
+        description: '生物事件'
       }
     };
 
@@ -1959,6 +2288,568 @@ cd Nexus-Android<br>
       }
     });
 
+    // === 参数提示 ===
+    const cmdParamHint = document.getElementById('cmdParamHint');
+    const cmdParamHintText = document.getElementById('cmdParamHintText');
+
+    const argTypeDescriptions = {
+      'entity': '实体目标选择器（如 @a, @p, @e）',
+      'entity?': '可选的实体目标选择器',
+      'player': '玩家目标选择器（如 @a, @p, @s）',
+      'player?': '可选的玩家目标选择器',
+      'player_name': '玩家名称字符串',
+      'position': '坐标（如 ~ ~ ~ 或 0 64 0）',
+      'position?': '可选的坐标',
+      'position_entity': '坐标或实体目标',
+      'int': '整数值',
+      'int?': '可选的整数值',
+      'float': '浮点数值',
+      'string': '字符串',
+      'string?': '可选字符串',
+      'bool?': '可选布尔值（true/false）',
+      'json': 'JSON 格式数据',
+      'block': '方块 ID（如 minecraft:stone）',
+      'item': '物品 ID（如 minecraft:diamond）',
+      'effect': '状态效果名称',
+      'sound': '音效名称',
+      'particle': '粒子名称',
+      'enchantment': '附魔名称',
+      'gamemode': '游戏模式（survival/creative/adventure/spectator）',
+      'difficulty': '难度（peaceful/easy/normal/hard）',
+      'gamerule': '游戏规则名称',
+      'levels': '经验等级（如 10L）',
+      'entity_type': '实体类型（如 minecraft:zombie）',
+      'subcommand': '子命令',
+      'fillmode?': '可选填充模式',
+      'setblockmode?': '可选方块模式',
+      'clonemode?': '可选克隆模式',
+      'velocity': '偏移速度向量',
+      'mode?': '可选模式'
+    };
+
+    function updateParamHint(parts, cmdKey) {
+      const cmd = minecraftCommands[cmdKey];
+      if (!cmd || !cmd.syntaxes || !cmd.syntaxes[0]) {
+        cmdParamHint.classList.add('hidden');
+        return;
+      }
+      const syntax = cmd.syntaxes[0];
+      const argIdx = parts.length - 1 - cmdKey.split(' ').length;
+      if (argIdx < 0 || argIdx >= syntax.args.length) {
+        cmdParamHint.classList.add('hidden');
+        return;
+      }
+      const argType = syntax.args[argIdx];
+      const desc = argTypeDescriptions[argType] || argType;
+      cmdParamHintText.innerHTML = `当前参数: <span class="cmd-param-hint-name">${argType}</span> — ${desc}`;
+      cmdParamHint.classList.remove('hidden');
+    }
+
+    // === 错误检查（Linter）===
+    const cmdErrors = document.getElementById('cmdErrors');
+
+    function runLinter(input, parts, cmdKey) {
+      const errors = [];
+
+      if (!input) {
+        cmdErrors.classList.add('hidden');
+        return;
+      }
+
+      if (parts.length === 1 && !commandList.some(c => c.startsWith(parts[0]))) {
+        if (parts[0].length > 1) {
+          errors.push({ msg: `未知命令 "/${parts[0]}"`, pos: 1 });
+        }
+      }
+
+      const cmd = minecraftCommands[cmdKey];
+      if (cmd && cmd.syntaxes && cmd.syntaxes[0]) {
+        const syntax = cmd.syntaxes[0];
+        const cmdParts = cmdKey.split(' ');
+        const argCount = parts.length - cmdParts.length;
+
+        if (argCount > 0 && syntax.args.length > 0) {
+          for (let i = 0; i < Math.min(argCount, syntax.args.length); i++) {
+            const argType = syntax.args[i];
+            const argValue = parts[cmdParts.length + i];
+            const cleanType = argType.replace('?', '');
+
+            if (cleanType === 'int' && argValue && !/^-?\d+$/.test(argValue)) {
+              errors.push({ msg: `参数 "${argValue}" 不是有效的整数`, pos: cmdParts.length + i + 1 });
+            }
+            if (cleanType === 'float' && argValue && !/^-?\d+\.?\d*$/.test(argValue)) {
+              errors.push({ msg: `参数 "${argValue}" 不是有效的浮点数`, pos: cmdParts.length + i + 1 });
+            }
+            if (cleanType === 'entity' && argValue && !argValue.startsWith('@') && !/^[a-zA-Z0-9_]+$/.test(argValue)) {
+              errors.push({ msg: `参数 "${argValue}" 不是有效的目标选择器`, pos: cmdParts.length + i + 1 });
+            }
+            if (cleanType === 'bool?' && argValue && argValue !== 'true' && argValue !== 'false') {
+              errors.push({ msg: `参数 "${argValue}" 不是有效的布尔值（true/false）`, pos: cmdParts.length + i + 1 });
+            }
+            if (cleanType === 'position' && argValue && !argValue.startsWith('~') && !argValue.startsWith('^') && !/^-?\d+\.?\d*$/.test(argValue)) {
+              errors.push({ msg: `参数 "${argValue}" 不是有效的坐标`, pos: cmdParts.length + i + 1 });
+            }
+          }
+        }
+
+        const requiredArgs = syntax.args.filter(a => !a.endsWith('?')).length;
+        if (argCount < requiredArgs && argCount >= 0) {
+          if (argCount < requiredArgs) {
+            errors.push({ msg: `缺少必需参数，还需要 ${requiredArgs - argCount} 个参数`, pos: parts.length });
+          }
+        }
+      }
+
+      if (errors.length === 0) {
+        cmdErrors.classList.add('hidden');
+      } else {
+        cmdErrors.classList.remove('hidden');
+        cmdErrors.innerHTML = errors.map(e => `
+          <div class="cmd-error-item">
+            <span class="cmd-error-icon">⚠️</span>
+            <span class="cmd-error-text">${e.msg}<span class="cmd-error-pos">@参数 ${e.pos}</span></span>
+          </div>
+        `).join('');
+      }
+    }
+
+    // === 多语法变体展示 ===
+    const cmdSyntaxVariants = document.getElementById('cmdSyntaxVariants');
+    const cmdVariantsList = document.getElementById('cmdVariantsList');
+
+    function updateSyntaxVariants(cmdKey) {
+      const cmd = minecraftCommands[cmdKey];
+      if (!cmd || !cmd.syntaxes || cmd.syntaxes.length <= 1) {
+        cmdSyntaxVariants.classList.add('hidden');
+        return;
+      }
+      cmdSyntaxVariants.classList.remove('hidden');
+      cmdVariantsList.innerHTML = cmd.syntaxes.map((s, i) => `
+        <div class="cmd-variant-item ${i === 0 ? 'active' : ''}" onclick="selectVariant(${i})">
+          ${s.syntax.replace(/<([^:>]+)(:[^>]*)?>/g, '<span class="cmd-syntax-param">&lt;$1$2&gt;</span>')}
+          <div class="cmd-variant-desc">${s.description}</div>
+        </div>
+      `).join('');
+    }
+
+    function selectVariant(idx) {
+      const items = cmdVariantsList.querySelectorAll('.cmd-variant-item');
+      items.forEach((item, i) => item.classList.toggle('active', i === idx));
+    }
+
+    // === 命令结构树 ===
+    const cmdStructure = document.getElementById('cmdStructure');
+    const cmdStructureTree = document.getElementById('cmdStructureTree');
+
+    function updateStructure(cmdKey) {
+      const cmd = minecraftCommands[cmdKey];
+      if (!cmd || !cmd.syntaxes || !cmd.syntaxes[0]) {
+        cmdStructure.classList.add('hidden');
+        return;
+      }
+      const syntax = cmd.syntaxes[0];
+      cmdStructure.classList.remove('hidden');
+
+      let tree = '<div class="cmd-structure-node"><span class="cmd-structure-literal">/' + cmdKey + '</span></div>';
+      const cmdParts = cmdKey.split(' ');
+      const inputParts = cmdInput.value.trim().split(' ');
+      const argCount = inputParts.length - cmdParts.length;
+
+      syntax.args.forEach((arg, i) => {
+        const isOptional = arg.endsWith('?');
+        const cleanType = arg.replace('?', '');
+        const cls = isOptional ? 'cmd-structure-optional' : 'cmd-structure-required';
+        const prefix = isOptional ? '[' : '<';
+        const suffix = isOptional ? ']?' : '>';
+        const isCurrent = i === argCount - 1 || (argCount === 0 && i === 0);
+        const marker = isCurrent ? ' ◀ 当前' : '';
+        tree += `<div class="cmd-structure-node">├─ <span class="${cls}">${prefix}${cleanType}${suffix}</span><span style="color:var(--text-muted);font-size:11px">${marker}</span></div>`;
+      });
+
+      cmdStructureTree.innerHTML = tree;
+    }
+
+    // === 集成到 updateCompletion ===
+    const originalUpdateCompletion = updateCompletion;
+    updateCompletion = function() {
+      originalUpdateCompletion();
+      const input = cmdInput.value.trim();
+      const parts = input.split(' ');
+      if (parts.length >= 1 && parts[0]) {
+        let cmdKey = parts[0];
+        for (let i = 1; i < parts.length - (parts[parts.length - 1] ? 0 : 1); i++) {
+          const testKey = cmdKey + ' ' + parts[i];
+          if (minecraftCommands[testKey]) cmdKey = testKey;
+        }
+        if (minecraftCommands[cmdKey]) {
+          updateParamHint(parts, cmdKey);
+          runLinter(input, parts, cmdKey);
+          updateSyntaxVariants(cmdKey);
+          updateStructure(cmdKey);
+        } else {
+          cmdParamHint.classList.add('hidden');
+          cmdErrors.classList.add('hidden');
+          cmdSyntaxVariants.classList.add('hidden');
+          cmdStructure.classList.add('hidden');
+        }
+      } else {
+        cmdParamHint.classList.add('hidden');
+        cmdErrors.classList.add('hidden');
+        cmdSyntaxVariants.classList.add('hidden');
+        cmdStructure.classList.add('hidden');
+      }
+    };
+
+    // === ID 浏览器 ===
+    const idData = {
+      '方块': [
+        { name: 'minecraft:stone', desc: '石头' },
+        { name: 'minecraft:grass', desc: '草方块' },
+        { name: 'minecraft:dirt', desc: '泥土' },
+        { name: 'minecraft:cobblestone', desc: '圆石' },
+        { name: 'minecraft:bedrock', desc: '基岩' },
+        { name: 'minecraft:sand', desc: '沙子' },
+        { name: 'minecraft:gravel', desc: '沙砾' },
+        { name: 'minecraft:gold_ore', desc: '金矿石' },
+        { name: 'minecraft:iron_ore', desc: '铁矿石' },
+        { name: 'minecraft:coal_ore', desc: '煤矿石' },
+        { name: 'minecraft:diamond_ore', desc: '钻石矿石' },
+        { name: 'minecraft:emerald_ore', desc: '绿宝石矿石' },
+        { name: 'minecraft:redstone_ore', desc: '红石矿石' },
+        { name: 'minecraft:lapis_ore', desc: '青金石矿石' },
+        { name: 'minecraft:obsidian', desc: '黑曜石' },
+        { name: 'minecraft:diamond_block', desc: '钻石块' },
+        { name: 'minecraft:gold_block', desc: '金块' },
+        { name: 'minecraft:iron_block', desc: '铁块' },
+        { name: 'minecraft:emerald_block', desc: '绿宝石块' },
+        { name: 'minecraft:redstone_block', desc: '红石块' },
+        { name: 'minecraft:lapis_block', desc: '青金石块' },
+        { name: 'minecraft:quartz_block', desc: '石英块' },
+        { name: 'minecraft:bricks', desc: '砖块' },
+        { name: 'minecraft:nether_bricks', desc: '下界砖块' },
+        { name: 'minecraft:glass', desc: '玻璃' },
+        { name: 'minecraft:bookshelf', desc: '书架' },
+        { name: 'minecraft:tnt', desc: 'TNT' },
+        { name: 'minecraft:crafting_table', desc: '合成台' },
+        { name: 'minecraft:furnace', desc: '熔炉' },
+        { name: 'minecraft:chest', desc: '箱子' },
+        { name: 'minecraft:ender_chest', desc: '末影箱' },
+        { name: 'minecraft:beacon', desc: '信标' },
+        { name: 'minecraft:anvil', desc: '铁砧' },
+        { name: 'minecraft:enchanting_table', desc: '附魔台' },
+        { name: 'minecraft:jukebox', desc: '唱片机' },
+        { name: 'minecraft:brewing_stand', desc: '酿造台' },
+        { name: 'minecraft:cauldron', desc: '炼药锅' },
+        { name: 'minecraft:netherite_block', desc: '下界合金块' },
+        { name: 'minecraft:conduit', desc: '潮涌核心' },
+        { name: 'minecraft:respawn_anchor', desc: '重生锚' }
+      ],
+      '物品': [
+        { name: 'minecraft:diamond', desc: '钻石' },
+        { name: 'minecraft:iron_ingot', desc: '铁锭' },
+        { name: 'minecraft:gold_ingot', desc: '金锭' },
+        { name: 'minecraft:emerald', desc: '绿宝石' },
+        { name: 'minecraft:coal', desc: '煤炭' },
+        { name: 'minecraft:redstone', desc: '红石粉' },
+        { name: 'minecraft:lapis_lazuli', desc: '青金石' },
+        { name: 'minecraft:quartz', desc: '下界石英' },
+        { name: 'minecraft:netherite_ingot', desc: '下界合金锭' },
+        { name: 'minecraft:stick', desc: '木棍' },
+        { name: 'minecraft:string', desc: '线' },
+        { name: 'minecraft:leather', desc: '皮革' },
+        { name: 'minecraft:feather', desc: '羽毛' },
+        { name: 'minecraft:gunpowder', desc: '火药' },
+        { name: 'minecraft:blaze_rod', desc: '烈焰棒' },
+        { name: 'minecraft:ender_pearl', desc: '末影珍珠' },
+        { name: 'minecraft:ender_eye', desc: '末影之眼' },
+        { name: 'minecraft:nether_star', desc: '下界之星' },
+        { name: 'minecraft:dragon_breath', desc: '龙息' },
+        { name: 'minecraft:shulker_shell', desc: '潜影壳' },
+        { name: 'minecraft:totem_of_undying', desc: '不死图腾' },
+        { name: 'minecraft:nautilus_shell', desc: '鹦鹉螺壳' },
+        { name: 'minecraft:heart_of_the_sea', desc: '海洋之心' },
+        { name: 'minecraft:phantom_membrane', desc: '幻翼膜' },
+        { name: 'minecraft:prismarine_crystals', desc: '海晶碎片' },
+        { name: 'minecraft:prismarine_shard', desc: '海晶碎片' },
+        { name: 'minecraft:scute', desc: '鳞甲' },
+        { name: 'minecraft:netherite_scrap', desc: '下界合金碎片' },
+        { name: 'minecraft:amethyst_shard', desc: '紫水晶碎片' },
+        { name: 'minecraft:echo_shard', desc: '回响碎片' }
+      ],
+      '实体': [
+        { name: 'minecraft:zombie', desc: '僵尸' },
+        { name: 'minecraft:skeleton', desc: '骷髅' },
+        { name: 'minecraft:creeper', desc: '苦力怕' },
+        { name: 'minecraft:spider', desc: '蜘蛛' },
+        { name: 'minecraft:cave_spider', desc: '洞穴蜘蛛' },
+        { name: 'minecraft:enderman', desc: '末影人' },
+        { name: 'minecraft:witch', desc: '女巫' },
+        { name: 'minecraft:slime', desc: '史莱姆' },
+        { name: 'minecraft:magma_cube', desc: '岩浆怪' },
+        { name: 'minecraft:ghast', desc: '恶魂' },
+        { name: 'minecraft:blaze', desc: '烈焰人' },
+        { name: 'minecraft:wither', desc: '凋灵' },
+        { name: 'minecraft:ender_dragon', desc: '末影龙' },
+        { name: 'minecraft:shulker', desc: '潜影贝' },
+        { name: 'minecraft:vindicator', desc: '卫道士' },
+        { name: 'minecraft:pillager', desc: '掠夺者' },
+        { name: 'minecraft:ravager', desc: '劫掠兽' },
+        { name: 'minecraft:evoker', desc: '唤魔者' },
+        { name: 'minecraft:vex', desc: '恼鬼' },
+        { name: 'minecraft:phantom', desc: '幻翼' },
+        { name: 'minecraft:warden', desc: '监守者' },
+        { name: 'minecraft:pig', desc: '猪' },
+        { name: 'minecraft:cow', desc: '牛' },
+        { name: 'minecraft:sheep', desc: '羊' },
+        { name: 'minecraft:chicken', desc: '鸡' },
+        { name: 'minecraft:rabbit', desc: '兔子' },
+        { name: 'minecraft:villager', desc: '村民' },
+        { name: 'minecraft:iron_golem', desc: '铁傀儡' },
+        { name: 'minecraft:snow_golem', desc: '雪傀儡' },
+        { name: 'minecraft:wolf', desc: '狼' },
+        { name: 'minecraft:cat', desc: '猫' },
+        { name: 'minecraft:parrot', desc: '鹦鹉' },
+        { name: 'minecraft:horse', desc: '马' },
+        { name: 'minecraft:llama', desc: '羊驼' },
+        { name: 'minecraft:panda', desc: '熊猫' },
+        { name: 'minecraft:fox', desc: '狐狸' },
+        { name: 'minecraft:bee', desc: '蜜蜂' },
+        { name: 'minecraft:piglin', desc: '猪灵' },
+        { name: 'minecraft:hoglin', desc: '疣猪兽' },
+        { name: 'minecraft:strider', desc: '炽足兽' },
+        { name: 'minecraft:allay', desc: '悦灵' }
+      ],
+      '音效': [
+        { name: 'mob.zombie.say', desc: '僵尸吼叫' },
+        { name: 'mob.skeleton.say', desc: '骷髅响声' },
+        { name: 'mob.creeper.say', desc: '苦力怕嘶嘶声' },
+        { name: 'mob.endermen.scream', desc: '末影人尖叫' },
+        { name: 'mob.wither.spawn', desc: '凋灵生成' },
+        { name: 'mob.enderdragon.end', desc: '末影龙死亡' },
+        { name: 'mob.enderdragon.growl', desc: '末影龙咆哮' },
+        { name: 'random.explode', desc: '爆炸' },
+        { name: 'random.glass', desc: '玻璃破碎' },
+        { name: 'random.wood_break', desc: '木头破坏' },
+        { name: 'random.stone', desc: '石头破坏' },
+        { name: 'random.levelup', desc: '升级' },
+        { name: 'random.orb', desc: '经验球' },
+        { name: 'random.bow', desc: '弓箭射击' },
+        { name: 'random.door_open', desc: '开门' },
+        { name: 'random.door_close', desc: '关门' },
+        { name: 'random.chestopen', desc: '打开箱子' },
+        { name: 'random.chestclosed', desc: '关闭箱子' },
+        { name: 'random.fizz', desc: '嘶嘶声' },
+        { name: 'random.pop', desc: '弹出' },
+        { name: 'random.click', desc: '点击' },
+        { name: 'random.anvil_use', desc: '铁砧使用' },
+        { name: 'random.anvil_break', desc: '铁砧破碎' },
+        { name: 'random.break', desc: '物品破损' },
+        { name: 'random.burp', desc: '打嗝' },
+        { name: 'random.drink', desc: '饮用' },
+        { name: 'random.eat', desc: '进食' },
+        { name: 'random.splash', desc: '溅水' },
+        { name: 'random.swim', desc: '游泳' },
+        { name: 'random.fuse', desc: '引信燃烧' }
+      ],
+      '粒子': [
+        { name: 'minecraft:basic_smoke_particle', desc: '烟雾' },
+        { name: 'minecraft:basic_flame_particle', desc: '火焰' },
+        { name: 'minecraft:basic_lava_particle', desc: '岩浆' },
+        { name: 'minecraft:heart_particle', desc: '爱心' },
+        { name: 'minecraft:critical_hit_emitter', desc: '暴击' },
+        { name: 'minecraft:knockback_roar_particle', desc: '击退咆哮' },
+        { name: 'minecraft:large_explosion', desc: '大爆炸' },
+        { name: 'minecraft:huge_explosion_emitter', desc: '巨大爆炸' },
+        { name: 'minecraft:water_splash_particle', desc: '水花' },
+        { name: 'minecraft:water_wake_particle', desc: '水波' },
+        { name: 'minecraft:bubble_column_up_particle', desc: '气泡上升' },
+        { name: 'minecraft:nautilus_particle', desc: '鹦鹉螺' },
+        { name: 'minecraft:conduit_particle', desc: '潮涌' },
+        { name: 'minecraft:soul_particle', desc: '灵魂' },
+        { name: 'minecraft:villager_angry', desc: '愤怒村民' },
+        { name: 'minecraft:villager_happy', desc: '开心村民' },
+        { name: 'minecraft:sparkler_emitter', desc: '烟花' },
+        { name: 'minecraft:balloon_gas_particle', desc: '气球气体' },
+        { name: 'minecraft:colored_flame_particle', desc: '彩色火焰' },
+        { name: 'minecraft:electric_spark_particle', desc: '电火花' }
+      ],
+      '附魔': [
+        { name: 'sharpness', desc: '锋利' },
+        { name: 'smite', desc: '亡灵杀手' },
+        { name: 'bane_of_arthropods', desc: '节肢杀手' },
+        { name: 'knockback', desc: '击退' },
+        { name: 'fire_aspect', desc: '火焰附加' },
+        { name: 'looting', desc: '抢夺' },
+        { name: 'efficiency', desc: '效率' },
+        { name: 'silk_touch', desc: '精准采集' },
+        { name: 'unbreaking', desc: '耐久' },
+        { name: 'fortune', desc: '时运' },
+        { name: 'power', desc: '力量' },
+        { name: 'punch', desc: '冲击' },
+        { name: 'flame', desc: '火矢' },
+        { name: 'infinity', desc: '无限' },
+        { name: 'luck_of_the_sea', desc: '海之眷顾' },
+        { name: 'lure', desc: '饵钓' },
+        { name: 'protection', desc: '保护' },
+        { name: 'fire_protection', desc: '火焰保护' },
+        { name: 'feather_falling', desc: '摔落保护' },
+        { name: 'blast_protection', desc: '爆炸保护' },
+        { name: 'projectile_protection', desc: '弹射物保护' },
+        { name: 'thorns', desc: '荆棘' },
+        { name: 'respiration', desc: '水下呼吸' },
+        { name: 'aqua_affinity', desc: '水下速掘' },
+        { name: 'depth_strider', desc: '深海探索者' },
+        { name: 'frost_walker', desc: '冰霜行者' },
+        { name: 'binding_curse', desc: '绑定诅咒' },
+        { name: 'vanishing_curse', desc: '消失诅咒' },
+        { name: 'mending', desc: '经验修补' },
+        { name: 'channeling', desc: '引雷' }
+      ],
+      '游戏规则': [
+        { name: 'doDaylightCycle', desc: '日夜交替' },
+        { name: 'doMobSpawning', desc: '生物生成' },
+        { name: 'doFireTick', desc: '火焰蔓延' },
+        { name: 'keepInventory', desc: '死亡保留物品' },
+        { name: 'mobGriefing', desc: '生物破坏' },
+        { name: 'naturalRegeneration', desc: '自然回血' },
+        { name: 'showDeathMessages', desc: '死亡消息' },
+        { name: 'doWeatherCycle', desc: '天气循环' },
+        { name: 'pvp', desc: '玩家互伤' },
+        { name: 'fallDamage', desc: '摔落伤害' },
+        { name: 'fireDamage', desc: '火焰伤害' },
+        { name: 'drowningDamage', desc: '溺水伤害' },
+        { name: 'doTntExplodes', desc: 'TNT爆炸' },
+        { name: 'doMobLoot', desc: '生物掉落' },
+        { name: 'doTileDrops', desc: '方块掉落' },
+        { name: 'sendCommandFeedback', desc: '命令反馈' },
+        { name: 'commandBlockOutput', desc: '命令方块输出' },
+        { name: 'maxCommandChainLength', desc: '最大命令链长度' },
+        { name: 'randomTickSpeed', desc: '随机刻速度' },
+        { name: 'spawnRadius', desc: '出生点半径' }
+      ]
+    };
+
+    const idTabs = document.getElementById('idTabs');
+    const idList = document.getElementById('idList');
+    const idSearch = document.getElementById('idSearch');
+    const idCount = document.getElementById('idCount');
+    let currentIdCategory = '方块';
+
+    function renderIdTabs() {
+      idTabs.innerHTML = Object.keys(idData).map(cat => `
+        <div class="id-tab ${cat === currentIdCategory ? 'active' : ''}" onclick="selectIdCategory('${cat}')">${cat}</div>
+      `).join('');
+    }
+
+    function renderIdList() {
+      const search = idSearch.value.toLowerCase().trim();
+      const items = idData[currentIdCategory].filter(item =>
+        !search || item.name.toLowerCase().includes(search) || item.desc.toLowerCase().includes(search)
+      );
+      idCount.innerText = `${items.length} 项`;
+      const icons = { '方块': '🧱', '物品': '🎁', '实体': '👾', '音效': '🔊', '粒子': '✨', '附魔': '⚔️', '游戏规则': '⚙️' };
+      const icon = icons[currentIdCategory] || '📋';
+      idList.innerHTML = items.map(item => `
+        <div class="id-item">
+          <div class="id-item-icon">${icon}</div>
+          <div>
+            <div class="id-item-name">${item.name}</div>
+            <div class="id-item-desc">${item.desc}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function selectIdCategory(cat) {
+      currentIdCategory = cat;
+      renderIdTabs();
+      renderIdList();
+    }
+
+    idSearch.addEventListener('input', renderIdList);
+    renderIdTabs();
+    renderIdList();
+
+    // === Rawtext 编辑器 ===
+    const rawtextPreview = document.getElementById('rawtextPreview');
+    const rawtextOutput = document.getElementById('rawtextOutput');
+    let rawtextItems = [];
+
+    function updateRawtext() {
+      if (rawtextItems.length === 0) {
+        rawtextPreview.innerText = '点击下方按钮添加 rawtext 元素...';
+        rawtextOutput.innerText = '{"rawtext":[]}';
+        return;
+      }
+
+      rawtextPreview.innerHTML = rawtextItems.map(item => {
+        switch (item.type) {
+          case 'text': return `<span style="color:#98c379">${item.value}</span>`;
+          case 'translate': return `<span style="color:#61afef">[翻译:${item.value}]</span>`;
+          case 'score': return `<span style="color:#e5c07b">[分数:${item.objective}:${item.selector}]</span>`;
+          case 'selector': return `<span style="color:#c678dd">[选择器:${item.value}]</span>`;
+          case 'newline': return '<br>';
+          default: return '';
+        }
+      }).join(' ');
+
+      rawtextOutput.innerText = JSON.stringify({ rawtext: rawtextItems.map(item => {
+        switch (item.type) {
+          case 'text': return { text: item.value };
+          case 'translate': return { translate: item.value };
+          case 'score': return { score: { name: item.selector, objective: item.objective } };
+          case 'selector': return { selector: item.value };
+          case 'newline': return { text: '\n' };
+          default: return {};
+        }
+      })}, null, 2);
+    }
+
+    function addRawtextItem(type) {
+      const prompts = {
+        text: { msg: '输入文本内容:', def: 'Hello World' },
+        translate: { msg: '输入翻译键:', def: 'item.sword.name' },
+        score: { msg: '输入记分项名称:', def: 'points' },
+        selector: { msg: '输入目标选择器:', def: '@s' }
+      };
+
+      if (type === 'newline') {
+        rawtextItems.push({ type: 'newline' });
+        updateRawtext();
+        return;
+      }
+
+      const p = prompts[type];
+      if (!p) return;
+
+      if (type === 'score') {
+        const objective = prompt(p.msg, p.def);
+        if (!objective) return;
+        const selector = prompt('输入目标选择器:', '@s');
+        rawtextItems.push({ type: 'score', objective: objective, selector: selector || '@s' });
+      } else {
+        const value = prompt(p.msg, p.def);
+        if (value === null) return;
+        rawtextItems.push({ type: type, value: value || p.def });
+      }
+      updateRawtext();
+    }
+
+    function clearRawtext() {
+      rawtextItems = [];
+      updateRawtext();
+    }
+
+    function copyRawtext() {
+      navigator.clipboard.writeText(rawtextOutput.innerText).then(() => {
+        const btn = event.target;
+        const original = btn.innerText;
+        btn.innerText = '✓ 已复制';
+        setTimeout(() => { btn.innerText = original; }, 2000);
+      });
+    }
+
+    updateRawtext();
     renderHistory();
   </script>
 </body>
