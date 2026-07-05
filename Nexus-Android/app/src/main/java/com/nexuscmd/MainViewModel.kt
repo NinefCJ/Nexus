@@ -708,7 +708,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         CommandLibraryItem("op", "赋予特定玩家管理员身份", "/op <玩家>", "管理员", Icons.Default.AdminPanelSettings),
         CommandLibraryItem("particle", "在指定位置生成粒子发射器", "/particle <颗粒效果> [生成位置]", "声音粒子", Icons.Default.AutoFixHigh),
         CommandLibraryItem("place", "放置已配置的地物、结构模板", "/place <地物|结构> <ID> [位置]", "世界", Icons.Default.Apartment),
-        CommandLibraryItem("playanimation", "在特定实体上播放实体动画", "/playanimation <实体> <动画ID>", "基岩版独有", Icons.Default.Movie),
+        CommandLibraryItem("playanimation", "在特定实体上播放动画并控制动画状态", "/playanimation <target> <animation_name> [next_state] [stop_expression] [controller] [blend_out_time]", "基岩版独有", Icons.Default.Movie),
         CommandLibraryItem("playsound", "在特定位置为指定玩家播放声音", "/playsound <声音ID> <目标> [位置]", "声音粒子", Icons.Default.VolumeUp),
         CommandLibraryItem("recipe", "对玩家赋予或收回指定的配方", "/recipe <赋予|收回> <玩家> <配方ID>", "基岩版独有", Icons.Default.Receipt),
         CommandLibraryItem("reload", "重新加载行为包中的函数与脚本", "/reload", "服务器", Icons.Default.Refresh),

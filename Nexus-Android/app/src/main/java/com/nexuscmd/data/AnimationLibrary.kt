@@ -421,17 +421,21 @@ object AnimationLibrary {
     fun buildPlayAnimationCommand(
         animation: MCAnimation,
         target: String = "@s",
-        nextState: String = "default",
+        nextState: String = "",
         stopExpression: String = "",
         controller: String = "",
-        blendOutTime: String = "0"
+        blendOutTime: String = "",
+        blendInTime: String = "",
+        speed: String = "",
+        loop: String = ""
     ): String {
         val sb = StringBuilder()
         sb.append("/playanimation ")
         sb.append(target)
         sb.append(' ')
         sb.append(animation.id)
-        if (nextState.isNotEmpty() && nextState != "default") {
+        
+        if (nextState.isNotEmpty()) {
             sb.append(' ')
             sb.append(nextState)
         }
@@ -443,10 +447,23 @@ object AnimationLibrary {
             sb.append(' ')
             sb.append(controller)
         }
-        if (blendOutTime.isNotEmpty() && blendOutTime != "0") {
+        if (blendOutTime.isNotEmpty()) {
             sb.append(' ')
             sb.append(blendOutTime)
         }
+        if (blendInTime.isNotEmpty()) {
+            sb.append(' ')
+            sb.append(blendInTime)
+        }
+        if (speed.isNotEmpty()) {
+            sb.append(' ')
+            sb.append(speed)
+        }
+        if (loop.isNotEmpty()) {
+            sb.append(' ')
+            sb.append(loop)
+        }
+        
         return sb.toString()
     }
 

@@ -1,5 +1,7 @@
 package com.nexuscmd.data
 
+import com.nexuscmd.data.MolangLibrary
+
 class CommandCompletionEnhancer(
     private val blockLibrary: BlockLibrary = BlockLibrary,
     private val itemLibrary: ItemLibrary = ItemLibrary,
@@ -28,7 +30,8 @@ class CommandCompletionEnhancer(
         PARTICLE,
         SELECTOR,
         COORDINATE,
-        TAG
+        TAG,
+        MOLANG
     }
 
     fun enhanceCompletions(
@@ -63,6 +66,9 @@ class CommandCompletionEnhancer(
                 }
                 "hud" -> {
                     getHudSuggestions(currentArgIndex, currentArg, baseCompletions)
+                }
+                "playanimation" -> {
+                    getPlayAnimationSuggestions(currentArgIndex, currentArg, baseCompletions)
                 }
                 "summon", "effect" -> {
                     if (currentArgIndex >= 0) baseCompletions.map { EnhancedSuggestion(it, it, SuggestionType.COMMAND) }
@@ -172,6 +178,87 @@ class CommandCompletionEnhancer(
 
         return if (addonFirst) addonSoundSuggestions + vanillaSuggestions
                else vanillaSuggestions + addonSoundSuggestions
+    }
+
+    private fun getPlayAnimationSuggestions(argIndex: Int, currentArg: String, baseCompletions: List<String>): List<EnhancedSuggestion> {
+        val normalized = currentArg.trim().lowercase()
+        return when (argIndex) {
+            0 -> selectors.filter { it.text.lowercase().contains(normalized) }
+            1 -> getAnimationSuggestions(normalized)
+            2 -> getNextStateSuggestions(normalized)
+            3 -> getStopExpressionSuggestions(normalized)
+            4 -> getControllerSuggestions(normalized)
+            else -> baseCompletions.map { EnhancedSuggestion(it, it, SuggestionType.COMMAND) }
+        }
+    }
+
+    private fun getAnimationSuggestions(query: String): List<EnhancedSuggestion> {
+        val normalized = query.trim().lowercase().removePrefix("animation.")
+        val animations = AnimationLibrary.filter(normalized, null).take(15)
+        return animations.map { anim ->
+            EnhancedSuggestion(
+                text = anim.id,
+                displayText = anim.name,
+                type = SuggestionType.COMMAND,
+                description = anim.description,
+                source = "minecraft"
+            )
+        }
+    }
+
+    private fun getNextStateSuggestions(query: String): List<EnhancedSuggestion> {
+        val nextStates = listOf(
+            EnhancedSuggestion("default", "default (默认)", SuggestionType.COMMAND, "播放后返回默认状态"),
+            EnhancedSuggestion("loop", "loop (循环)", SuggestionType.COMMAND, "循环播放动画"),
+            EnhancedSuggestion("hold", "hold (保持)", SuggestionType.COMMAND, "播放完毕后保持最后一帧"),
+            EnhancedSuggestion("reset", "reset (重置)", SuggestionType.COMMAND, "重置动画状态")
+        )
+        return nextStates.filter { it.text.lowercase().contains(query) }
+    }
+
+    private fun getStopExpressionSuggestions(query: String): List<EnhancedSuggestion> {
+        val molangItems = MolangLibrary.filter(query)
+        val commonExpressions = listOf(
+            EnhancedSuggestion("query.anim_time > 1", "anim_time > 1", SuggestionType.MOLANG, "动画时间超过1秒"),
+            EnhancedSuggestion("query.health < 10", "health < 10", SuggestionType.MOLANG, "生命值低于10"),
+            EnhancedSuggestion("query.is_grounded", "is_grounded", SuggestionType.MOLANG, "实体接触地面"),
+            EnhancedSuggestion("query.is_sneaking", "is_sneaking", SuggestionType.MOLANG, "实体正在潜行"),
+            EnhancedSuggestion("query.is_riding", "is_riding", SuggestionType.MOLANG, "实体正在骑乘"),
+            EnhancedSuggestion("query.is_dead", "is_dead", SuggestionType.MOLANG, "实体已死亡"),
+            EnhancedSuggestion("query.attack_time > 0", "attack_time > 0", SuggestionType.MOLANG, "攻击动画进行中"),
+            EnhancedSuggestion("query.is_in_water", "is_in_water", SuggestionType.MOLANG, "实体在水中"),
+            EnhancedSuggestion("query.is_sprinting", "is_sprinting", SuggestionType.MOLANG, "实体正在疾跑"),
+            EnhancedSuggestion("query.is_flying", "is_flying", SuggestionType.MOLANG, "实体正在飞行"),
+        )
+        
+        val molangSuggestions = molangItems.map { item ->
+            EnhancedSuggestion(
+                text = item.name,
+                displayText = item.display,
+                type = SuggestionType.MOLANG,
+                description = item.description,
+                source = "molang"
+            )
+        }
+        
+        return (commonExpressions + molangSuggestions).filter { 
+            it.text.lowercase().contains(query) || it.displayText.lowercase().contains(query) 
+        }.distinctBy { it.text }.take(20)
+    }
+
+    private fun getControllerSuggestions(query: String): List<EnhancedSuggestion> {
+        val controllers = listOf(
+            EnhancedSuggestion("controller.animation", "controller.animation", SuggestionType.COMMAND, "动画控制器"),
+            EnhancedSuggestion("controller.move", "controller.move", SuggestionType.COMMAND, "移动控制器"),
+            EnhancedSuggestion("controller.attack", "controller.attack", SuggestionType.COMMAND, "攻击控制器"),
+            EnhancedSuggestion("controller.look", "controller.look", SuggestionType.COMMAND, "视线控制器"),
+            EnhancedSuggestion("controller.player.attack", "controller.player.attack", SuggestionType.COMMAND, "玩家攻击控制器"),
+            EnhancedSuggestion("controller.player.move", "controller.player.move", SuggestionType.COMMAND, "玩家移动控制器"),
+            EnhancedSuggestion("controller.player.look", "controller.player.look", SuggestionType.COMMAND, "玩家视线控制器"),
+            EnhancedSuggestion("controller.player.swim", "controller.player.swim", SuggestionType.COMMAND, "玩家游泳控制器"),
+            EnhancedSuggestion("controller.player.sleep", "controller.player.sleep", SuggestionType.COMMAND, "玩家睡觉控制器")
+        )
+        return controllers.filter { it.text.lowercase().contains(query) }
     }
 
     private fun getHudSuggestions(argIndex: Int, currentArg: String, baseCompletions: List<String>): List<EnhancedSuggestion> {
