@@ -1100,141 +1100,496 @@ cd Nexus-Android<br>
     let selectedIndex = -1;
     let isCommandMode = false;
 
+    const selectorVariables = [
+      { icon: '👤', value: '@p', label: '最近的玩家' },
+      { icon: '👥', value: '@a', label: '所有玩家' },
+      { icon: '🎲', value: '@r', label: '随机玩家' },
+      { icon: '👾', value: '@e', label: '所有实体' },
+      { icon: '🙋', value: '@s', label: '命令执行者' },
+      { icon: '🎯', value: '@n', label: '最近的实体' },
+      { icon: '💬', value: '@initiator', label: 'NPC对话触发者' }
+    ];
+
+    const selectorArgs = [
+      { icon: '📍', value: 'x=', label: 'X坐标' },
+      { icon: '📍', value: 'y=', label: 'Y坐标' },
+      { icon: '📍', value: 'z=', label: 'Z坐标' },
+      { icon: '📏', value: 'r=', label: '最大半径' },
+      { icon: '📏', value: 'rm=', label: '最小半径' },
+      { icon: '📐', value: 'dx=', label: 'X轴方向长度' },
+      { icon: '📐', value: 'dy=', label: 'Y轴方向长度' },
+      { icon: '📐', value: 'dz=', label: 'Z轴方向长度' },
+      { icon: '🔢', value: 'c=', label: '数量限制' },
+      { icon: '👾', value: 'type=', label: '实体类型' },
+      { icon: '🏷️', value: 'tag=', label: '记分板标签' },
+      { icon: '📝', value: 'name=', label: '实体名称' },
+      { icon: '👨‍👩‍👧‍👦', value: 'family=', label: '实体族' },
+      { icon: '📊', value: 'scores=', label: '记分项分数' },
+      { icon: '⬆️', value: 'rx=', label: '最大垂直旋转角度' },
+      { icon: '⬇️', value: 'rxm=', label: '最小垂直旋转角度' },
+      { icon: '➡️', value: 'ry=', label: '最大水平旋转角度' },
+      { icon: '⬅️', value: 'rym=', label: '最小水平旋转角度' },
+      { icon: '⭐', value: 'l=', label: '最大经验等级' },
+      { icon: '⭐', value: 'lm=', label: '最小经验等级' },
+      { icon: '🎮', value: 'm=', label: '游戏模式' },
+      { icon: '🎒', value: 'hasitem=', label: '物品持有' },
+      { icon: '🔑', value: 'has_property=', label: '实体属性' }
+    ];
+
+    const entityTypes = [
+      'player', 'zombie', 'skeleton', 'creeper', 'spider', 'enderman',
+      'cave_spider', 'witch', 'slime', 'magma_cube', 'ghast', 'blaze',
+      'wither', 'ender_dragon', 'pig', 'cow', 'sheep', 'chicken',
+      'rabbit', 'villager', 'iron_golem', 'snow_golem', 'wolf', 'cat',
+      'parrot', 'horse', 'donkey', 'mule', 'llama', 'panda',
+      'fox', 'bee', 'piglin', 'hoglin', 'strider', 'goat',
+      'frog', 'allay', 'warden', 'camel', 'sniffer', 'armadillo'
+    ];
+
     const minecraftCommands = {
+      'tp': {
+        syntaxes: [
+          {
+            syntax: '/tp <目的地实体:实体>',
+            description: '将自身传送至指定实体所在位置',
+            args: ['entity']
+          },
+          {
+            syntax: '/tp <目标:实体> <目的地:位置|实体>',
+            description: '传送目标到指定位置或实体',
+            args: ['entity', 'position_entity']
+          },
+          {
+            syntax: '/tp <目标:实体> <x:小数> <y:小数> <z:小数>',
+            description: '传送目标到指定坐标位置',
+            args: ['entity', 'position']
+          }
+        ],
+        description: '传送实体或玩家'
+      },
+      'teleport': {
+        syntaxes: [
+          {
+            syntax: '/teleport <目的地实体:实体>',
+            description: '将自身传送至指定实体所在位置',
+            args: ['entity']
+          },
+          {
+            syntax: '/teleport <目标:实体> <x:小数> <y:小数> <z:小数>',
+            description: '传送目标到指定坐标位置',
+            args: ['entity', 'position']
+          }
+        ],
+        description: '传送实体（面向保持）'
+      },
+      'give': {
+        syntaxes: [
+          {
+            syntax: '/give <玩家:目标> <物品:字符串> [数量:整数] [数据值:整数]',
+            description: '给予玩家指定物品',
+            args: ['player', 'item', 'int?', 'int?']
+          }
+        ],
+        description: '给予玩家物品'
+      },
+      'kill': {
+        syntaxes: [
+          {
+            syntax: '/kill [目标:实体]',
+            description: '杀死指定目标（不填则杀死自己）',
+            args: ['entity?']
+          }
+        ],
+        description: '杀死实体'
+      },
+      'effect': {
+        syntaxes: [
+          {
+            syntax: '/effect <目标:实体> <效果:字符串> [持续时间:整数] [强度:整数] [隐藏:布尔]',
+            description: '给目标添加状态效果',
+            args: ['entity', 'effect', 'int?', 'int?', 'bool?']
+          },
+          {
+            syntax: '/effect <目标:实体> clear',
+            description: '清除目标的所有状态效果',
+            args: ['entity', 'clear']
+          }
+        ],
+        description: '管理状态效果'
+      },
+      'execute': {
+        syntaxes: [
+          {
+            syntax: '/execute <子命令:枚举> ...',
+            description: '执行条件或变换命令',
+            args: ['subcommand']
+          }
+        ],
+        description: '执行条件命令',
+        subcommands: ['as', 'at', 'positioned', 'facing', 'aligned', 'if', 'unless', 'run', 'in', 'anchored', 'rotated']
+      },
       'scoreboard': {
-        syntax: '/scoreboard <objectives|players> <操作> <参数> ...',
-        description: '管理记分板系统',
-        subcommands: ['objectives', 'players']
+        syntaxes: [
+          {
+            syntax: '/scoreboard <objectives|players|display|tag>',
+            description: '管理记分板系统',
+            args: ['subcommand']
+          }
+        ],
+        description: '管理记分板',
+        subcommands: ['objectives', 'players', 'display', 'tag']
       },
       'scoreboard objectives': {
-        syntax: '/scoreboard objectives <add|remove|list|setdisplay> ...',
-        description: '管理记分板目标',
+        syntaxes: [
+          {
+            syntax: '/scoreboard objectives <add|remove|list|setdisplay>',
+            description: '管理记分板目标',
+            args: ['subcommand']
+          }
+        ],
+        description: '记分板目标',
         subcommands: ['add', 'remove', 'list', 'setdisplay']
       },
       'scoreboard players': {
-        syntax: '/scoreboard players <add|remove|set|list|operation|random> <选择器> <记分项> <分数>',
-        description: '修改记分板对象的分数',
-        subcommands: ['add', 'remove', 'set', 'list', 'operation', 'random']
-      },
-      'execute': {
-        syntax: '/execute <位置参数> <条件参数> <命令>',
-        description: '执行条件命令',
-        subcommands: ['as', 'at', 'positioned', 'facing', 'aligned', 'if', 'unless']
-      },
-      'give': {
-        syntax: '/give <目标> <物品> [数量] [数据值] [NBT]',
-        description: '给予玩家物品',
-        subcommands: ['@p', '@a', '@r', '@e', '@s']
+        syntaxes: [
+          {
+            syntax: '/scoreboard players <add|remove|set|list|operation|random|reset> <目标:实体> <记分项:字符串> <分数:整数>',
+            description: '修改记分板对象的分数',
+            args: ['subcommand', 'entity', 'string', 'int']
+          }
+        ],
+        description: '记分板玩家',
+        subcommands: ['add', 'remove', 'set', 'list', 'operation', 'random', 'reset']
       },
       'summon': {
-        syntax: '/summon <实体类型> [位置] [NBT]',
-        description: '召唤实体',
-        subcommands: ['minecraft:']
-      },
-      'tp': {
-        syntax: '/tp <目标> <位置|目标>',
-        description: '传送实体',
-        subcommands: ['@p', '@a', '@r', '@e', '@s']
-      },
-      'kill': {
-        syntax: '/kill <目标>',
-        description: '杀死实体',
-        subcommands: ['@p', '@a', '@r', '@e', '@s']
-      },
-      'effect': {
-        syntax: '/effect <目标> <效果> [持续时间] [等级] [隐藏粒子]',
-        description: '管理状态效果',
-        subcommands: ['@p', '@a', '@r', '@e', '@s', 'clear']
-      },
-      'say': {
-        syntax: '/say <消息>',
-        description: '发送消息',
-        subcommands: []
-      },
-      'tell': {
-        syntax: '/tell <目标> <消息>',
-        description: '发送私密消息',
-        subcommands: ['@p', '@a', '@r', '@e', '@s']
+        syntaxes: [
+          {
+            syntax: '/summon <实体类型:字符串> [x:小数] [y:小数] [z:小数] [NBT:JSON]',
+            description: '在指定位置召唤实体',
+            args: ['entity_type', 'position?']
+          }
+        ],
+        description: '召唤实体'
       },
       'fill': {
-        syntax: '/fill <位置1> <位置2> <方块> [替换模式] [方块状态]',
+        syntaxes: [
+          {
+            syntax: '/fill <x1:小数> <y1:小数> <z1:小数> <x2:小数> <y2:小数> <z2:小数> <方块:字符串> [模式:枚举]',
+            description: '用指定方块填充区域',
+            args: ['position', 'position', 'block', 'fillmode?']
+          }
+        ],
         description: '填充区域',
-        subcommands: ['minecraft:', 'replace', 'destroy', 'keep', 'hollow', 'outline']
+        fillmodes: ['replace', 'destroy', 'keep', 'hollow', 'outline']
       },
       'setblock': {
-        syntax: '/setblock <位置> <方块> [方块状态] [替换模式]',
+        syntaxes: [
+          {
+            syntax: '/setblock <x:小数> <y:小数> <z:小数> <方块:字符串> [模式:枚举]',
+            description: '在指定位置设置方块',
+            args: ['position', 'block', 'setblockmode?']
+          }
+        ],
         description: '设置方块',
-        subcommands: ['minecraft:', 'replace', 'destroy', 'keep']
+        setblockmodes: ['replace', 'destroy', 'keep']
       },
       'particle': {
-        syntax: '/particle <粒子类型> <位置> <偏移> <速度> <数量> [模式] [玩家]',
-        description: '生成粒子效果',
-        subcommands: ['minecraft:', 'force', 'normal']
+        syntaxes: [
+          {
+            syntax: '/particle <粒子类型:字符串> <x:小数> <y:小数> <z:小数> <xd:小数> <yd:小数> <zd:小数> <速度:小数> <数量:整数> [模式:枚举] [玩家:目标]',
+            description: '生成粒子效果',
+            args: ['particle', 'position', 'velocity', 'int', 'int', 'mode?', 'player?']
+          }
+        ],
+        description: '生成粒子效果'
       },
       'playsound': {
-        syntax: '/playsound <音效> <玩家> [位置] [音量] [音调] [最小音量]',
-        description: '播放音效',
-        subcommands: ['minecraft:', '@p', '@a', '@r', '@e', '@s']
+        syntaxes: [
+          {
+            syntax: '/playsound <音效:字符串> <玩家:目标> [x:小数] [y:小数] [z:小数] [音量:小数] [音调:小数] [最小音量:小数]',
+            description: '播放音效给玩家',
+            args: ['sound', 'player', 'position?']
+          }
+        ],
+        description: '播放音效'
       },
       'time': {
-        syntax: '/time <set|add|query> <值>',
+        syntaxes: [
+          {
+            syntax: '/time <set|add|query> <值:整数>',
+            description: '管理游戏时间',
+            args: ['subcommand', 'int']
+          }
+        ],
         description: '管理游戏时间',
         subcommands: ['set', 'add', 'query', 'day', 'night', 'noon', 'midnight']
       },
       'weather': {
-        syntax: '/weather <clear|rain|thunder> [持续时间]',
+        syntaxes: [
+          {
+            syntax: '/weather <clear|rain|thunder> [持续时间:整数]',
+            description: '设置天气',
+            args: ['subcommand', 'int?']
+          }
+        ],
         description: '管理天气',
         subcommands: ['clear', 'rain', 'thunder']
       },
-      'difficulty': {
-        syntax: '/difficulty <peaceful|easy|normal|hard>',
-        description: '设置难度',
-        subcommands: ['peaceful', 'easy', 'normal', 'hard']
-      },
       'gamemode': {
-        syntax: '/gamemode <survival|creative|adventure|spectator> [目标]',
+        syntaxes: [
+          {
+            syntax: '/gamemode <模式:枚举> [玩家:目标]',
+            description: '设置玩家的游戏模式',
+            args: ['gamemode', 'player?']
+          }
+        ],
         description: '设置游戏模式',
-        subcommands: ['survival', 'creative', 'adventure', 'spectator', 's', 'c', 'a', 'sp']
+        gamemodes: ['survival', 'creative', 'adventure', 'spectator', 's', 'c', 'a', 'sp']
+      },
+      'difficulty': {
+        syntaxes: [
+          {
+            syntax: '/difficulty <难度:枚举>',
+            description: '设置游戏难度',
+            args: ['difficulty']
+          }
+        ],
+        description: '设置难度',
+        difficulties: ['peaceful', 'easy', 'normal', 'hard']
       },
       'gamerule': {
-        syntax: '/gamerule <规则> [值]',
+        syntaxes: [
+          {
+            syntax: '/gamerule <规则:字符串> [值:布尔|整数]',
+            description: '设置或查询游戏规则',
+            args: ['gamerule', 'value?']
+          }
+        ],
         description: '设置游戏规则',
-        subcommands: ['doDaylightCycle', 'doMobSpawning', 'doFireTick', 'keepInventory']
+        gamerules: [
+          'doDaylightCycle', 'doMobSpawning', 'doFireTick', 'keepInventory',
+          'mobGriefing', 'naturalRegeneration', 'showDeathMessages',
+          'doWeatherCycle', 'doTntExplodes', 'fallDamage', 'fireDamage',
+          'pvp', 'sendCommandFeedback', 'commandblockoutput', 'maxCommandChainLength'
+        ]
+      },
+      'say': {
+        syntaxes: [
+          {
+            syntax: '/say <消息:字符串>',
+            description: '向所有玩家发送消息',
+            args: ['string']
+          }
+        ],
+        description: '发送消息'
+      },
+      'tell': {
+        syntaxes: [
+          {
+            syntax: '/tell <目标:玩家> <消息:字符串>',
+            description: '向指定玩家发送私密消息',
+            args: ['player', 'string']
+          }
+        ],
+        description: '发送私密消息'
+      },
+      'me': {
+        syntaxes: [
+          {
+            syntax: '/me <动作:字符串>',
+            description: '以第三人称描述自己的动作',
+            args: ['string']
+          }
+        ],
+        description: '第三人称动作'
+      },
+      'title': {
+        syntaxes: [
+          {
+            syntax: '/title <玩家:目标> <title|subtitle|actionbar|clear|reset|times> ...',
+            description: '向玩家显示标题',
+            args: ['player', 'subcommand']
+          }
+        ],
+        description: '显示标题',
+        subcommands: ['title', 'subtitle', 'actionbar', 'clear', 'reset', 'times']
       },
       'kick': {
-        syntax: '/kick <玩家> [原因]',
-        description: '踢出玩家',
-        subcommands: []
+        syntaxes: [
+          {
+            syntax: '/kick <玩家:字符串> [原因:字符串]',
+            description: '踢出玩家',
+            args: ['player_name', 'string?']
+          }
+        ],
+        description: '踢出玩家'
       },
       'ban': {
-        syntax: '/ban <玩家> [原因]',
-        description: '封禁玩家',
-        subcommands: []
-      },
-      'banlist': {
-        syntax: '/banlist [ips|players]',
-        description: '查看封禁列表',
-        subcommands: ['ips', 'players']
+        syntaxes: [
+          {
+            syntax: '/ban <玩家:字符串> [原因:字符串]',
+            description: '封禁玩家',
+            args: ['player_name', 'string?']
+          }
+        ],
+        description: '封禁玩家'
       },
       'pardon': {
-        syntax: '/pardon <玩家>',
-        description: '解封玩家',
-        subcommands: []
+        syntaxes: [
+          {
+            syntax: '/pardon <玩家:字符串>',
+            description: '解封玩家',
+            args: ['player_name']
+          }
+        ],
+        description: '解封玩家'
       },
       'op': {
-        syntax: '/op <玩家>',
-        description: '授予管理员权限',
-        subcommands: []
+        syntaxes: [
+          {
+            syntax: '/op <玩家:字符串>',
+            description: '授予管理员权限',
+            args: ['player_name']
+          }
+        ],
+        description: '授予管理员权限'
       },
       'deop': {
-        syntax: '/deop <玩家>',
-        description: '撤销管理员权限',
-        subcommands: []
+        syntaxes: [
+          {
+            syntax: '/deop <玩家:字符串>',
+            description: '撤销管理员权限',
+            args: ['player_name']
+          }
+        ],
+        description: '撤销管理员权限'
       },
       'help': {
-        syntax: '/help [命令]',
-        description: '显示帮助',
-        subcommands: []
+        syntaxes: [
+          {
+            syntax: '/help [命令:字符串]',
+            description: '显示命令帮助',
+            args: ['string?']
+          }
+        ],
+        description: '显示帮助'
+      },
+      'clear': {
+        syntaxes: [
+          {
+            syntax: '/clear [玩家:目标] [物品:字符串] [数据值:整数] [最大数量:整数]',
+            description: '清除玩家物品栏中的物品',
+            args: ['player?', 'item?', 'int?', 'int?']
+          }
+        ],
+        description: '清除物品'
+      },
+      'clone': {
+        syntaxes: [
+          {
+            syntax: '/clone <x1> <y1> <z1> <x2> <y2> <z2> <x> <y> <z> [模式:枚举]',
+            description: '克隆区域到指定位置',
+            args: ['position', 'position', 'position', 'clonemode?']
+          }
+        ],
+        description: '克隆区域',
+        clonemodes: ['replace', 'masked', 'filtered', 'force', 'move', 'normal']
+      },
+      'setworldspawn': {
+        syntaxes: [
+          {
+            syntax: '/setworldspawn [x:小数] [y:小数] [z:小数]',
+            description: '设置世界出生点',
+            args: ['position?']
+          }
+        ],
+        description: '设置世界出生点'
+      },
+      'spawnpoint': {
+        syntaxes: [
+          {
+            syntax: '/spawnpoint [玩家:目标] [x:小数] [y:小数] [z:小数]',
+            description: '设置玩家出生点',
+            args: ['player?', 'position?']
+          }
+        ],
+        description: '设置出生点'
+      },
+      'enchant': {
+        syntaxes: [
+          {
+            syntax: '/enchant <玩家:目标> <附魔:字符串> [等级:整数]',
+            description: '为玩家手持物品附魔',
+            args: ['player', 'enchantment', 'int?']
+          }
+        ],
+        description: '附魔物品'
+      },
+      'spreadplayers': {
+        syntaxes: [
+          {
+            syntax: '/spreadplayers <x:小数> <z:小数> <散布距离:小数> <最大距离:小数> <目标:实体>',
+            description: '将目标随机散布到指定区域',
+            args: ['float', 'float', 'float', 'float', 'entity']
+          }
+        ],
+        description: '随机散布实体'
+      },
+      'testfor': {
+        syntaxes: [
+          {
+            syntax: '/testfor <目标:实体>',
+            description: '检测指定目标是否存在',
+            args: ['entity']
+          }
+        ],
+        description: '检测实体'
+      },
+      'testforblock': {
+        syntaxes: [
+          {
+            syntax: '/testforblock <x:小数> <y:小数> <z:小数> <方块:字符串> [数据值:整数]',
+            description: '检测指定位置的方块',
+            args: ['position', 'block', 'int?']
+          }
+        ],
+        description: '检测方块'
+      },
+      'testforblocks': {
+        syntaxes: [
+          {
+            syntax: '/testforblocks <x1> <y1> <z1> <x2> <y2> <z2> <x> <y> <z> [模式:枚举]',
+            description: '检测两个区域的方块是否相同',
+            args: ['position', 'position', 'position', 'mode?']
+          }
+        ],
+        description: '检测区域方块'
+      },
+      'xp': {
+        syntaxes: [
+          {
+            syntax: '/xp <数量:整数> [玩家:目标]',
+            description: '给予玩家经验值',
+            args: ['int', 'player?']
+          },
+          {
+            syntax: '/xp <数量:L> [玩家:目标]',
+            description: '给予玩家经验等级',
+            args: ['levels', 'player?']
+          }
+        ],
+        description: '给予经验'
+      },
+      'experience': {
+        syntaxes: [
+          {
+            syntax: '/experience <add|set|query> <玩家:目标> <数量:整数>',
+            description: '管理玩家经验',
+            args: ['subcommand', 'player', 'int']
+          }
+        ],
+        description: '管理经验',
+        subcommands: ['add', 'set', 'query']
       }
     };
 
@@ -1249,6 +1604,74 @@ cd Nexus-Android<br>
       { cmd: '/particle minecraft:heart ~ ~1 ~ 0 0 0 1 10', time: '1小时前' },
       { cmd: '/time set day', time: '2小时前' }
     ];
+
+    function isSelector(token) {
+      return /^@[paresn]/.test(token);
+    }
+
+    function getContextType(parts, commandKey) {
+      const cmd = minecraftCommands[commandKey];
+      if (!cmd) return null;
+
+      const idx = parts.length - 2;
+      const syntax = cmd.syntaxes?.[0];
+      if (!syntax || !syntax.args) return null;
+
+      if (idx < syntax.args.length) {
+        const arg = syntax.args[idx];
+        if (arg.endsWith('?')) return arg.slice(0, -1);
+        return arg;
+      }
+      return null;
+    }
+
+    function getEntityCompletions(prefix) {
+      const base = selectorVariables.filter(v => v.value.startsWith(prefix));
+      return base;
+    }
+
+    function getSelectorArgCompletions(argPrefix, selectorText) {
+      const lastComma = selectorText.lastIndexOf(',');
+      const bracketIdx = selectorText.indexOf('[');
+      let currentArgPrefix = '';
+
+      if (bracketIdx >= 0) {
+        const inside = selectorText.substring(bracketIdx + 1);
+        const lastArg = inside.split(',').pop();
+        currentArgPrefix = lastArg.trim();
+      }
+
+      if (currentArgPrefix === '' || !currentArgPrefix.includes('=')) {
+        return selectorArgs.filter(a => a.value.startsWith(currentArgPrefix));
+      }
+
+      const [argName, argVal] = currentArgPrefix.split('=');
+      if (argName === 'type') {
+        return entityTypes
+          .filter(t => t.startsWith(argVal || ''))
+          .map(t => ({ icon: '👾', value: argName + '=' + t, label: '' }));
+      }
+      if (argName === 'm') {
+        return ['survival', 'creative', 'adventure', 'spectator']
+          .filter(m => m.startsWith(argVal || ''))
+          .map(m => ({ icon: '🎮', value: argName + '=' + m, label: '' }));
+      }
+      if (argName === 'family') {
+        return ['player', 'zombie', 'skeleton', 'creeper', 'spider', 'undead', 'mob']
+          .filter(f => f.startsWith(argVal || ''))
+          .map(f => ({ icon: '👨‍👩‍👧‍👦', value: argName + '=' + f, label: '' }));
+      }
+
+      return [];
+    }
+
+    function isInsideSelector(parts) {
+      const lastPart = parts[parts.length - 1];
+      if (!lastPart.startsWith('@')) return false;
+      const bracketIdx = lastPart.indexOf('[');
+      if (bracketIdx < 0) return false;
+      return !lastPart.includes(']');
+    }
 
     function renderHistory() {
       cmdHistoryList.innerHTML = historyCommands.map((h, i) => `
@@ -1273,7 +1696,7 @@ cd Nexus-Android<br>
       const input = cmdInput.value.trim();
       const parts = input.split(' ');
       const currentPart = parts[parts.length - 1];
-      const fullCommand = parts.join(' ');
+      const fullCommand = parts.slice(0, -1).join(' ');
 
       cmdSyntaxHint.classList.add('hidden');
       cmdHistoryHeader.classList.add('hidden');
@@ -1287,60 +1710,131 @@ cd Nexus-Android<br>
         completions = commandList.map(c => ({
           icon: '⚡', value: c, label: minecraftCommands[c].description
         }));
+      } else if (isInsideSelector(parts)) {
+        const argCompletions = getSelectorArgCompletions('', currentPart);
+        const bracketIdx = currentPart.indexOf('[');
+        const prefix = currentPart.substring(0, bracketIdx + 1);
+        const lastComma = currentPart.lastIndexOf(',');
+        const insertPoint = lastComma > bracketIdx ? lastComma + 1 : bracketIdx + 1;
+        const prefixToKeep = currentPart.substring(0, insertPoint);
+
+        completions = argCompletions.map(c => ({
+          icon: c.icon,
+          value: prefixToKeep + c.value,
+          label: c.label
+        }));
       } else {
-        const partialMatch = commandList.filter(c => c.startsWith(currentPart));
-        if (partialMatch.length > 0 && parts.length === 1) {
+        if (parts.length === 1) {
+          const partialMatch = commandList.filter(c => c.startsWith(currentPart));
           completions = partialMatch.map(c => ({
             icon: '⚡', value: c, label: minecraftCommands[c].description
           }));
         } else {
           const baseCmd = parts[0];
-          const cmdKey = parts.length > 1 ? `${baseCmd} ${parts[1]}` : baseCmd;
-          if (minecraftCommands[cmdKey]) {
-            syntaxInfo = minecraftCommands[cmdKey];
-            const subcmds = syntaxInfo.subcommands || [];
-            const filteredSubcmds = subcmds.filter(s => s.startsWith(currentPart));
-            if (filteredSubcmds.length > 0) {
-              completions = filteredSubcmds.map(s => ({
-                icon: '📋', value: s, label: ''
-              }));
-            }
-          } else if (minecraftCommands[baseCmd]) {
-            syntaxInfo = minecraftCommands[baseCmd];
-            const subcmds = syntaxInfo.subcommands || [];
-            const filteredSubcmds = subcmds.filter(s => s.startsWith(currentPart));
-            if (filteredSubcmds.length > 0) {
-              completions = filteredSubcmds.map(s => ({
-                icon: '📋', value: s, label: ''
-              }));
+          let cmdKey = baseCmd;
+
+          for (let i = 1; i < parts.length - 1; i++) {
+            const testKey = cmdKey + ' ' + parts[i];
+            if (minecraftCommands[testKey]) {
+              cmdKey = testKey;
             }
           }
 
-          if (currentPart.startsWith('@')) {
-            completions = [
-              { icon: '👤', value: '@p', label: '最近的玩家' },
-              { icon: '👥', value: '@a', label: '所有玩家' },
-              { icon: '🎲', value: '@r', label: '随机玩家' },
-              { icon: '👾', value: '@e', label: '所有实体' },
-              { icon: '🙋', value: '@s', label: '自己' }
-            ].filter(c => c.value.startsWith(currentPart));
-          } else if (currentPart.startsWith('minecraft:')) {
-            completions = [
-              { icon: '🧱', value: 'minecraft:diamond_block', label: '钻石方块' },
-              { icon: '🎁', value: 'minecraft:diamond', label: '钻石' },
-              { icon: '⚔️', value: 'minecraft:diamond_sword', label: '钻石剑' },
-              { icon: '🏠', value: 'minecraft:bedrock', label: '基岩' },
-              { icon: '🔥', value: 'minecraft:fire', label: '火' },
-              { icon: '💧', value: 'minecraft:water', label: '水' }
-            ].filter(c => c.value.startsWith(currentPart));
+          const cmd = minecraftCommands[cmdKey];
+          if (cmd) {
+            syntaxInfo = cmd.syntaxes?.[0];
+
+            if (cmd.subcommands && parts[parts.length - 2] === cmdKey.split(' ').pop() || (parts.length - 1 === cmdKey.split(' ').length)) {
+              const subcmds = cmd.subcommands || [];
+              const filtered = subcmds.filter(s => s.startsWith(currentPart));
+              if (filtered.length > 0) {
+                completions = filtered.map(s => ({
+                  icon: '📋', value: s, label: ''
+                }));
+              }
+            }
+
+            const ctxType = getContextType(parts, cmdKey);
+
+            if (currentPart.startsWith('@')) {
+              completions = getEntityCompletions(currentPart);
+            } else if (currentPart.startsWith('~') || currentPart.startsWith('^')) {
+              completions = [
+                { icon: '📍', value: '~', label: '相对坐标（当前位置）' },
+                { icon: '📍', value: '~~', label: '相对Y坐标' },
+                { icon: '📍', value: '~~5', label: '向上5格' },
+                { icon: '📍', value: '~-5', label: '向下5格' }
+              ].filter(c => c.value.startsWith(currentPart));
+            } else if (currentPart.startsWith('minecraft:')) {
+              const suggestions = [
+                'diamond_block', 'diamond', 'diamond_sword', 'bedrock', 'fire',
+                'water', 'lava', 'stone', 'cobblestone', 'dirt', 'grass',
+                'iron_ingot', 'gold_ingot', 'emerald', 'redstone', 'lapis_lazuli',
+                'wither', 'creeper', 'skeleton', 'zombie', 'enderman'
+              ];
+              completions = suggestions
+                .filter(s => s.startsWith(currentPart.slice(10)))
+                .map(s => ({
+                  icon: s.includes('minecraft') ? '🧱' : '👾',
+                  value: 'minecraft:' + s,
+                  label: ''
+                }));
+            } else if (cmd.fillmodes && ctxType === 'fillmode?') {
+              completions = cmd.fillmodes
+                .filter(m => m.startsWith(currentPart))
+                .map(m => ({ icon: '🧱', value: m, label: '' }));
+            } else if (cmd.setblockmodes && ctxType === 'setblockmode?') {
+              completions = cmd.setblockmodes
+                .filter(m => m.startsWith(currentPart))
+                .map(m => ({ icon: '🧱', value: m, label: '' }));
+            } else if (cmd.gamemodes && ctxType === 'gamemode') {
+              completions = cmd.gamemodes
+                .filter(m => m.startsWith(currentPart))
+                .map(m => ({ icon: '🎮', value: m, label: '' }));
+            } else if (cmd.difficulties && ctxType === 'difficulty') {
+              completions = cmd.difficulties
+                .filter(m => m.startsWith(currentPart))
+                .map(m => ({ icon: '💀', value: m, label: '' }));
+            } else if (cmd.gamerules && ctxType === 'gamerule') {
+              completions = cmd.gamerules
+                .filter(m => m.startsWith(currentPart))
+                .map(m => ({ icon: '⚙️', value: m, label: '' }));
+            }
+
+            if ((ctxType === 'entity' || ctxType === 'player' || ctxType === 'position_entity') && !currentPart.startsWith('@') && currentPart.length > 0) {
+              const entityCompletions = getEntityCompletions('@');
+              if (completions.length === 0) {
+                completions = entityCompletions;
+              }
+            }
+
+            if (ctxType === 'position' || ctxType === 'position?') {
+              if (!currentPart.startsWith('~') && !currentPart.startsWith('^') && completions.length === 0) {
+                completions = [
+                  { icon: '📍', value: '~', label: '相对坐标' },
+                  { icon: '📍', value: '^', label: '局部坐标(^左 ^上 ^前)' }
+                ];
+              }
+            }
           }
         }
       }
 
       if (syntaxInfo) {
         cmdSyntaxHint.classList.remove('hidden');
-        cmdSyntaxContent.innerHTML = syntaxInfo.syntax.replace(/<([^>]+)>/g, '<span class="cmd-syntax-param">&lt;$1&gt;</span>');
+        cmdSyntaxContent.innerHTML = syntaxInfo.syntax.replace(/<([^:>]+)(:[^>]*)?>/g,
+          '<span class="cmd-syntax-param">&lt;$1$2&gt;</span>');
         cmdSyntaxDesc.innerText = syntaxInfo.description;
+      } else {
+        const baseCmd = parts[0];
+        const cmd = minecraftCommands[baseCmd];
+        if (cmd && cmd.syntaxes && parts.length > 1) {
+          cmdSyntaxHint.classList.remove('hidden');
+          const syn = cmd.syntaxes[0];
+          cmdSyntaxContent.innerHTML = syn.syntax.replace(/<([^:>]+)(:[^>]*)?>/g,
+            '<span class="cmd-syntax-param">&lt;$1$2&gt;</span>');
+          cmdSyntaxDesc.innerText = syn.description;
+        }
       }
 
       if (completions.length === 0) {
@@ -1350,7 +1844,7 @@ cd Nexus-Android<br>
 
       cmdCompletionList.innerHTML = completions.map((c, i) => `
         <div class="cmd-completion-item ${i === selectedIndex ? 'active' : ''}" 
-             onclick="selectCompletion('${c.value}')" 
+             onclick="selectCompletion('${c.value.replace(/'/g, "\\'")}')" 
              onmouseenter="selectedIndex=${i};updateSelection()">
           <div class="cmd-completion-icon">${c.icon}</div>
           <div class="cmd-completion-text">
@@ -1363,10 +1857,20 @@ cd Nexus-Android<br>
     }
 
     function selectCompletion(value) {
-      const input = cmdInput.value.trim();
+      const input = cmdInput.value;
       const parts = input.split(' ');
       parts[parts.length - 1] = value;
-      cmdInput.value = parts.join(' ') + ' ';
+
+      if (value.startsWith('@') && !value.includes('[')) {
+        cmdInput.value = parts.join(' ') + ' ';
+      } else if (value.endsWith('=')) {
+        cmdInput.value = parts.join('');
+      } else if (isInsideSelector(parts)) {
+        cmdInput.value = parts.join('');
+      } else {
+        cmdInput.value = parts.join(' ') + ' ';
+      }
+
       selectedIndex = -1;
       updateCompletion();
       cmdInput.focus();
