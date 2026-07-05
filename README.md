@@ -2,7 +2,16 @@
 
 > 一款专为 Minecraft 基岩版设计的命令辅助工具，提供智能语法提示、命令补全、ID翻译库等强大功能。
 
+[![GitHub Pages](https://img.shields.io/badge/Pages-online-success?logo=github&logoColor=white)](https://ninefcj.github.io/Nexus/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Android-green.svg)](https://developer.android.com)
+[![Wiki](https://img.shields.io/badge/Wiki-docs-informational.svg)](https://github.com/NinefCJ/Nexus/wiki)
+
 [English](README-en.md) | 简体中文
+
+🌐 **在线预览**：[https://ninefcj.github.io/Nexus/](https://ninefcj.github.io/Nexus/)
+
+📚 **Wiki 文档**：[https://github.com/NinefCJ/Nexus/wiki](https://github.com/NinefCJ/Nexus/wiki)
 
 ---
 
@@ -17,6 +26,7 @@
 - [性能优化](#性能优化)
 - [主题系统](#主题系统)
 - [贡献指南](#贡献指南)
+- [相关项目](#相关项目)
 
 ---
 
@@ -124,13 +134,34 @@ Nexus/
 │               └── values/            # 值资源
 │                   └── themes.xml    # 主题配置
 │
+├── Nexus-Addon-Spec/              # 拓展包规范 (Git 子模块)
+│   └── → https://github.com/NinefCJ/Nexus-Addon-Spec
+│
 ├── Command/                        # 命令定义数据
 │   ├── commands_list.txt          # 命令列表
 │   ├── 默认命令库.json            # 默认命令库
 │   ├── 方块状态包.json            # 方块状态定义
 │   └── JSON Schema包.json         # JSON Schema
 │
-├── docs/                          # 文档目录 (可选)
+├── web/                           # GitHub Pages 网站
+│   └── index.html                 # 项目展示页面
+│
+├── wiki/                          # Wiki 文档源文件
+│   ├── Home.md                    # 首页
+│   ├── Getting-Started.md         # 快速上手
+│   ├── Architecture.md            # 架构说明
+│   ├── Core-Modules.md            # 核心模块
+│   ├── Android-App.md             # Android 应用
+│   ├── Addon-System.md            # 拓展包系统
+│   ├── Command-Data-Format.md     # 命令数据格式
+│   ├── Theme-System.md            # 主题系统
+│   ├── Performance.md             # 性能优化
+│   ├── FAQ.md                     # 常见问题
+│   └── Contributing.md            # 贡献指南
+│
+├── .github/                       # GitHub 配置
+│   └── workflows/
+│       └── deploy-pages.yml       # Pages 自动部署工作流
 │
 └── README.md                      # 项目说明文档
 
@@ -193,8 +224,11 @@ Nexus/
 #### 1. 克隆项目
 
 ```bash
-git clone https://github.com/your-repo/Nexus.git
+git clone https://github.com/NinefCJ/Nexus.git
 cd Nexus
+
+# 初始化拓展包规范子模块（可选，用于拓展包开发）
+git submodule update --init --recursive
 ```
 
 #### 2. 配置 Android SDK
@@ -772,7 +806,7 @@ cd Nexus-Android
 
 ### 问题反馈
 
-请通过 [GitHub Issues](https://github.com/your-repo/Nexus/issues) 反馈问题，包含：
+请通过 [GitHub Issues](https://github.com/NinefCJ/Nexus/issues) 反馈问题，包含：
 
 1. 问题描述
 2. 复现步骤
@@ -790,17 +824,22 @@ See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
 
 本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件
 
-## 参考项目
-
-- [CA_reforged](https://github.com/huangyxHUTAO/CA_reforged) - 命令助手社区版
-- [CHelper](https://github.com/Yancey2023/CHelper-Core) - C++ 内核架构参考
-- [Minecraft Wiki](https://zh.minecraft.wiki) - 命令语法与 ID 数据
-
 ## 联系方式
 
 - **作者**: NexusTeam(氿九Ninef)
 - **邮箱**: 2395953343@qq.com
-- **网站**: 无
+- **网站**: [https://ninefcj.github.io/Nexus/](https://ninefcj.github.io/Nexus/)
+- **Wiki**: [https://github.com/NinefCJ/Nexus/wiki](https://github.com/NinefCJ/Nexus/wiki)
+
+---
+
+## 相关项目
+
+- [Nexus-Addon-Spec](https://github.com/NinefCJ/Nexus-Addon-Spec) - 拓展包代码规范与指南（子模块）
+  - 在线预览：[https://ninefcj.github.io/Nexus-Addon-Spec/](https://ninefcj.github.io/Nexus-Addon-Spec/)
+- [CA_reforged](https://github.com/huangyxHUTAO/CA_reforged) - 命令助手社区版
+- [CHelper](https://github.com/Yancey2023/CHelper-Core) - C++ 内核架构参考
+- [Minecraft Wiki](https://zh.minecraft.wiki) - 命令语法与 ID 数据
 
 ---
 
