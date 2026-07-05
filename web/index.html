@@ -382,14 +382,14 @@
 
     <div class="hero-eyebrow">
       <span class="dot"></span>
-      <span>v1.2.0 已发布 · 支持拓展包系统</span>
+      <span>v1.3.0 已发布 · 游戏桥接 & 无障碍粘贴</span>
     </div>
     <h1>
       <span class="line-1">Minecraft 命令助手</span>
       <span class="line-2">Nexus</span>
     </h1>
     <p class="hero-desc">
-      专为 Minecraft 基岩版设计的跨平台命令辅助工具，提供智能语法提示、实时命令补全、完整 ID 翻译库，让命令编写更高效。
+      专为 Minecraft 基岩版设计的跨平台命令辅助工具，提供智能语法提示、实时命令补全、游戏桥接服务、无障碍一键粘贴，让命令编写与执行更高效。
     </p>
     <div class="hero-actions">
       <a href="#quickstart" class="btn btn-primary">
@@ -411,8 +411,8 @@
   <!-- 统计数据 -->
   <div class="stats">
     <div class="stat-card glass-hover reveal">
-      <div class="stat-num">55+</div>
-      <div class="stat-label">命令模板</div>
+      <div class="stat-num">15+</div>
+      <div class="stat-label">核心功能</div>
     </div>
     <div class="stat-card glass-hover reveal reveal-delay-1">
       <div class="stat-num">2000+</div>
@@ -423,8 +423,8 @@
       <div class="stat-label">预设主题</div>
     </div>
     <div class="stat-card glass-hover reveal reveal-delay-3">
-      <div class="stat-num">0</div>
-      <div class="stat-label">广告干扰</div>
+      <div class="stat-num">100%</div>
+      <div class="stat-label">开源免费</div>
     </div>
   </div>
 
@@ -490,6 +490,42 @@
         <p>自动保存命令历史，支持搜索和收藏，快速复用常用命令，提高效率。</p>
         <span class="feature-tag">自动保存</span>
       </div>
+      <div class="feature-card glass-hover reveal">
+        <div class="feature-icon" style="background:rgba(52,211,153,.15);color:var(--green)">♿</div>
+        <h3>无障碍一键粘贴</h3>
+        <p>通过无障碍服务实现一键粘贴到游戏，支持监听特殊按键触发，无需手动复制。</p>
+        <span class="feature-tag">Accessibility</span>
+      </div>
+      <div class="feature-card glass-hover reveal reveal-delay-1">
+        <div class="feature-icon" style="background:rgba(244,114,182,.15);color:var(--pink)">🔌</div>
+        <h3>游戏桥接服务</h3>
+        <p>Messenger 跨进程通信，支持与游戏客户端双向交互，实时命令发送与反馈。</p>
+        <span class="feature-tag">IPC 通信</span>
+      </div>
+      <div class="feature-card glass-hover reveal reveal-delay-2">
+        <div class="feature-icon" style="background:rgba(251,191,36,.15);color:var(--orange)">📲</div>
+        <h3>快捷设置磁贴</h3>
+        <p>系统快速设置面板一键启动悬浮窗，无需打开应用即可快速使用命令助手。</p>
+        <span class="feature-tag">Quick Settings</span>
+      </div>
+      <div class="feature-card glass-hover reveal">
+        <div class="feature-icon" style="background:rgba(6,182,212,.15);color:var(--accent)">🔄</div>
+        <h3>开机自启动</h3>
+        <p>设备开机后自动启动服务，随时随地待命，无需每次手动打开应用。</p>
+        <span class="feature-tag">Boot AutoStart</span>
+      </div>
+      <div class="feature-card glass-hover reveal reveal-delay-1">
+        <div class="feature-icon" style="background:rgba(139,92,246,.15);color:var(--purple)">📦</div>
+        <h3>命令库导入导出</h3>
+        <p>支持从文件管理器加载自定义命令库，一键导入导出，轻松分享与备份。</p>
+        <span class="feature-tag">文件导入</span>
+      </div>
+      <div class="feature-card glass-hover reveal reveal-delay-2">
+        <div class="feature-icon" style="background:rgba(251,113,133,.15);color:var(--rose)">🔗</div>
+        <h3>Intent 外部调用</h3>
+        <p>支持外部应用通过 Intent 调用命令助手功能，灵活集成到各种工作流中。</p>
+        <span class="feature-tag">API 接口</span>
+      </div>
     </div>
   </section>
 
@@ -541,6 +577,21 @@
         <div class="tech-name">JUnit</div>
         <div class="tech-desc">单元测试</div>
       </div>
+      <div class="tech-card glass-hover reveal">
+        <div class="tech-icon">📡</div>
+        <div class="tech-name">Messenger</div>
+        <div class="tech-desc">IPC 通信</div>
+      </div>
+      <div class="tech-card glass-hover reveal reveal-delay-1">
+        <div class="tech-icon">♿</div>
+        <div class="tech-name">Accessibility</div>
+        <div class="tech-desc">无障碍服务</div>
+      </div>
+      <div class="tech-card glass-hover reveal reveal-delay-2">
+        <div class="tech-icon">🔌</div>
+        <div class="tech-name">TileService</div>
+        <div class="tech-desc">快捷设置</div>
+      </div>
     </div>
 
     <div class="architecture-section reveal">
@@ -561,6 +612,14 @@
             <div class="layer-desc">StateFlow + Coroutines 响应式状态管理</div>
           </div>
           <div class="layer-tech">状态管理</div>
+        </div>
+        <div class="arch-layer">
+          <div class="layer-icon" style="background:rgba(244,114,182,.15);color:var(--pink)">🔌</div>
+          <div class="layer-info">
+            <div class="layer-title">Service Layer</div>
+            <div class="layer-desc">GameBridge / Accessibility / TileService 服务层</div>
+          </div>
+          <div class="layer-tech">系统服务</div>
         </div>
         <div class="arch-layer">
           <div class="layer-icon" style="background:rgba(52,211,153,.15);color:var(--green)">📦</div>
@@ -666,8 +725,8 @@ cd Nexus-Android<br>
   <section class="section" id="modules">
     <div class="section-head-center reveal">
       <div class="section-label">📦 模块详解</div>
-      <h2 class="section-title">核心模块 <span class="grad">功能介绍</span></h2>
-      <p class="section-desc">两大核心模块协同工作，提供完整的命令辅助能力</p>
+      <h2 class="section-title">三大模块 <span class="grad">协同工作</span></h2>
+      <p class="section-desc">核心引擎、应用层、服务扩展三位一体，提供完整的命令辅助能力</p>
     </div>
     <div class="module-section">
       <div class="module-card glass-hover reveal">
@@ -702,6 +761,23 @@ cd Nexus-Android<br>
           <li>Command Registry - 命令注册表</li>
           <li>Highlighter - 语法高亮引擎</li>
           <li>RapidJSON - 高效 JSON 解析</li>
+        </ul>
+      </div>
+      <div class="module-card glass-hover reveal reveal-delay-2">
+        <div class="module-header">
+          <div class="module-icon" style="background:rgba(52,211,153,.15);color:var(--green)">🔌</div>
+          <div>
+            <h3 class="module-title">服务与扩展模块</h3>
+            <p class="module-desc">Services & Extensions</p>
+          </div>
+        </div>
+        <ul class="module-features">
+          <li>GameBridgeService - 游戏桥接通信服务</li>
+          <li>AccessibilitySvc - 无障碍一键粘贴</li>
+          <li>BootReceiver - 开机自启动</li>
+          <li>ScriptTileService - 快捷设置磁贴</li>
+          <li>AddonManager - 拓展包管理系统</li>
+          <li>Intent API - 外部应用调用接口</li>
         </ul>
       </div>
     </div>
@@ -815,7 +891,7 @@ cd Nexus-Android<br>
             <div class="footer-logo-icon">⚡</div>
             <span>Nexus</span>
           </div>
-          <p class="footer-desc">专为 Minecraft 基岩版设计的跨平台命令辅助工具，提供智能语法提示、实时命令补全、完整 ID 翻译库。</p>
+          <p class="footer-desc">专为 Minecraft 基岩版设计的跨平台命令辅助工具，提供智能语法提示、游戏桥接、无障碍粘贴、完整 ID 翻译库。</p>
         </div>
         <div class="footer-col">
           <h4>项目</h4>
@@ -830,6 +906,7 @@ cd Nexus-Android<br>
           <ul>
             <li><a href="#quickstart">快速开始</a></li>
             <li><a href="#faq">常见问题</a></li>
+            <li><a href="https://github.com/NinefCJ/Nexus/wiki" target="_blank">Wiki 文档</a></li>
             <li><a href="https://github.com/NinefCJ/Nexus-Addon-Spec" target="_blank">拓展包规范</a></li>
           </ul>
         </div>
