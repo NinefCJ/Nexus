@@ -11,8 +11,8 @@ android {
         applicationId = "com.nexuscmd"
         minSdk = 24
         targetSdk = 34
-        versionCode = 4
-        versionName = "1.3.0"
+        versionCode = 114
+        versionName = "1.3.114"
 
         ndk {
             abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
