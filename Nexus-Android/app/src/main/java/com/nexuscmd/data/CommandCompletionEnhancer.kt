@@ -188,6 +188,10 @@ class CommandCompletionEnhancer(
             2 -> getNextStateSuggestions(normalized)
             3 -> getStopExpressionSuggestions(normalized)
             4 -> getControllerSuggestions(normalized)
+            5 -> getBlendOutTimeSuggestions(normalized)
+            6 -> getBlendInTimeSuggestions(normalized)
+            7 -> getSpeedSuggestions(normalized)
+            8 -> getLoopSuggestions(normalized)
             else -> baseCompletions.map { EnhancedSuggestion(it, it, SuggestionType.COMMAND) }
         }
     }
@@ -248,7 +252,7 @@ class CommandCompletionEnhancer(
 
     private fun getControllerSuggestions(query: String): List<EnhancedSuggestion> {
         val controllers = listOf(
-            EnhancedSuggestion("controller.animation", "controller.animation", SuggestionType.COMMAND, "动画控制器"),
+            EnhancedSuggestion("controller.animation", "controller.animation", SuggestionType.COMMAND, "通用动画控制器"),
             EnhancedSuggestion("controller.move", "controller.move", SuggestionType.COMMAND, "移动控制器"),
             EnhancedSuggestion("controller.attack", "controller.attack", SuggestionType.COMMAND, "攻击控制器"),
             EnhancedSuggestion("controller.look", "controller.look", SuggestionType.COMMAND, "视线控制器"),
@@ -256,9 +260,65 @@ class CommandCompletionEnhancer(
             EnhancedSuggestion("controller.player.move", "controller.player.move", SuggestionType.COMMAND, "玩家移动控制器"),
             EnhancedSuggestion("controller.player.look", "controller.player.look", SuggestionType.COMMAND, "玩家视线控制器"),
             EnhancedSuggestion("controller.player.swim", "controller.player.swim", SuggestionType.COMMAND, "玩家游泳控制器"),
-            EnhancedSuggestion("controller.player.sleep", "controller.player.sleep", SuggestionType.COMMAND, "玩家睡觉控制器")
+            EnhancedSuggestion("controller.player.sleep", "controller.player.sleep", SuggestionType.COMMAND, "玩家睡觉控制器"),
+            EnhancedSuggestion("controller.villager.work", "controller.villager.work", SuggestionType.COMMAND, "村民工作控制器"),
+            EnhancedSuggestion("controller.villager.move", "controller.villager.move", SuggestionType.COMMAND, "村民移动控制器"),
+            EnhancedSuggestion("controller.wolf.idle", "controller.wolf.idle", SuggestionType.COMMAND, "狼空闲控制器"),
+            EnhancedSuggestion("controller.wolf.move", "controller.wolf.move", SuggestionType.COMMAND, "狼移动控制器"),
+            EnhancedSuggestion("controller.cat.idle", "controller.cat.idle", SuggestionType.COMMAND, "猫空闲控制器"),
+            EnhancedSuggestion("controller.parrot.idle", "controller.parrot.idle", SuggestionType.COMMAND, "鹦鹉空闲控制器"),
+            EnhancedSuggestion("controller.iron_golem.move", "controller.iron_golem.move", SuggestionType.COMMAND, "铁傀儡移动控制器"),
+            EnhancedSuggestion("controller.ender_dragon.move", "controller.ender_dragon.move", SuggestionType.COMMAND, "末影龙移动控制器"),
+            EnhancedSuggestion("controller.wither.move", "controller.wither.move", SuggestionType.COMMAND, "凋灵移动控制器"),
+            EnhancedSuggestion("controller.boat.move", "controller.boat.move", SuggestionType.COMMAND, "船移动控制器"),
+            EnhancedSuggestion("controller.minecart.move", "controller.minecart.move", SuggestionType.COMMAND, "矿车移动控制器")
         )
         return controllers.filter { it.text.lowercase().contains(query) }
+    }
+
+    private fun getBlendOutTimeSuggestions(query: String): List<EnhancedSuggestion> {
+        val values = listOf(
+            EnhancedSuggestion("0", "0", SuggestionType.COMMAND, "无淡出时间"),
+            EnhancedSuggestion("0.1", "0.1", SuggestionType.COMMAND, "快速淡出"),
+            EnhancedSuggestion("0.25", "0.25", SuggestionType.COMMAND, "标准淡出"),
+            EnhancedSuggestion("0.5", "0.5", SuggestionType.COMMAND, "较慢淡出"),
+            EnhancedSuggestion("1.0", "1.0", SuggestionType.COMMAND, "缓慢淡出"),
+            EnhancedSuggestion("2.0", "2.0", SuggestionType.COMMAND, "非常缓慢淡出")
+        )
+        return values.filter { it.text.contains(query) }
+    }
+
+    private fun getBlendInTimeSuggestions(query: String): List<EnhancedSuggestion> {
+        val values = listOf(
+            EnhancedSuggestion("0", "0", SuggestionType.COMMAND, "无淡入时间"),
+            EnhancedSuggestion("0.1", "0.1", SuggestionType.COMMAND, "快速淡入"),
+            EnhancedSuggestion("0.25", "0.25", SuggestionType.COMMAND, "标准淡入"),
+            EnhancedSuggestion("0.5", "0.5", SuggestionType.COMMAND, "较慢淡入"),
+            EnhancedSuggestion("1.0", "1.0", SuggestionType.COMMAND, "缓慢淡入")
+        )
+        return values.filter { it.text.contains(query) }
+    }
+
+    private fun getSpeedSuggestions(query: String): List<EnhancedSuggestion> {
+        val values = listOf(
+            EnhancedSuggestion("0.5", "0.5", SuggestionType.COMMAND, "慢速播放（0.5倍）"),
+            EnhancedSuggestion("1.0", "1.0", SuggestionType.COMMAND, "正常速度"),
+            EnhancedSuggestion("1.5", "1.5", SuggestionType.COMMAND, "快速播放（1.5倍）"),
+            EnhancedSuggestion("2.0", "2.0", SuggestionType.COMMAND, "倍速播放（2倍）"),
+            EnhancedSuggestion("3.0", "3.0", SuggestionType.COMMAND, "快速播放（3倍）")
+        )
+        return values.filter { it.text.contains(query) }
+    }
+
+    private fun getLoopSuggestions(query: String): List<EnhancedSuggestion> {
+        val values = listOf(
+            EnhancedSuggestion("0", "0", SuggestionType.COMMAND, "播放一次"),
+            EnhancedSuggestion("1", "1", SuggestionType.COMMAND, "播放1次"),
+            EnhancedSuggestion("2", "2", SuggestionType.COMMAND, "播放2次"),
+            EnhancedSuggestion("3", "3", SuggestionType.COMMAND, "播放3次"),
+            EnhancedSuggestion("-1", "-1", SuggestionType.COMMAND, "无限循环")
+        )
+        return values.filter { it.text.contains(query) }
     }
 
     private fun getHudSuggestions(argIndex: Int, currentArg: String, baseCompletions: List<String>): List<EnhancedSuggestion> {
