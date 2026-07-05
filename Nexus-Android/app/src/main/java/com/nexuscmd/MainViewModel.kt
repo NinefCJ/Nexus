@@ -784,7 +784,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         
         // ============ HUD控制 ============
         CommandLibraryItem("隐藏全部HUD", "隐藏所有HUD元素", "/hud @s hide all", "HUD", Icons.Default.VisibilityOff),
-        CommandLibraryItem("显示全部HUD", "显示所有HUD元素", "/hud @s show all", "HUD", Icons.Default.Visibility),
+        CommandLibraryItem("重置HUD", "重置所有HUD元素为默认", "/hud @s reset", "HUD", Icons.Default.Visibility),
         CommandLibraryItem("隐藏快捷栏", "隐藏物品快捷栏", "/hud @s hide hotbar", "HUD", Icons.Default.Inventory2),
         CommandLibraryItem("隐藏十字准星", "隐藏十字准星", "/hud @s hide crosshair", "HUD", Icons.Default.Crop),
         CommandLibraryItem("隐藏生命值", "隐藏生命值显示", "/hud @s hide health", "HUD", Icons.Default.FavoriteBorder),

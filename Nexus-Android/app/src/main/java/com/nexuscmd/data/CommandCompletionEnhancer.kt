@@ -267,7 +267,7 @@ class CommandCompletionEnhancer(
             0 -> selectors.filter { it.text.lowercase().contains(normalized) }
             1 -> listOf(
                 EnhancedSuggestion("hide", "hide (隐藏)", SuggestionType.COMMAND, "隐藏指定的HUD元素"),
-                EnhancedSuggestion("show", "show (显示)", SuggestionType.COMMAND, "显示指定的HUD元素")
+                EnhancedSuggestion("reset", "reset (重置)", SuggestionType.COMMAND, "重置所有HUD元素为默认可见性")
             ).filter { it.text.lowercase().contains(normalized) }
             2 -> hudElements.filter { it.text.lowercase().contains(normalized) || it.displayText.lowercase().contains(normalized) }
             else -> baseCompletions.map { EnhancedSuggestion(it, it, SuggestionType.COMMAND) }
