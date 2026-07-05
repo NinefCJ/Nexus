@@ -1,0 +1,3 @@
+[submodule "Nexus-Addon-Spec"]
+	path = Nexus-Addon-Spec
+	url = https://github.com/NinefCJ/Nexus-Addon-Spec.git
