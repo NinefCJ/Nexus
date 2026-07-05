@@ -4,8 +4,6 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
-import android.media.AudioManager
-import android.media.ToneGenerator
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -45,6 +43,7 @@ import com.nexuscmd.data.HistoryItem
 import com.nexuscmd.data.SavedCommand
 import com.nexuscmd.data.SoundEffect
 import com.nexuscmd.data.SoundEffectLibrary
+import com.nexuscmd.data.SoundPreviewPlayer
 import com.nexuscmd.data.ParticleLibrary
 import com.nexuscmd.data.Particle
 import com.nexuscmd.data.BlockLibrary
@@ -1086,10 +1085,13 @@ fun SoundEffectLibraryTab(viewModel: MainViewModel) {
     var pitch by remember { mutableStateOf("1") }
     var minimumVolume by remember { mutableStateOf("0") }
     var showParams by remember { mutableStateOf(false) }
+    var useMultiTone by remember { mutableStateOf(true) }
 
     val clipboardManager = LocalClipboardManager.current
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
-    val toneGenerator = remember { ToneGenerator(AudioManager.STREAM_MUSIC, 80) }
+    val isPlaying by SoundPreviewPlayer.isPlaying.collectAsState()
+    val currentSoundId by SoundPreviewPlayer.currentSoundId.collectAsState()
+    val context = LocalContext.current
     val displayedEffects = remember(searchQuery, selectedCategory) {
         SoundEffectLibrary.filter(searchQuery, selectedCategory)
     }
@@ -1100,7 +1102,7 @@ fun SoundEffectLibraryTab(viewModel: MainViewModel) {
     }
 
     DisposableEffect(Unit) {
-        onDispose { toneGenerator.release() }
+        onDispose { SoundPreviewPlayer.release() }
     }
 
     val showEffects = displayedEffects.take(displayCount)
@@ -1159,6 +1161,12 @@ fun SoundEffectLibraryTab(viewModel: MainViewModel) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.weight(1f))
+                FilterChip(
+                    selected = useMultiTone,
+                    onClick = { useMultiTone = !useMultiTone },
+                    label = { Text("多音调试听", style = MaterialTheme.typography.bodySmall) }
+                )
+                Spacer(modifier = Modifier.width(4.dp))
                 TextButton(onClick = { showParams = !showParams }) {
                     Text(
                         if (showParams) "隐藏参数" else "参数设置",
@@ -1237,10 +1245,20 @@ fun SoundEffectLibraryTab(viewModel: MainViewModel) {
                 pitch = pitch.ifBlank { effect.pitch },
                 minimumVolume = minimumVolume.ifBlank { "0" }
             )
+            val isThisPlaying = isPlaying && currentSoundId == effect.id
             SimpleSoundItem(
                 effect = effect,
+                isPlaying = isThisPlaying,
                 onPreview = {
-                    toneGenerator.startTone(toneForSoundEffect(effect), 350)
+                    if (isThisPlaying) {
+                        SoundPreviewPlayer.stop()
+                    } else {
+                        if (useMultiTone) {
+                            SoundPreviewPlayer.playMultiTonePreview(effect)
+                        } else {
+                            SoundPreviewPlayer.playTonePreview(effect)
+                        }
+                    }
                 },
                 onUse = {
                     viewModel.onCommandTextChanged(command)
@@ -1269,21 +1287,47 @@ fun SoundEffectLibraryTab(viewModel: MainViewModel) {
 @Composable
 fun SimpleSoundItem(
     effect: SoundEffect,
+    isPlaying: Boolean = false,
     onPreview: () -> Unit,
     onUse: () -> Unit,
     onCopy: () -> Unit
 ) {
+    val pulseAlpha = if (isPlaying) {
+        val infiniteTransition = androidx.compose.animation.core.rememberInfiniteTransition()
+        infiniteTransition.animateFloat(
+            initialValue = 0.5f,
+            targetValue = 1f,
+            animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+                animation = androidx.compose.animation.core.tween(500),
+                repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+            )
+        ).value
+    } else {
+        1f
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
+            .background(
+                if (isPlaying) {
+                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                } else {
+                    Color.Transparent
+                }
+            )
             .padding(horizontal = 10.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
             imageVector = Icons.Default.GraphicEq,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.secondary,
+            contentDescription = if (isPlaying) "播放中" else null,
+            tint = if (isPlaying) {
+                MaterialTheme.colorScheme.primary.copy(alpha = pulseAlpha)
+            } else {
+                MaterialTheme.colorScheme.secondary
+            },
             modifier = Modifier.size(18.dp)
         )
         Spacer(modifier = Modifier.width(8.dp))
@@ -1291,21 +1335,22 @@ fun SimpleSoundItem(
             Text(
                 text = effect.name,
                 style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium
+                fontWeight = if (isPlaying) FontWeight.SemiBold else FontWeight.Medium,
+                color = if (isPlaying) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = effect.id,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (isPlaying) MaterialTheme.colorScheme.primary.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurfaceVariant,
                 fontFamily = FontFamily.Monospace
             )
         }
-        IconButton(onClick = onPreview, modifier = Modifier.size(28.dp)) {
+        IconButton(onClick = onPreview, modifier = Modifier.size(32.dp)) {
             Icon(
-                Icons.Default.PlayArrow,
-                contentDescription = "试听",
+                if (isPlaying) Icons.Default.Stop else Icons.Default.PlayArrow,
+                contentDescription = if (isPlaying) "停止" else "试听",
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(20.dp)
             )
         }
         IconButton(onClick = onCopy, modifier = Modifier.size(28.dp)) {
@@ -1415,19 +1460,6 @@ fun SoundEffectItem(
                 }
             }
         }
-    }
-}
-
-fun toneForSoundEffect(effect: SoundEffect): Int {
-    return when (effect.category) {
-        "实体" -> ToneGenerator.TONE_DTMF_2
-        "玩家" -> ToneGenerator.TONE_PROP_ACK
-        "方块" -> ToneGenerator.TONE_PROP_BEEP
-        "红石" -> ToneGenerator.TONE_DTMF_5
-        "天气" -> ToneGenerator.TONE_DTMF_0
-        "音乐" -> ToneGenerator.TONE_DTMF_8
-        "UI" -> ToneGenerator.TONE_PROP_PROMPT
-        else -> ToneGenerator.TONE_PROP_NACK
     }
 }
 

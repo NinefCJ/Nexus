@@ -360,7 +360,62 @@ object AnimationLibrary {
         MCAnimation("animation.emote.eyebrow_raise", "挑眉", "表情动作", "玩家挑眉质疑", "player"),
         MCAnimation("animation.emote.sick", "生病", "表情动作", "玩家生病难受", "player"),
         MCAnimation("animation.emote.yawn", "打哈欠", "表情动作", "玩家打哈欠", "player"),
-        MCAnimation("animation.emote.sleepy", "困倦", "表情动作", "玩家昏昏欲睡", "player")
+        MCAnimation("animation.emote.sleepy", "困倦", "表情动作", "玩家昏昏欲睡", "player"),
+
+        // 更多生物动画
+        MCAnimation("animation.frog.idle", "青蛙空闲", "生物通用", "青蛙空闲动画", "frog"),
+        MCAnimation("animation.frog.jump", "青蛙跳跃", "日常动作", "青蛙跳跃动画", "frog"),
+        MCAnimation("animation.frog.walk", "青蛙行走", "日常动作", "青蛙行走动画", "frog"),
+        MCAnimation("animation.frog.attack", "青蛙攻击", "攻击动作", "青蛙用舌头攻击", "frog"),
+        MCAnimation("animation.frog.eat", "青蛙进食", "日常动作", "青蛙进食动画", "frog"),
+
+        MCAnimation("animation.tadpole.swim", "蝌蚪游泳", "日常动作", "蝌蚪游泳动画", "tadpole"),
+        MCAnimation("animation.tadpole.idle", "蝌蚪空闲", "生物通用", "蝌蚪空闲动画", "tadpole"),
+
+        MCAnimation("animation.allay.idle", "悦灵空闲", "生物通用", "悦灵空闲动画", "allay"),
+        MCAnimation("animation.allay.fly", "悦灵飞行", "日常动作", "悦灵飞行动画", "allay"),
+        MCAnimation("animation.allay.dance", "悦灵跳舞", "表情动作", "悦灵随音乐跳舞", "allay"),
+        MCAnimation("animation.allay.hurt", "悦灵受伤", "生物通用", "悦灵受伤动画", "allay"),
+        MCAnimation("animation.allay.death", "悦灵死亡", "生物通用", "悦灵死亡动画", "allay"),
+
+        MCAnimation("animation.warden.emerge", "监守者浮现", "特殊效果", "监守者从地下钻出", "warden"),
+        MCAnimation("animation.warden.dig", "监守者挖掘", "日常动作", "监守者钻入地下", "warden"),
+        MCAnimation("animation.warden.sonic_charge", "监守者声波蓄力", "攻击动作", "监守者蓄力声波冲击", "warden"),
+        MCAnimation("animation.warden.sonic_shoot", "监守者声波发射", "攻击动作", "监守者发射声波冲击", "warden"),
+        MCAnimation("animation.warden.heartbeat", "监守者心跳", "特殊效果", "监守者灵魂心跳效果", "warden"),
+
+        // 更多方块实体动画
+        MCAnimation("animation.brewing_stand.brew", "酿造台酿造", "方块实体", "酿造台酿造药水动画", "brewing_stand"),
+        MCAnimation("animation.furnace.cook", "熔炉烧炼", "方块实体", "熔炉烧炼物品动画", "furnace"),
+        MCAnimation("animation.blast_furnace.cook", "高炉烧炼", "方块实体", "高炉烧炼物品动画", "blast_furnace"),
+        MCAnimation("animation.smoker.cook", "烟熏炉烧炼", "方块实体", "烟熏炉烧炼食物动画", "smoker"),
+        MCAnimation("animation.campfire.crackle", "营火燃烧", "方块实体", "营火燃烧动画", "campfire"),
+
+        // 物品/装备动画
+        MCAnimation("animation.armor.equip", "装备盔甲", "特殊效果", "装备盔甲动画", "player"),
+        MCAnimation("animation.armor.unequip", "卸下盔甲", "特殊效果", "卸下盔甲动画", "player"),
+        MCAnimation("animation.bucket.fill", "桶填充", "特殊效果", "桶填充液体动画", "player"),
+        MCAnimation("animation.bucket.empty", "桶倒出", "特殊效果", "桶倒出液体动画", "player"),
+        MCAnimation("animation.bow.draw", "拉弓", "日常动作", "拉弓蓄力动画", "player"),
+        MCAnimation("animation.bow.shoot", "射箭", "攻击动作", "射箭动画", "player"),
+
+        // 环境/世界动画
+        MCAnimation("animation.weather.rain", "下雨", "特殊效果", "下雨天气动画", "weather"),
+        MCAnimation("animation.weather.thunder", "打雷", "特殊效果", "打雷天气动画", "weather"),
+        MCAnimation("animation.weather.snow", "下雪", "特殊效果", "下雪天气动画", "weather"),
+
+        // 红石动画
+        MCAnimation("animation.redstone.torch.on", "红石火把点亮", "方块实体", "红石火把点亮动画", "redstone_torch"),
+        MCAnimation("animation.redstone.torch.off", "红石火把熄灭", "方块实体", "红石火把熄灭动画", "redstone_torch"),
+        MCAnimation("animation.lever.pull", "拉杆拉动", "方块实体", "拉杆被拉动动画", "lever"),
+        MCAnimation("animation.button.press", "按钮按下", "方块实体", "按钮被按下动画", "button"),
+
+        // 交通工具动画
+        MCAnimation("animation.boat.float", "船漂浮", "载具", "船在水上漂浮动画", "boat"),
+        MCAnimation("animation.minecart.riding", "矿车行驶", "载具", "矿车行驶动画", "minecart"),
+        MCAnimation("animation.minecart.chest", "宝箱矿车", "载具", "宝箱矿车动画", "chest_minecart"),
+        MCAnimation("animation.minecart.hopper", "漏斗矿车", "载具", "漏斗矿车动画", "hopper_minecart"),
+        MCAnimation("animation.minecart.tnt", "TNT矿车", "载具", "TNT矿车动画", "tnt_minecart"),
     )
 
     fun buildPlayAnimationCommand(
