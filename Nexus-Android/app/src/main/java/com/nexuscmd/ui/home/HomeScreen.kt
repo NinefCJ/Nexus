@@ -483,31 +483,42 @@ private fun HomeFeatureCard(
 ) {
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(NexusTheme.colors.backgroundComponentNoTranslate)
             .clickable(onClick = onClick)
-            .padding(16.dp),
+            .padding(14.dp),
         horizontalAlignment = Alignment.Start
     ) {
-        Image(
-            painter = painterResource(id = icon),
-            contentDescription = title,
-            modifier = Modifier.size(28.dp)
-        )
-        Spacer(modifier = Modifier.height(10.dp))
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(NexusTheme.colors.mainColorSecondary),
+            contentAlignment = Alignment.Center
+        ) {
+            Image(
+                painter = painterResource(id = icon),
+                contentDescription = title,
+                modifier = Modifier.size(20.dp),
+                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(NexusTheme.colors.mainColor)
+            )
+        }
+        Spacer(modifier = Modifier.height(12.dp))
         Text(
             text = title,
             style = TextStyle(
-                fontSize = 15.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold
-            )
+            ),
+            maxLines = 1
         )
         Text(
             text = subtitle,
             style = TextStyle(
                 fontSize = 12.sp,
                 color = NexusTheme.colors.textSecondary
-            )
+            ),
+            maxLines = 1
         )
     }
 }
