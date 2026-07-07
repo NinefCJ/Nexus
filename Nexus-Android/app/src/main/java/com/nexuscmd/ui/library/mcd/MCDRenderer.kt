@@ -1,0 +1,701 @@
+/**
+ * It is part of Nexus. Nexus is a command helper for Minecraft Bedrock Edition.
+ * Copyright (C) 2026  Akanyi
+ *
+ * MCD (Minecraft Command Data) 可视化渲染器
+ * 支持 v1 (纯指令列表) 和 v2 (带状态行/链分隔符的结构化格式) 两种格式
+ */
+
+package com.nexuscmd.ui.library.mcd
+
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.util.Log
+import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import com.nexuscmd.core.NexusCore
+import com.nexuscmd.core.Theme
+import com.nexuscmd.data.SettingsDataStore
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import com.nexuscmd.R
+import com.nexuscmd.android.util.MonitorUtil
+import com.nexuscmd.ui.common.NexusTheme
+import com.nexuscmd.ui.common.widget.Icon
+import com.nexuscmd.ui.common.widget.Text
+
+// 数据模型
+
+/** 元数据行，例如 @author = xxx */
+data class MCDMeta(val key: String, val value: String)
+
+/** 命令方块的类型标识 */
+enum class BlockType(val label: String, val lightColor: Color, val darkColor: Color) {
+    // 颜色参照 MC 命令方块的原版色调
+    IMPULSE("脉冲", Color(0xFFFF9933), Color(0xFFCC7A29)),
+    CHAIN("连锁", Color(0xFF4FC1A6), Color(0xFF3A9C83)),
+    REPEAT("循环", Color(0xFF9966FF), Color(0xFF7A52CC)),
+    CHAT("手动键入", Color(0xFF607D8B), Color(0xFF455A64))
+}
+
+/** v2 格式的命令方块 */
+data class MCDBlock(
+    val type: BlockType = BlockType.CHAIN,
+    val conditional: Boolean = false,
+    val alwaysActive: Boolean = true,
+    val needsRedstone: Boolean = false,
+    val tickDelay: Int = 0,
+    val command: String = "",
+    var syntaxHighlightTokens: IntArray? = null
+)
+
+/** 链中的一个元素：可能是注释、v1 原始指令、或 v2 命令方块 */
+sealed class ChainItem {
+    data class Comment(val text: String) : ChainItem()
+    data class RawCommand(
+        val command: String,
+        var syntaxHighlightTokens: IntArray? = null
+    ) : ChainItem()
+    data class Block(val block: MCDBlock) : ChainItem()
+}
+
+/** 一条命令链 */
+data class MCDChain(
+    val name: String,
+    val items: MutableList<ChainItem> = mutableListOf()
+)
+
+/** 解析后的完整 MCD 结构 */
+data class ParsedMCD(
+    val metaInfo: List<MCDMeta> = emptyList(),
+    val rootComments: List<String> = emptyList(),
+    val chains: List<MCDChain> = emptyList(),
+    val isV2: Boolean = false
+)
+
+// 解析器
+
+fun parseMCD(
+    content: String?,
+    ambiguousDefault: String = "comment",
+    context: Context? = null,
+    cpackBranch: String? = null,
+    isEnableMcdHighlight: Boolean = false
+): ParsedMCD {
+    if (content.isNullOrBlank()) return ParsedMCD()
+
+    return try {
+        val lines = content.split(Regex("\\r?\n"))
+        val metaInfo = mutableListOf<MCDMeta>()
+        val rootComments = mutableListOf<String>()
+        val chains = mutableListOf<MCDChain>()
+        var currentChain: MCDChain? = null
+
+        // 确认是否是 v2
+        val isV2 = lines.any { it.trim().startsWith("@mcd_version=2") }
+
+        var pendingBlockType = BlockType.CHAIN
+        var pendingConditional = false
+        var pendingAlwaysActive = true
+        var pendingNeedsRedstone = false
+        var pendingTickDelay = 0
+        var hasPendingState = false
+
+        for (line in lines) {
+            val tline = line.trim()
+            if (tline.isEmpty()) continue
+
+            // 杂项标记 ###Function### / ###End###
+            if (tline.startsWith("###") && tline.endsWith("###")) continue
+
+            // 若当前等待的是 CHAT 状态，则无论下面是什么前缀，都当成指令文本
+            if (isV2 && hasPendingState && pendingBlockType == BlockType.CHAT) {
+                // 确保有容纳容器
+                if (currentChain == null) {
+                    currentChain = MCDChain(name = "分离的指令")
+                    chains.add(currentChain)
+                }
+                val block = MCDBlock(
+                    type = pendingBlockType,
+                    conditional = false,
+                    alwaysActive = true,
+                    needsRedstone = false,
+                    tickDelay = 0,
+                    command = tline
+                )
+                currentChain.items.add(ChainItem.Block(block))
+                hasPendingState = false
+                continue
+            }
+
+            // 元数据行
+            if (tline.startsWith("@")) {
+                val splitIdx = tline.indexOf('=')
+                if (splitIdx > 0) {
+                    metaInfo.add(
+                        MCDMeta(
+                            key = tline.substring(1, splitIdx).trim(),
+                            value = tline.substring(splitIdx + 1).trim()
+                        )
+                    )
+                }
+                continue
+            }
+
+            // v2 链分割符 ---链名---
+            if (tline.startsWith("---") && tline.endsWith("---")) {
+                val chainName = tline.replace("---", "").trim().ifEmpty { "未命名命令链" }
+                currentChain = MCDChain(name = chainName)
+                chains.add(currentChain)
+                hasPendingState = false
+                continue
+            }
+
+            // 注释行（# 和 // 两种格式）
+            if (tline.startsWith("#")) {
+                val commentText = tline.substring(1).trim()
+                if (currentChain != null) {
+                    currentChain.items.add(ChainItem.Comment(commentText))
+                } else {
+                    rootComments.add(commentText)
+                }
+                continue
+            }
+            if (tline.startsWith("//")) continue
+
+            // v2 状态行 > 开头
+            if (isV2 && tline.startsWith(">")) {
+                val stateRegex = Regex(
+                    """^>\s*([ICRH_])?([?_])?([!_])?(?:t(\d+|_))?\s*$""",
+                    RegexOption.IGNORE_CASE
+                )
+                val match = stateRegex.matchEntire(tline)
+                if (match != null) {
+                    val rawType = (match.groupValues[1].ifEmpty { "C" }).uppercase()
+                    // _ 占位符视为缺省值 C
+                    val effectiveType = if (rawType == "_") "C" else rawType
+                    pendingBlockType = when (effectiveType) {
+                        "I" -> BlockType.IMPULSE
+                        "R" -> BlockType.REPEAT
+                        "H" -> BlockType.CHAT
+                        else -> BlockType.CHAIN
+                    }
+
+                    if (pendingBlockType == BlockType.CHAT) {
+                        pendingConditional = false
+                        pendingAlwaysActive = true
+                        pendingNeedsRedstone = false
+                        pendingTickDelay = 0
+                    } else {
+                        val cond = match.groupValues[2]
+                        val rs = match.groupValues[3]
+                        val tick = match.groupValues[4]
+                        pendingConditional = cond == "?"          // _ 或空都是无条件
+                        pendingAlwaysActive = rs != "!"           // 只有显式 ! 才需要红石
+                        pendingNeedsRedstone = rs == "!"
+                        pendingTickDelay =
+                            if (tick.isNotEmpty() && tick != "_") tick.toIntOrNull() ?: 0 else 0
+                    }
+                } else {
+                    pendingBlockType = BlockType.CHAIN
+                    pendingConditional = false
+                    pendingAlwaysActive = true
+                    pendingNeedsRedstone = false
+                    pendingTickDelay = 0
+                }
+                hasPendingState = true
+                continue
+            }
+
+            // 确保有容纳容器
+            if (currentChain == null) {
+                currentChain = MCDChain(name = "分离的指令")
+                chains.add(currentChain)
+            }
+
+            // 正式的命令指令
+            if (isV2) {
+                val block = if (hasPendingState) {
+                    MCDBlock(
+                        type = pendingBlockType,
+                        conditional = pendingConditional,
+                        alwaysActive = pendingAlwaysActive,
+                        needsRedstone = pendingNeedsRedstone,
+                        tickDelay = pendingTickDelay,
+                        command = tline
+                    )
+                } else {
+                    MCDBlock(command = tline)
+                }
+                currentChain.items.add(ChainItem.Block(block))
+                hasPendingState = false
+            } else {
+                // v1: 行首是英文字母或斜杠才视为指令
+                val firstChar = tline.firstOrNull()
+                if (firstChar != null && (firstChar.isLetter() && firstChar.code < 128 || firstChar == '/')) {
+                    currentChain.items.add(ChainItem.RawCommand(tline))
+                } else {
+                    // 无法推断的行：根据用户设置决定 fallback
+                    if (ambiguousDefault == "command") {
+                        currentChain.items.add(ChainItem.RawCommand(tline))
+                    } else {
+                        currentChain.items.add(ChainItem.Comment(tline))
+                    }
+                }
+            }
+        }
+
+        val parsed = ParsedMCD(
+            metaInfo = metaInfo,
+            rootComments = rootComments,
+            chains = chains,
+            isV2 = isV2
+        )
+        if (isEnableMcdHighlight && context != null && !cpackBranch.isNullOrEmpty()) {
+            try {
+                var cpackPath: String? = null
+                val cpackList = context.assets.list("cpack")
+                if (cpackList != null) {
+                    for (filename in cpackList) {
+                        if (filename.startsWith(cpackBranch)) {
+                            cpackPath = "cpack/$filename"
+                            break
+                        }
+                    }
+                }
+                if (cpackPath != null) {
+                    synchronized(MCDHighlightCoreCache) {
+                        val core = MCDHighlightCoreCache.get(context, cpackPath)
+                        if (core != null) {
+                            chains.forEach { chain ->
+                                chain.items.forEach { item ->
+                                    when (item) {
+                                        is ChainItem.Block -> {
+                                            core.onTextChanged(item.block.command, 0)
+                                            item.block.syntaxHighlightTokens = core.syntaxToken
+                                        }
+                                        is ChainItem.RawCommand -> {
+                                            core.onTextChanged(item.command, 0)
+                                            item.syntaxHighlightTokens = core.syntaxToken
+                                        }
+                                        else -> {}
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("MCDRenderer", "Failed to highlight MCD blocks", e)
+            }
+        }
+        parsed
+    } catch (e: Exception) {
+        // 之前是 e.printStackTrace()，release 版 logcat 看不到也没上报，
+        // 这里改成完整 Log.e + Umeng 上报，避免"解析悄悄炸"成为线上盲区。
+        // 仍然返回错误占位结构而不是抛出，以保住界面不至于整体 measure 阶段崩。
+        Log.e("MCDRenderer", "MCD 解析失败", e)
+        MonitorUtil.generateCustomLog(e, "MCDParseError")
+        ParsedMCD(
+            metaInfo = listOf(MCDMeta(key = "error", value = "解析失败: ${e.message}")),
+            rootComments = emptyList(),
+            chains = emptyList(),
+            isV2 = false
+        )
+    }
+}
+
+// Compose 渲染
+
+private fun copyToClipboard(context: Context, text: String) {
+    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+    clipboard.setPrimaryClip(ClipData.newPlainText("command", text))
+    Toast.makeText(context, "已复制", Toast.LENGTH_SHORT).show()
+}
+
+@Composable
+fun MCDContentView(
+    content: String?,
+    modifier: Modifier = Modifier,
+    ambiguousDefault: String = "comment",
+    showMetadata: Boolean = true
+) {
+    val context = LocalContext.current
+    val settingsDataStore = remember(context) { SettingsDataStore(context) }
+    val cpackBranch by settingsDataStore.cpackBranch().collectAsState(initial = "release-experiment")
+    val isEnableMcdHighlight by settingsDataStore.isEnableMcdHighlight().collectAsState(initial = true)
+
+    val parsed by produceState<ParsedMCD?>(initialValue = null, content, ambiguousDefault, cpackBranch, isEnableMcdHighlight) {
+        value = null
+        value = withContext(Dispatchers.Default) {
+            parseMCD(
+                content = content,
+                ambiguousDefault = ambiguousDefault,
+                context = context,
+                cpackBranch = cpackBranch,
+                isEnableMcdHighlight = isEnableMcdHighlight
+            )
+        }
+    }
+
+    if (parsed == null) {
+        Box(
+            modifier = modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(10.dp))
+                .background(NexusTheme.colors.backgroundComponent)
+                .padding(12.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "解析中...",
+                style = TextStyle(
+                    fontSize = 12.sp,
+                    color = NexusTheme.colors.textSecondary
+                )
+            )
+        }
+        return
+    }
+    val parsedData = parsed ?: return
+
+    // 不用 LazyColumn——调用方常把本组件嵌进 verticalScroll 容器（例如 MCDPreviewScreen），
+    // LazyColumn 在无限高度约束下会直接抛 IllegalStateException 让进入预览时闪退。
+    // 单条命令库的 chain/item 数量都在百级以内，普通 Column 性能完全够用。
+    // 调用方需要滚动时自己用 verticalScroll 包一层即可。
+    Column(modifier = modifier) {
+        // 元数据区（可通过设置隐藏）
+        if (showMetadata && parsedData.metaInfo.isNotEmpty()) {
+            MetaSection(parsedData.metaInfo)
+            Spacer(Modifier.height(8.dp))
+        }
+
+        // 链前游离注释
+        parsedData.rootComments.forEach { comment ->
+            CommentItem(comment)
+            Spacer(Modifier.height(4.dp))
+        }
+
+        // 命令链
+        parsedData.chains.forEach { chain ->
+            val shouldShowHeader = chain.name != "分离的指令" && chain.name != "默认主链"
+            if (shouldShowHeader) {
+                ChainHeader(chain.name)
+            }
+
+            chain.items.forEach { item ->
+                when (item) {
+                    is ChainItem.Comment -> CommentItem(item.text)
+                    is ChainItem.RawCommand -> RawCommandItem(item.command, item.syntaxHighlightTokens)
+                    is ChainItem.Block -> BlockItem(item.block)
+                }
+                Spacer(Modifier.height(4.dp))
+            }
+
+            Spacer(Modifier.height(12.dp))
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun MetaSection(metaInfo: List<MCDMeta>) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(NexusTheme.colors.backgroundComponent)
+            .padding(12.dp)
+    ) {
+        metaInfo.forEach { meta ->
+            Row(
+                modifier = Modifier.padding(vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "@${meta.key}",
+                    style = TextStyle(
+                        fontSize = 12.sp,
+                        color = NexusTheme.colors.mainColor,
+                        fontWeight = FontWeight.Medium,
+                        fontFamily = FontFamily.Monospace
+                    )
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = meta.value,
+                    style = TextStyle(
+                        fontSize = 12.sp,
+                        color = NexusTheme.colors.textMain,
+                        fontFamily = FontFamily.Monospace
+                    )
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CommentItem(text: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(6.dp))
+            .background(NexusTheme.colors.backgroundComponent.copy(alpha = 0.5f))
+            .padding(10.dp, 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            id = R.drawable.pencil,
+            contentDescription = null,
+            modifier = Modifier.size(14.dp)
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(
+            text = text,
+            style = TextStyle(
+                fontSize = 12.sp,
+                color = NexusTheme.colors.textSecondary
+            )
+        )
+    }
+}
+
+@Composable
+private fun ChainHeader(name: String) {
+    Row(
+        modifier = Modifier.padding(bottom = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            id = R.drawable.share,
+            contentDescription = null,
+            modifier = Modifier.size(16.dp)
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(
+            text = name,
+            style = TextStyle(
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = NexusTheme.colors.textMain
+            )
+        )
+    }
+}
+
+@Composable
+private fun RawCommandItem(command: String, tokens: IntArray?) {
+    val context = LocalContext.current
+    val isDark = NexusTheme.theme == NexusTheme.Theme.Dark
+    val highlightedText = remember(command, tokens, isDark) {
+        highlightCommand(command, tokens, isDark)
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(6.dp))
+            .background(NexusTheme.colors.backgroundComponent)
+            .padding(10.dp, 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = highlightedText,
+            modifier = Modifier
+                .weight(1f),
+            style = TextStyle(
+                fontSize = 13.sp,
+                fontFamily = FontFamily.Monospace,
+                color = NexusTheme.colors.textMain
+            )
+        )
+        Spacer(Modifier.width(8.dp))
+        Icon(
+            id = R.drawable.copy,
+            contentDescription = "复制指令",
+            modifier = Modifier
+                .size(18.dp)
+                .clickable { copyToClipboard(context, command) }
+        )
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun BlockItem(block: MCDBlock) {
+    val context = LocalContext.current
+    val blockColor = if (NexusTheme.theme == NexusTheme.Theme.Dark) {
+        block.type.darkColor
+    } else {
+        block.type.lightColor
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            // 左边框色带，模拟命令方块颜色
+            .border(
+                width = 1.dp,
+                color = blockColor.copy(alpha = 0.3f),
+                shape = RoundedCornerShape(8.dp)
+            )
+            .background(NexusTheme.colors.backgroundComponent)
+    ) {
+        // 顶部 Badge 区
+        FlowRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(blockColor.copy(alpha = 0.1f))
+                .padding(8.dp, 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Badge(block.type.label, blockColor)
+            if (block.type != BlockType.CHAT) {
+                if (block.conditional) Badge("条件", Color(0xFFE65100))
+                if (block.alwaysActive) Badge("保持开启", Color(0xFF2E7D32))
+                if (block.needsRedstone) Badge("红石控制", Color(0xFFB71C1C))
+                if (block.tickDelay > 0) Badge("${block.tickDelay} 延迟", Color(0xFF1565C0))
+            }
+        }
+
+        // 指令内容 + 复制按钮
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(10.dp, 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            val isDark = NexusTheme.theme == NexusTheme.Theme.Dark
+            val highlightedText = remember(block.command, block.syntaxHighlightTokens, isDark) {
+                highlightCommand(block.command, block.syntaxHighlightTokens, isDark)
+            }
+            Text(
+                text = highlightedText,
+                modifier = Modifier
+                    .weight(1f),
+                style = TextStyle(
+                    fontSize = 13.sp,
+                    fontFamily = FontFamily.Monospace,
+                    color = NexusTheme.colors.textMain
+                )
+            )
+            Spacer(Modifier.width(8.dp))
+            Icon(
+                id = R.drawable.copy,
+                contentDescription = "复制指令",
+                modifier = Modifier
+                    .size(18.dp)
+                    .clickable { copyToClipboard(context, block.command) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun Badge(text: String, color: Color) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(4.dp))
+            .background(color.copy(alpha = 0.15f))
+            .padding(horizontal = 6.dp, vertical = 2.dp)
+    ) {
+        Text(
+            text = text,
+            style = TextStyle(
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Medium,
+                color = color
+            )
+        )
+    }
+}
+
+fun highlightCommand(command: String, tokens: IntArray?, isDark: Boolean): AnnotatedString {
+    if (tokens == null || tokens.isEmpty() || command.isEmpty()) {
+        return AnnotatedString(command)
+    }
+    val theme = if (isDark) Theme.THEME_NIGHT else Theme.THEME_DAY
+    val normalColor = if (isDark) 0xFFFFFFFF.toInt() else 0xFF000000.toInt()
+    
+    return buildAnnotatedString {
+        append(command)
+        var lastIndex = 0
+        var lastColor = theme.getColorByToken(tokens[0], normalColor)
+        val length = minOf(tokens.size, command.length)
+        for (i in 1 until length) {
+            val color = theme.getColorByToken(tokens[i], normalColor)
+            if (color != lastColor) {
+                addStyle(
+                    style = SpanStyle(color = Color(lastColor)),
+                    start = lastIndex,
+                    end = i
+                )
+                lastIndex = i
+                lastColor = color
+            }
+        }
+        addStyle(
+            style = SpanStyle(color = Color(lastColor)),
+            start = lastIndex,
+            end = length
+        )
+    }
+}
+
+object MCDHighlightCoreCache {
+    private var core: NexusCore? = null
+    private var path: String? = null
+
+    @Synchronized
+    fun get(context: Context, cpackPath: String): NexusCore? {
+        if (core != null && path == cpackPath) {
+            return core
+        }
+        try {
+            core?.close()
+            core = NexusCore.fromAssets(context.assets, cpackPath)
+            path = cpackPath
+        } catch (e: Exception) {
+            Log.e("MCDHighlightCoreCache", "Failed to load NexusCore", e)
+            core = null
+            path = null
+        }
+        return core
+    }
+}
