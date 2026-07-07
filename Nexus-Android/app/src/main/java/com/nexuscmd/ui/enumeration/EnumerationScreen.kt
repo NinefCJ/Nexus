@@ -65,7 +65,7 @@ fun EnumerationScreenTimes(viewModel: EnumerationViewModel) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 15.dp)
+            .padding(horizontal = 16.dp)
             .height(30.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -88,7 +88,7 @@ fun EnumerationScreenVariable(modifier: Modifier = Modifier, viewModel: Enumerat
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 15.dp)
+                .padding(horizontal = 16.dp)
         ) {
             Text(
                 text = stringResource(R.string.layout_enumeration_variable_name),
@@ -97,7 +97,7 @@ fun EnumerationScreenVariable(modifier: Modifier = Modifier, viewModel: Enumerat
                     textAlign = TextAlign.Center,
                 ),
             )
-            Spacer(modifier = Modifier.width(15.dp))
+            Spacer(modifier = Modifier.width(16.dp))
             Text(
                 text = stringResource(R.string.layout_enumeration_initial_value),
                 modifier = Modifier.weight(1f),
@@ -105,7 +105,7 @@ fun EnumerationScreenVariable(modifier: Modifier = Modifier, viewModel: Enumerat
                     textAlign = TextAlign.Center,
                 ),
             )
-            Spacer(modifier = Modifier.width(15.dp))
+            Spacer(modifier = Modifier.width(16.dp))
             Text(
                 text = stringResource(R.string.layout_enumeration_interval),
                 modifier = Modifier.weight(1f),
@@ -121,11 +121,11 @@ fun EnumerationScreenVariable(modifier: Modifier = Modifier, viewModel: Enumerat
                 .weight(1f)
         ) {
             itemsIndexed(viewModel.variableList) { index, variable ->
-                Spacer(modifier = Modifier.height(15.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 15.dp)
+                        .padding(horizontal = 16.dp)
                         .height(30.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -136,7 +136,7 @@ fun EnumerationScreenVariable(modifier: Modifier = Modifier, viewModel: Enumerat
                         verticalPadding = 0.dp,
                         lineLimits = TextFieldLineLimits.SingleLine
                     )
-                    Spacer(modifier = Modifier.width(15.dp))
+                    Spacer(modifier = Modifier.width(16.dp))
                     TextField(
                         state = variable.start,
                         modifier = Modifier.weight(1f),
@@ -144,7 +144,7 @@ fun EnumerationScreenVariable(modifier: Modifier = Modifier, viewModel: Enumerat
                         verticalPadding = 0.dp,
                         lineLimits = TextFieldLineLimits.SingleLine
                     )
-                    Spacer(modifier = Modifier.width(15.dp))
+                    Spacer(modifier = Modifier.width(16.dp))
                     TextField(
                         state = variable.interval,
                         modifier = Modifier.weight(1f),
@@ -152,7 +152,7 @@ fun EnumerationScreenVariable(modifier: Modifier = Modifier, viewModel: Enumerat
                         verticalPadding = 0.dp,
                         lineLimits = TextFieldLineLimits.SingleLine
                     )
-                    Spacer(modifier = Modifier.width(15.dp))
+                    Spacer(modifier = Modifier.width(16.dp))
                     Icon(
                         id = R.drawable.x,
                         modifier = Modifier
@@ -163,7 +163,7 @@ fun EnumerationScreenVariable(modifier: Modifier = Modifier, viewModel: Enumerat
                     )
                 }
                 if (index == viewModel.variableList.size) {
-                    Spacer(modifier = Modifier.height(15.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
             }
         }
@@ -189,40 +189,40 @@ fun EnumerationScreen(viewModel: EnumerationViewModel = viewModel()) {
     RootViewWithHeaderAndCopyright(stringResource(R.string.layout_enumeration_title)) {
         if (configuration.orientation != Configuration.ORIENTATION_LANDSCAPE) {
             Column(modifier = Modifier.fillMaxSize()) {
-                Spacer(Modifier.height(15.dp))
+                Spacer(Modifier.height(12.dp))
                 TextField(
                     state = viewModel.expression,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 15.dp)
+                        .padding(horizontal = 16.dp)
                         .height(100.dp),
                     hint = stringResource(R.string.layout_enumeration_expression_hint)
                 )
-                Spacer(Modifier.height(15.dp))
+                Spacer(Modifier.height(12.dp))
                 EnumerationScreenTimes(viewModel = viewModel)
-                Spacer(Modifier.height(15.dp))
+                Spacer(Modifier.height(12.dp))
                 EnumerationScreenVariable(modifier = Modifier.weight(1f), viewModel = viewModel)
                 EnumerationScreenButton(viewModel = viewModel)
             }
         } else {
             Row(modifier = Modifier.fillMaxSize()) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Spacer(Modifier.height(15.dp))
+                    Spacer(Modifier.height(12.dp))
                     TextField(
                         state = viewModel.expression,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 15.dp)
+                            .padding(horizontal = 16.dp)
                             .weight(1f),
                         hint = stringResource(R.string.layout_enumeration_expression_hint)
                     )
-                    Spacer(Modifier.height(15.dp))
+                    Spacer(Modifier.height(12.dp))
                     EnumerationScreenTimes(viewModel = viewModel)
-                    Spacer(Modifier.height(15.dp))
+                    Spacer(Modifier.height(12.dp))
                     EnumerationScreenButton(viewModel = viewModel)
                 }
                 Column(modifier = Modifier.weight(1f)) {
-                    Spacer(Modifier.height(15.dp))
+                    Spacer(Modifier.height(12.dp))
                     EnumerationScreenVariable(modifier = Modifier.weight(1f), viewModel = viewModel)
                 }
             }

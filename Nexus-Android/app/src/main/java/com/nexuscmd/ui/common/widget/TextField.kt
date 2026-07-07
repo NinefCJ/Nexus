@@ -49,9 +49,9 @@ fun TextField(
     modifier: Modifier = Modifier,
     contentAlignment: Alignment = Alignment.TopStart,
     hint: String? = null,
-    horizontalPadding: Dp = 10.dp,
-    verticalPadding: Dp = 10.dp,
-    clipCornerSize: Dp = 10.dp,
+    horizontalPadding: Dp = 12.dp,
+    verticalPadding: Dp = 12.dp,
+    clipCornerSize: Dp = 12.dp,
     lineLimits: TextFieldLineLimits = TextFieldLineLimits.Default,
     style: TextStyle = TextStyle(),
 ) {

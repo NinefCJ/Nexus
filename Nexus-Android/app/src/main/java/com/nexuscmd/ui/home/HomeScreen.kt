@@ -19,6 +19,7 @@
 package com.nexuscmd.ui.home
 
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -33,6 +34,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Surface
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -43,6 +45,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -111,34 +115,35 @@ fun HomeScreen(
                     .verticalScroll(rememberScrollState())
             ) {
                 // Header Area
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(NexusTheme.colors.backgroundComponent)
-                        .padding(horizontal = 20.dp, vertical = 20.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .background(NexusTheme.colors.mainColor)
+                        .padding(horizontal = 20.dp, vertical = 24.dp)
                 ) {
-                    Image(
-                        painter = painterResource(R.drawable.pack_icon),
-                        contentDescription = stringResource(R.string.app_name),
-                        modifier = Modifier.size(width = 56.dp, height = 56.dp)
-                    )
-                    Column(modifier = Modifier.padding(start = 16.dp)) {
-                        Text(
-                            text = stringResource(R.string.layout_home_app_name),
-                            style = TextStyle(
-                                color = NexusTheme.colors.textBond,
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight.Bold
-                            ),
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Image(
+                            painter = painterResource(R.drawable.pack_icon),
+                            contentDescription = stringResource(R.string.app_name),
+                            modifier = Modifier.size(width = 48.dp, height = 48.dp)
                         )
-                        Text(
-                            text = stringResource(R.string.layout_home_app_description),
-                            style = TextStyle(
-                                color = NexusTheme.colors.textSecondary,
-                                fontSize = 14.sp
-                            ),
-                        )
+                        Column(modifier = Modifier.padding(start = 14.dp)) {
+                            Text(
+                                text = stringResource(R.string.layout_home_app_name),
+                                style = TextStyle(
+                                    color = Color.White,
+                                    fontSize = 22.sp,
+                                    fontWeight = FontWeight.Bold
+                                ),
+                            )
+                            Text(
+                                text = stringResource(R.string.layout_home_app_description),
+                                style = TextStyle(
+                                    color = Color.White.copy(alpha = 0.8f),
+                                    fontSize = 13.sp
+                                ),
+                            )
+                        }
                     }
                 }
 
@@ -435,31 +440,35 @@ private fun HomeSectionTitle(title: String) {
 
 @Composable
 private fun HomeTwoColumnGrid(items: List<HomeFeatureItem>) {
-    Column(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(NexusTheme.colors.backgroundComponent)
-            .padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(horizontal = 16.dp),
+        shape = RoundedCornerShape(12.dp),
+        color = NexusTheme.colors.backgroundComponent,
+        border = BorderStroke(1.dp, NexusTheme.colors.line),
     ) {
-        items.chunked(2).forEach { rowItems ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                rowItems.forEach { item ->
-                    HomeFeatureCard(
-                        icon = item.icon,
-                        title = item.title,
-                        subtitle = item.subtitle,
-                        onClick = item.onClick,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                if (rowItems.size == 1) {
-                    Spacer(modifier = Modifier.weight(1f))
+        Column(
+            modifier = Modifier.padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            items.chunked(2).forEach { rowItems ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    rowItems.forEach { item ->
+                        HomeFeatureCard(
+                            icon = item.icon,
+                            title = item.title,
+                            subtitle = item.subtitle,
+                            onClick = item.onClick,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    if (rowItems.size == 1) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
                 }
             }
         }
@@ -500,7 +509,7 @@ private fun HomeFeatureCard(
                 painter = painterResource(id = icon),
                 contentDescription = title,
                 modifier = Modifier.size(20.dp),
-                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(NexusTheme.colors.mainColor)
+                colorFilter = ColorFilter.tint(NexusTheme.colors.mainColor)
             )
         }
         Spacer(modifier = Modifier.height(12.dp))

@@ -18,14 +18,14 @@
 
 package com.nexuscmd.ui.common.layout
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.nexuscmd.ui.common.NexusTheme
@@ -34,18 +34,22 @@ import com.nexuscmd.ui.common.NexusTheme
 fun Surface(
     modifier: Modifier = Modifier,
     contentAlignment: Alignment = Alignment.TopStart,
-    horizontalPadding: Dp = 10.dp,
-    verticalPadding: Dp = 10.dp,
-    clipCornerSize: Dp = 10.dp,
+    horizontalPadding: Dp = 12.dp,
+    verticalPadding: Dp = 12.dp,
+    clipCornerSize: Dp = 12.dp,
     content: @Composable () -> Unit
 ) {
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(clipCornerSize))
-            .background(color = NexusTheme.colors.backgroundComponent)
-            .padding(horizontal = horizontalPadding, vertical = verticalPadding),
-        contentAlignment = contentAlignment
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(clipCornerSize),
+        color = NexusTheme.colors.backgroundComponent,
+        border = BorderStroke(1.dp, NexusTheme.colors.line),
     ) {
-        content()
+        Box(
+            modifier = Modifier.padding(horizontal = horizontalPadding, vertical = verticalPadding),
+            contentAlignment = contentAlignment
+        ) {
+            content()
+        }
     }
 }

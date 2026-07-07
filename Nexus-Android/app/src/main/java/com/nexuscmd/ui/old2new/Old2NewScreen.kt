@@ -58,25 +58,25 @@ fun Old2NewScreen(viewModel: Old2NewViewModel = viewModel(), old2new: (String) -
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
             ) {
-                Spacer(modifier = Modifier.height(15.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 TextField(
                     state = viewModel.oldCommand,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 15.dp)
+                        .padding(horizontal = 16.dp)
                         .height(200.dp),
                     hint = stringResource(R.string.layout_old2new_old_command_hint)
                 )
-                Spacer(modifier = Modifier.height(15.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 15.dp)
+                        .padding(horizontal = 16.dp)
                         .height(200.dp)
                 ) {
                     Text(text = viewModel.newCommand)
                 }
-                Spacer(modifier = Modifier.height(15.dp))
+                Spacer(modifier = Modifier.height(12.dp))
             }
             val clipboard = LocalClipboard.current
             Button(stringResource(R.string.layout_old2new_clear_and_paste_old_command)) {

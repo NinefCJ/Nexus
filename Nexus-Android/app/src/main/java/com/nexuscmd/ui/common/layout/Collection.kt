@@ -18,26 +18,30 @@
 
 package com.nexuscmd.ui.common.layout
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.nexuscmd.ui.common.NexusTheme
 
 @Composable
 fun Collection(content: @Composable () -> Unit) {
-    Column(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(NexusTheme.colors.backgroundComponent)
+            .padding(horizontal = 16.dp),
+        shape = RoundedCornerShape(12.dp),
+        color = NexusTheme.colors.backgroundComponent,
+        border = BorderStroke(1.dp, NexusTheme.colors.line),
     ) {
-        content()
+        Column {
+            content()
+        }
     }
 }

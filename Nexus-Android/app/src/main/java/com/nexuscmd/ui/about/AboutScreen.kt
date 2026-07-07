@@ -52,7 +52,7 @@ fun AboutScreen(navController: NavHostController) {
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
-            Spacer(Modifier.height(15.dp))
+            Spacer(Modifier.height(12.dp))
             Collection {
                 NameAndValue(
                     stringResource(R.string.layout_about_current_version),
@@ -75,7 +75,7 @@ fun AboutScreen(navController: NavHostController) {
                     "https://github.com/Yancey2023/Nexus".toUri()
                 )
             }
-            Spacer(Modifier.height(15.dp))
+            Spacer(Modifier.height(12.dp))
             Collection {
                 NameAndAsset(
                     navController,

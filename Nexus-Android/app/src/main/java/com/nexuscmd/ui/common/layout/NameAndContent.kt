@@ -34,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -150,9 +151,10 @@ fun NameAndAsset(
 fun CollectionName(name: String) {
     Text(
         text = name,
-        modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+        modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
         style = TextStyle(
-            fontSize = 14.sp,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
             color = NexusTheme.colors.textSecondary
         )
     )

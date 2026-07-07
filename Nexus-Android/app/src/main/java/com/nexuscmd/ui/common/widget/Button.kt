@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nexuscmd.ui.common.NexusTheme
@@ -43,14 +44,14 @@ fun Button(
     text: String,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    shape: Shape = RoundedCornerShape(6.dp),
+    shape: Shape = RoundedCornerShape(10.dp),
     onClick: () -> Unit
 ) {
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 15.dp, vertical = 5.dp)
-            .height(45.dp)
+            .padding(horizontal = 16.dp, vertical = 5.dp)
+            .height(48.dp)
             .clip(shape)
             .background(
                 if (enabled) NexusTheme.colors.mainColor else NexusTheme.colors.mainColor.copy(
@@ -64,7 +65,8 @@ fun Button(
             text = text,
             style = TextStyle(
                 color = Color.White,
-                fontSize = 18.sp,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Center
             ),
         )
