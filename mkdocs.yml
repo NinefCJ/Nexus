@@ -1,0 +1,44 @@
+site_name: Nexus - Minecraft 命令助手
+site_url: https://ninefcj.github.io/Nexus/
+site_description: 一款专为 Minecraft 基岩版设计的命令辅助工具
+site_author: NexusTeam (氿九Ninef)
+
+theme:
+  name: material
+  language: zh
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to dark mode
+    - scheme: slate
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - toc.integrate
+    - content.code.copy
+
+repo_name: NinefCJ/Nexus
+repo_url: https://github.com/NinefCJ/Nexus
+edit_uri: edit/main/docs/
+
+markdown_extensions:
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - pymdownx.details
+
+nav:
+  - 首页: index.md
+  - 快速开始: getting-started.md
+  - 功能特性: features.md
+  - 命令参考: commands.md
+  - 开发指南: development.md
+  - 更新日志: changelog.md

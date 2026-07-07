@@ -1,0 +1,39 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - '.github/workflows/pages.yml'
+      - 'docs/**'
+      - 'README.md'
+      - 'README-en.md'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install mkdocs
+        run: |
+          pip install mkdocs mkdocs-material
+
+      - name: Build docs
+        run: |
+          mkdocs build --site-dir public
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
