@@ -28,10 +28,12 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -47,6 +49,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
@@ -54,6 +57,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -252,20 +256,17 @@ import com.nexuscmd.ui.common.widget.Text
 
 @Composable
 fun ToolbarItem(@DrawableRes id: Int, description: String, onClick: () -> Unit) {
-    Column(
+    Box(
         modifier = Modifier
-            .padding(5.dp)
+            .size(44.dp)
+            .clip(RoundedCornerShape(8.dp))
             .clickable(onClick = onClick),
-        horizontalAlignment = Alignment.CenterHorizontally
+        contentAlignment = Alignment.Center
     ) {
         Icon(
             id = id,
-            modifier = Modifier.size(24.dp),
+            modifier = Modifier.size(22.dp),
             contentDescription = description
-        )
-        Text(
-            text = description,
-            style = TextStyle(fontSize = 14.sp)
         )
     }
 }
@@ -277,44 +278,42 @@ fun CompletionScreenTopBar(
     errorReason: String?,
     fontSize: TextUnit = TextUnit.Unspecified
 ) {
-    Column {
+    val actualFontSize = if (fontSize == TextUnit.Unspecified) 15.sp else fontSize
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(12.dp)
+    ) {
         Text(
-            text = structure ?: "欢迎使用Nexus",
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 5.dp),
+            text = structure ?: "欢迎使用 Nexus",
+            modifier = Modifier.fillMaxWidth(),
             style = TextStyle(
-                fontSize = fontSize,
+                fontSize = actualFontSize,
+                fontWeight = FontWeight.SemiBold
             )
         )
-        Text(
-            text = paramHint ?: "作者：Yancey",
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 5.dp),
-            style = TextStyle(
-                color = NexusTheme.colors.textSecondary,
-                fontSize = fontSize,
-            )
-        )
-        errorReason?.let {
+        if (paramHint != null) {
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = it,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 5.dp),
+                text = paramHint,
+                modifier = Modifier.fillMaxWidth(),
                 style = TextStyle(
-                    color = NexusTheme.colors.textErrorReason,
-                    fontSize = fontSize,
+                    color = NexusTheme.colors.textSecondary,
+                    fontSize = actualFontSize * 0.9f,
                 )
             )
         }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(NexusTheme.colors.line)
-        )
+        errorReason?.let {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = it,
+                modifier = Modifier.fillMaxWidth(),
+                style = TextStyle(
+                    color = NexusTheme.colors.textErrorReason,
+                    fontSize = actualFontSize * 0.85f,
+                )
+            )
+        }
     }
 }
 
@@ -440,7 +439,7 @@ fun CompletionScreen(
                                                 isShowErrorReason
                                             )
                                         })
-                                        .padding(5.dp),
+                                        .padding(horizontal = 12.dp, vertical = 10.dp),
                                     text = suggestionText,
                                     style = TextStyle(
                                         fontSize = 14.sp
@@ -450,6 +449,7 @@ fun CompletionScreen(
                         } else {
                             Column(
                                 modifier = Modifier
+                                    .fillMaxWidth()
                                     .clickable(onClick = {
                                         viewModel.onItemClick(suggestionIndex)
                                         viewModel.onSelectionChanged(
@@ -458,7 +458,7 @@ fun CompletionScreen(
                                             isShowErrorReason
                                         )
                                     })
-                                    .padding(5.dp)
+                                    .padding(horizontal = 12.dp, vertical = 10.dp)
                             ) {
                                 val suggestion =
                                     remember(viewModel.suggestionsUpdateTimes, suggestionIndex) {
@@ -467,10 +467,9 @@ fun CompletionScreen(
                                 suggestion?.name?.let {
                                     Text(
                                         text = it,
-                                        modifier = Modifier
-                                            .fillMaxWidth(),
+                                        modifier = Modifier.fillMaxWidth(),
                                         style = TextStyle(
-                                            fontSize = 14.sp
+                                            fontSize = 15.sp
                                         )
                                     )
                                 }
@@ -478,10 +477,11 @@ fun CompletionScreen(
                                     Text(
                                         text = it,
                                         modifier = Modifier
-                                            .fillMaxWidth(),
+                                            .fillMaxWidth()
+                                            .padding(top = 2.dp),
                                         style = TextStyle(
                                             color = NexusTheme.colors.textSecondary,
-                                            fontSize = 14.sp
+                                            fontSize = 13.sp
                                         )
                                     )
                                 }
@@ -496,7 +496,8 @@ fun CompletionScreen(
                         .fillMaxWidth()
                         .background(NexusTheme.colors.background)
                         .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.SpaceAround
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     ToolbarItem(
                         id = R.drawable.arrow_back_up,
@@ -552,8 +553,9 @@ fun CompletionScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(40.dp)
-                    .background(NexusTheme.colors.background),
+                    .height(48.dp)
+                    .background(NexusTheme.colors.background)
+                    .padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(

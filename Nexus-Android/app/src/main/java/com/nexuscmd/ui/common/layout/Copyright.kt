@@ -26,6 +26,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nexuscmd.R
+import com.nexuscmd.ui.common.NexusTheme
 import com.nexuscmd.ui.common.widget.Text
 
 @Composable
@@ -35,9 +36,10 @@ fun Copyright(
 ) {
     Text(
         text = copyright,
-        modifier = modifier.padding(5.dp),
+        modifier = modifier.padding(12.dp),
         style = TextStyle(
-            fontSize = 14.sp,
+            fontSize = 12.sp,
+            color = NexusTheme.colors.textSecondary
         ),
     )
 }

@@ -105,7 +105,6 @@ fun SettingsScreen(
         .collectAsState(initial = true)
     val syntaxHighlightMaxLength by settingsDataStore.syntaxHighlightMaxLength()
         .collectAsState(initial = null)
-    // DataStore flow -> 本地变量同步（首次加载时拿到持久化值）
     val tagClickBehaviorFlow by settingsDataStore.tagClickBehavior()
         .collectAsState(initial = "search")
     val ambiguousLineDefaultFlow by settingsDataStore.ambiguousLineDefault()
@@ -176,6 +175,7 @@ fun SettingsScreen(
                     name = stringResource(R.string.layout_settings_is_enable_update_notification),
                     description = stringResource(R.string.layout_settings_is_enable_update_notification_description),
                     checked = isEnableUpdateNotifications,
+                    leadingIcon = R.drawable.check_circle,
                     onCheckedChange = {
                         coroutineScope.launch {
                             settingsDataStore.setIsEnableUpdateNotifications(it)
@@ -188,6 +188,7 @@ fun SettingsScreen(
                 NameAndAction(
                     name = stringResource(R.string.layout_settings_choose_background),
                     description = stringResource(R.string.layout_settings_choose_background_description),
+                    leadingIcon = R.drawable.eye,
                 ) {
                     chooseBackground()
                 }
@@ -195,6 +196,7 @@ fun SettingsScreen(
                 NameAndAction(
                     name = stringResource(R.string.layout_settings_restore_background),
                     description = stringResource(R.string.layout_settings_restore_background_description),
+                    leadingIcon = R.drawable.refresh,
                 ) {
                     isShowResumeBackgroundDialog = true
                 }
@@ -202,6 +204,7 @@ fun SettingsScreen(
                 NameAndAction(
                     name = stringResource(R.string.layout_settings_choose_theme),
                     description = stringResource(R.string.layout_settings_choose_theme_description),
+                    leadingIcon = R.drawable.pencil,
                 ) {
                     isShowChooseThemeDialog = true
                 }
@@ -209,6 +212,7 @@ fun SettingsScreen(
                 NameAndAction(
                     name = stringResource(R.string.layout_settings_floating_window_icon_alpha),
                     description = stringResource(R.string.layout_settings_floating_window_icon_alpha_description),
+                    leadingIcon = R.drawable.eye_off,
                 ) {
                     isShowInputFloatingWindowIconAlphaDialog = true
                 }
@@ -216,6 +220,7 @@ fun SettingsScreen(
                 NameAndAction(
                     name = stringResource(R.string.layout_settings_floating_window_screen_alpha),
                     description = stringResource(R.string.layout_settings_floating_window_screen_alpha_description),
+                    leadingIcon = R.drawable.eye_off,
                 ) {
                     isShowInputFloatingWindowScreenAlphaDialog = true
                 }
@@ -224,6 +229,7 @@ fun SettingsScreen(
                     name = "悬浮窗字体是否跟随透明",
                     description = "开启后字体随窗口一同透明；关闭后仅背景透明，字体保持清晰",
                     checked = isFloatingWindowFontAlphaSync,
+                    leadingIcon = R.drawable.eye,
                     onCheckedChange = {
                         coroutineScope.launch {
                             settingsDataStore.setIsFloatingWindowFontAlphaSync(it)
@@ -234,6 +240,7 @@ fun SettingsScreen(
                 NameAndAction(
                     name = stringResource(R.string.layout_settings_floating_window_icon_size),
                     description = stringResource(R.string.layout_settings_floating_window_icon_size_description),
+                    leadingIcon = R.drawable.plus,
                 ) {
                     isShowInputFloatingWindowIconSizeDialog = true
                 }
@@ -255,7 +262,8 @@ fun SettingsScreen(
                         R.string.layout_settings_current_cpack,
                         currentCpackBranchTranslation
                             ?: stringResource(R.string.layout_settings_unknown_branch)
-                    )
+                    ),
+                    leadingIcon = R.drawable.box,
                 ) {
                     isShowChooseCpackBranchDialog = true
                 }
@@ -264,6 +272,7 @@ fun SettingsScreen(
                     name = stringResource(R.string.layout_setting_checking_by_selection),
                     description = stringResource(R.string.layout_setting_checking_by_selection_description),
                     checked = isCheckingBySelection,
+                    leadingIcon = R.drawable.check_circle,
                     onCheckedChange = {
                         coroutineScope.launch {
                             settingsDataStore.setIsCheckingBySelection(it)
@@ -275,6 +284,7 @@ fun SettingsScreen(
                     name = stringResource(R.string.layout_setting_is_hide_window_when_copying),
                     description = stringResource(R.string.layout_setting_is_hide_window_when_copying_description),
                     checked = isHideWindowWhenCopying,
+                    leadingIcon = R.drawable.copy,
                     onCheckedChange = {
                         coroutineScope.launch {
                             settingsDataStore.setIsHideWindowWhenCopying(it)
@@ -286,6 +296,7 @@ fun SettingsScreen(
                     name = stringResource(R.string.layout_setting_is_saving_when_pausing),
                     description = stringResource(R.string.layout_setting_is_saving_when_pausing_description),
                     checked = isSavingWhenPausing,
+                    leadingIcon = R.drawable.folder,
                     onCheckedChange = {
                         coroutineScope.launch {
                             settingsDataStore.setIsSavingWhenPausing(it)
@@ -297,6 +308,7 @@ fun SettingsScreen(
                     name = stringResource(R.string.layout_setting_is_crowed),
                     description = stringResource(R.string.layout_setting_is_crowed_description),
                     checked = isCrowded,
+                    leadingIcon = R.drawable.more,
                     onCheckedChange = {
                         coroutineScope.launch {
                             settingsDataStore.setIsCrowded(it)
@@ -308,6 +320,7 @@ fun SettingsScreen(
                     name = stringResource(R.string.layout_setting_is_show_error_reason),
                     description = stringResource(R.string.layout_setting_is_show_error_reason_description),
                     checked = isShowErrorReason,
+                    leadingIcon = R.drawable.alert_triangle,
                     onCheckedChange = {
                         coroutineScope.launch {
                             settingsDataStore.setIsShowErrorReason(it)
@@ -319,6 +332,7 @@ fun SettingsScreen(
                     name = stringResource(R.string.layout_setting_is_syntax_highlight),
                     description = stringResource(R.string.layout_setting_is_syntax_highlight_description),
                     checked = isSyntaxHighlight,
+                    leadingIcon = R.drawable.pencil,
                     onCheckedChange = {
                         coroutineScope.launch {
                             settingsDataStore.setIsSyntaxHighlight(it)
@@ -329,6 +343,7 @@ fun SettingsScreen(
                 NameAndAction(
                     name = "高亮自动关闭阈值",
                     description = "当前限制: ${syntaxHighlightMaxLength ?: 4000} 字符 (为防卡死)",
+                    leadingIcon = R.drawable.alert_triangle,
                 ) {
                     isShowInputSyntaxHighlightMaxLengthDialog = true
                 }
@@ -338,6 +353,7 @@ fun SettingsScreen(
                 NameAndAction(
                     name = "命令库默认主页流",
                     description = "当前: ${if (isPublicLibraryHomeRecommend) "猜你喜欢" else "按时间最新发布"}",
+                    leadingIcon = R.drawable.book,
                 ) {
                     isShowChooseLibraryHomeRecommendDialog = true
                 }
@@ -345,6 +361,7 @@ fun SettingsScreen(
                 NameAndAction(
                     name = "Tag 点击行为",
                     description = "当前: ${if (tagClickBehavior == "search") "搜索该 Tag" else "进入详情页"}",
+                    leadingIcon = R.drawable.book,
                 ) {
                     isShowChooseTagClickDialog = true
                 }
@@ -352,6 +369,7 @@ fun SettingsScreen(
                 NameAndAction(
                     name = "无法推断行的默认处理",
                     description = "当前: ${if (ambiguousLineDefault == "comment") "当作注释" else "当作指令"}",
+                    leadingIcon = R.drawable.book,
                 ) {
                     isShowChooseAmbiguousLineDialog = true
                 }
@@ -360,6 +378,7 @@ fun SettingsScreen(
                     name = "隐藏正文元数据预览",
                     description = "隐藏 MCD 可视化中 @name、@version 等元信息区",
                     checked = isHideMetadataPreview,
+                    leadingIcon = R.drawable.eye_off,
                     onCheckedChange = {
                         coroutineScope.launch {
                             settingsDataStore.setIsHideMetadataPreview(it)
@@ -371,6 +390,7 @@ fun SettingsScreen(
                     name = "[实验性] 命令块语法高亮",
                     description = "支持命令库在 v2 渲染时为命令块附加语法高亮",
                     checked = isEnableMcdHighlight,
+                    leadingIcon = R.drawable.pencil,
                     onCheckedChange = {
                         coroutineScope.launch {
                             settingsDataStore.setIsEnableMcdHighlight(it)

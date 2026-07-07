@@ -11,9 +11,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -29,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -146,6 +149,7 @@ private fun BottomNavItem(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .clip(RoundedCornerShape(8.dp))
             .clickable(onClick = onClick)
             .padding(vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -158,12 +162,12 @@ private fun BottomNavItem(
                 modifier = Modifier.size(24.dp),
                 colorFilter = ColorFilter.tint(color)
             )
-            // 未读消息红点
             if (badgeCount > 0) {
                 Box(
                     modifier = Modifier
                         .size(8.dp)
                         .align(Alignment.TopEnd)
+                        .offset(x = 2.dp, y = (-2).dp)
                         .clip(CircleShape)
                         .background(Color.Red)
                 )
@@ -174,7 +178,8 @@ private fun BottomNavItem(
             text = title,
             style = TextStyle(
                 color = color,
-                fontSize = 11.sp
+                fontSize = 11.sp,
+                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
             )
         )
     }

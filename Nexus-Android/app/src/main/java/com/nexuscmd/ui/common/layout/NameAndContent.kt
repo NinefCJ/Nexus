@@ -53,15 +53,25 @@ fun NameAndContent(
     name: String,
     modifier: Modifier = Modifier,
     description: String? = null,
+    @DrawableRes leadingIcon: Int? = null,
     content: @Composable () -> Unit
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 10.dp, vertical = 20.dp),
+            .padding(horizontal = 16.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
+        if (leadingIcon != null) {
+            Icon(
+                id = leadingIcon,
+                modifier = Modifier
+                    .padding(end = 12.dp)
+                    .size(22.dp),
+                contentDescription = null
+            )
+        }
         Column(modifier = Modifier.weight(1f)) {
             Text(text = name)
             if (description != null) {
@@ -69,7 +79,7 @@ fun NameAndContent(
                     text = description,
                     style = TextStyle(
                         color = NexusTheme.colors.textSecondary,
-                        fontSize = 14.sp,
+                        fontSize = 13.sp,
                     )
                 )
             }
@@ -82,15 +92,17 @@ fun NameAndContent(
 fun NameAndAction(
     name: String,
     description: String? = null,
+    @DrawableRes leadingIcon: Int? = null,
     @DrawableRes iconId: Int = R.drawable.chevron_right,
     onClick: () -> Unit
 ) {
     NameAndContent(
         name = name,
         description = description,
+        leadingIcon = leadingIcon,
         modifier = Modifier.clickable(onClick = onClick)
     ) {
-        Icon(iconId, Modifier.size(24.dp), name)
+        Icon(iconId, Modifier.size(20.dp), name)
     }
 }
 
@@ -138,7 +150,11 @@ fun NameAndAsset(
 fun CollectionName(name: String) {
     Text(
         text = name,
-        modifier = Modifier.padding(horizontal = 25.dp, vertical = 15.dp)
+        modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+        style = TextStyle(
+            fontSize = 14.sp,
+            color = NexusTheme.colors.textSecondary
+        )
     )
 }
 
@@ -147,9 +163,10 @@ fun SettingsItem(
     name: String,
     description: String?,
     checked: Boolean?,
+    @DrawableRes leadingIcon: Int? = null,
     onCheckedChange: (Boolean) -> Unit
 ) {
-    NameAndContent(name = name, description = description) {
+    NameAndContent(name = name, description = description, leadingIcon = leadingIcon) {
         if (checked != null) {
             Switch(
                 checked = checked,

@@ -34,8 +34,8 @@ fun Collection(content: @Composable () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 15.dp)
-            .clip(RoundedCornerShape(20.dp))
+            .padding(horizontal = 16.dp)
+            .clip(RoundedCornerShape(12.dp))
             .background(NexusTheme.colors.backgroundComponent)
     ) {
         content()

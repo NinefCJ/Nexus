@@ -18,15 +18,23 @@
 
 package com.nexuscmd.ui.home
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -34,6 +42,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -68,12 +77,8 @@ import com.nexuscmd.ui.ShowTextScreenKey
 import com.nexuscmd.ui.common.NexusTheme
 import com.nexuscmd.ui.common.dialog.IsConfirmDialog
 import com.nexuscmd.ui.common.dialog.PolicyGrantDialog
-import com.nexuscmd.ui.common.layout.Collection
-import com.nexuscmd.ui.common.layout.CollectionName
 import com.nexuscmd.ui.common.layout.Copyright
-import com.nexuscmd.ui.common.layout.NameAndAction
 import com.nexuscmd.ui.common.layout.RootView
-import com.nexuscmd.ui.common.widget.Divider
 import com.nexuscmd.ui.common.widget.Text
 
 @Composable
@@ -96,6 +101,7 @@ fun HomeScreen(
         .collectAsState(initial = true)
     val publicLibraryMinVersion by settingsDataStore.publicLibraryMinVersion()
         .collectAsState(initial = 0)
+
     RootView {
         Column(modifier = Modifier.fillMaxSize()) {
             Column(
@@ -104,126 +110,60 @@ fun HomeScreen(
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
             ) {
+                // Header Area
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(NexusTheme.colors.backgroundComponent)
-                        .padding(horizontal = 25.dp, vertical = 15.dp),
+                        .padding(horizontal = 20.dp, vertical = 20.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Image(
                         painter = painterResource(R.drawable.pack_icon),
                         contentDescription = stringResource(R.string.app_name),
-                        modifier = Modifier.size(width = 70.dp, height = 70.dp)
+                        modifier = Modifier.size(width = 56.dp, height = 56.dp)
                     )
-                    Column(modifier = Modifier.padding(start = 20.dp)) {
+                    Column(modifier = Modifier.padding(start = 16.dp)) {
                         Text(
                             text = stringResource(R.string.layout_home_app_name),
                             style = TextStyle(
                                 color = NexusTheme.colors.textBond,
-                                fontSize = 25.sp,
+                                fontSize = 24.sp,
                                 fontWeight = FontWeight.Bold
                             ),
                         )
                         Text(
                             text = stringResource(R.string.layout_home_app_description),
                             style = TextStyle(
-                                color = NexusTheme.colors.textBond,
-                                fontSize = 18.sp
+                                color = NexusTheme.colors.textSecondary,
+                                fontSize = 14.sp
                             ),
                         )
                     }
                 }
-                CollectionName(stringResource(R.string.layout_home_command_completion))
-                Collection {
-                    NameAndAction(
-                        name = stringResource(R.string.layout_home_command_completion_app_mode),
-                        onClick = {
-                            if (viewModel.isUsingFloatingWindow(floatingWindowManager)) {
-                                Toaster.show("你必须关闭悬浮窗模式才可以进入应用模式")
-                            } else {
-                                navController.navigate(CompletionScreenKey)
-                            }
-                        }
-                    )
-                    Divider()
-                    NameAndAction(
-                        name = stringResource(R.string.layout_home_command_completion_floating_window_mode),
-                        onClick = {
-                            if (viewModel.isUsingFloatingWindow(floatingWindowManager)) {
-                                viewModel.stopFloatingWindow(floatingWindowManager)
-                            } else {
-                                viewModel.startFloatingWindow(
-                                    context,
-                                    false,
-                                    floatingWindowIconSize,
-                                    floatingWindowIconAlpha,
-                                    floatingWindowScreenAlpha,
-                                    isFloatingWindowFontAlphaSync,
-                                    floatingWindowManager,
-                                )
-                            }
-                        }
-                    )
-                    Divider()
-                    NameAndAction(stringResource(R.string.layout_home_command_completion_settings)) {
-                        navController.navigate(SettingsScreenKey)
-                    }
-                }
-                CollectionName(stringResource(R.string.layout_home_old2new))
-                Collection {
-                    NameAndAction(stringResource(R.string.layout_home_old2new_app_mode)) {
-                        navController.navigate(Old2NewScreenKey)
-                    }
-                    Divider()
-                    NameAndAction(stringResource(R.string.layout_home_old2new_ime_mode)) {
-                        navController.navigate(Old2NewIMEGuideScreenKey)
-                    }
-                }
-                CollectionName(stringResource(R.string.layout_home_enumeration))
-                Collection {
-                    NameAndAction(stringResource(R.string.layout_home_enumeration_app_mode)) {
-                        navController.navigate(EnumerationScreenKey)
-                    }
-                }
-                CollectionName(stringResource(R.string.layout_home_experimental_feature))
-                Collection {
-                    NameAndAction("命令库") {
-                        if (isShowPublicLibrary) {
-                            viewModel.checkCommandLabVersion(publicLibraryMinVersion) {
-                                navController.navigate(LibraryMainScreenKey)
-                            }
-                        } else {
-                            navController.navigate(LibraryMainScreenKey)
-                        }
-                    }
-                    Divider()
-                    NameAndAction("游龙导出") {
-                        if (!XXPermissions.isGrantedPermission(
-                                context,
-                                PermissionLists.getSystemAlertWindowPermission()
-                            )
-                        ) {
-                            viewModel.isShowPermissionRequestWindow = true
-                        } else {
-                            floatingWindowManager?.loongFlowManager?.showExport(context)
-                        }
-                    }
-                    Divider()
-                    NameAndAction(stringResource(R.string.layout_home_experimental_feature_raw_json_studio)) {
-                        navController.navigate(RawtextScreenKey)
-                    }
-                }
-                CollectionName(stringResource(R.string.layout_home_about))
-                Collection {
-                    NameAndAction(stringResource(R.string.layout_home_about_app_mode)) {
-                        navController.navigate(AboutScreenKey)
-                    }
-                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Feature Grid
+                HomeFeatureGrid(
+                    navController = navController,
+                    viewModel = viewModel,
+                    floatingWindowManager = floatingWindowManager,
+                    floatingWindowIconSize = floatingWindowIconSize,
+                    floatingWindowIconAlpha = floatingWindowIconAlpha,
+                    floatingWindowScreenAlpha = floatingWindowScreenAlpha,
+                    isFloatingWindowFontAlphaSync = isFloatingWindowFontAlphaSync,
+                    isShowPublicLibrary = isShowPublicLibrary,
+                    publicLibraryMinVersion = publicLibraryMinVersion
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
             }
             Copyright(Modifier.align(Alignment.CenterHorizontally))
         }
     }
+
+    // Dialogs remain unchanged
     if (viewModel.isShowPermissionRequestWindow) {
         IsConfirmDialog(
             onDismissRequest = {
@@ -332,6 +272,242 @@ fun HomeScreen(
             content = content,
             cancelText = "忽略此版本",
             onCancel = { viewModel.ignoreLatestVersion() }
+        )
+    }
+}
+
+@Composable
+private fun HomeFeatureGrid(
+    navController: NavHostController,
+    viewModel: HomeViewModel,
+    floatingWindowManager: FloatingWindowManager?,
+    floatingWindowIconSize: Int,
+    floatingWindowIconAlpha: Float,
+    floatingWindowScreenAlpha: Float,
+    isFloatingWindowFontAlphaSync: Boolean,
+    isShowPublicLibrary: Boolean,
+    publicLibraryMinVersion: Int
+) {
+    val context = LocalContext.current
+
+    // Section: Core
+    HomeSectionTitle(title = stringResource(R.string.layout_home_command_completion))
+    HomeTwoColumnGrid(
+        items = listOf(
+            HomeFeatureItem(
+                icon = R.drawable.box,
+                title = stringResource(R.string.layout_home_command_completion_app_mode),
+                subtitle = "应用内编辑",
+                onClick = {
+                    if (viewModel.isUsingFloatingWindow(floatingWindowManager)) {
+                        Toaster.show("你必须关闭悬浮窗模式才可以进入应用模式")
+                    } else {
+                        navController.navigate(CompletionScreenKey)
+                    }
+                }
+            ),
+            HomeFeatureItem(
+                icon = R.drawable.pencil,
+                title = stringResource(R.string.layout_home_command_completion_floating_window_mode),
+                subtitle = "悬浮窗编辑",
+                onClick = {
+                    if (viewModel.isUsingFloatingWindow(floatingWindowManager)) {
+                        viewModel.stopFloatingWindow(floatingWindowManager)
+                    } else {
+                        viewModel.startFloatingWindow(
+                            context, false,
+                            floatingWindowIconSize, floatingWindowIconAlpha,
+                            floatingWindowScreenAlpha, isFloatingWindowFontAlphaSync,
+                            floatingWindowManager,
+                        )
+                    }
+                }
+            ),
+            HomeFeatureItem(
+                icon = R.drawable.help_circle,
+                title = stringResource(R.string.layout_home_command_completion_settings),
+                subtitle = "偏好设置",
+                onClick = { navController.navigate(SettingsScreenKey) }
+            )
+        )
+    )
+
+    // Section: Tools
+    HomeSectionTitle(title = stringResource(R.string.layout_home_old2new))
+    HomeTwoColumnGrid(
+        items = listOf(
+            HomeFeatureItem(
+                icon = R.drawable.arrow_right,
+                title = stringResource(R.string.layout_home_old2new_app_mode),
+                subtitle = "命令转换",
+                onClick = { navController.navigate(Old2NewScreenKey) }
+            ),
+            HomeFeatureItem(
+                icon = R.drawable.arrow_forward_up,
+                title = stringResource(R.string.layout_home_old2new_ime_mode),
+                subtitle = "输入法转换",
+                onClick = { navController.navigate(Old2NewIMEGuideScreenKey) }
+            )
+        )
+    )
+
+    HomeSectionTitle(title = stringResource(R.string.layout_home_enumeration))
+    HomeTwoColumnGrid(
+        items = listOf(
+            HomeFeatureItem(
+                icon = R.drawable.refresh,
+                title = stringResource(R.string.layout_home_enumeration_app_mode),
+                subtitle = "参数穷举",
+                onClick = { navController.navigate(EnumerationScreenKey) }
+            )
+        )
+    )
+
+    // Section: Experimental
+    HomeSectionTitle(title = stringResource(R.string.layout_home_experimental_feature))
+    HomeTwoColumnGrid(
+        items = listOf(
+            HomeFeatureItem(
+                icon = R.drawable.book,
+                title = "命令库",
+                subtitle = "浏览与收藏",
+                onClick = {
+                    if (isShowPublicLibrary) {
+                        viewModel.checkCommandLabVersion(publicLibraryMinVersion) {
+                            navController.navigate(LibraryMainScreenKey)
+                        }
+                    } else {
+                        navController.navigate(LibraryMainScreenKey)
+                    }
+                }
+            ),
+            HomeFeatureItem(
+                icon = R.drawable.ic_loong_flow_bubble,
+                title = "游龙导出",
+                subtitle = "可视化导出",
+                onClick = {
+                    if (!XXPermissions.isGrantedPermission(
+                            context,
+                            PermissionLists.getSystemAlertWindowPermission()
+                        )
+                    ) {
+                        viewModel.isShowPermissionRequestWindow = true
+                    } else {
+                        floatingWindowManager?.loongFlowManager?.showExport(context)
+                    }
+                }
+            ),
+            HomeFeatureItem(
+                icon = R.drawable.file_arrow_left,
+                title = "Raw JSON",
+                subtitle = "原始文本生成",
+                onClick = { navController.navigate(RawtextScreenKey) }
+            )
+        )
+    )
+
+    // Section: About
+    HomeSectionTitle(title = stringResource(R.string.layout_home_about))
+    HomeTwoColumnGrid(
+        items = listOf(
+            HomeFeatureItem(
+                icon = R.drawable.heart,
+                title = stringResource(R.string.layout_home_about_app_mode),
+                subtitle = "关于本应用",
+                onClick = { navController.navigate(AboutScreenKey) }
+            )
+        )
+    )
+}
+
+@Composable
+private fun HomeSectionTitle(title: String) {
+    Text(
+        text = title,
+        modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+        style = TextStyle(
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            color = NexusTheme.colors.textSecondary
+        )
+    )
+}
+
+@Composable
+private fun HomeTwoColumnGrid(items: List<HomeFeatureItem>) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(NexusTheme.colors.backgroundComponent)
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        items.chunked(2).forEach { rowItems ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                rowItems.forEach { item ->
+                    HomeFeatureCard(
+                        icon = item.icon,
+                        title = item.title,
+                        subtitle = item.subtitle,
+                        onClick = item.onClick,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                if (rowItems.size == 1) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+        }
+    }
+}
+
+data class HomeFeatureItem(
+    @DrawableRes val icon: Int,
+    val title: String,
+    val subtitle: String,
+    val onClick: () -> Unit
+)
+
+@Composable
+private fun HomeFeatureCard(
+    @DrawableRes icon: Int,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(NexusTheme.colors.backgroundComponentNoTranslate)
+            .clickable(onClick = onClick)
+            .padding(16.dp),
+        horizontalAlignment = Alignment.Start
+    ) {
+        Image(
+            painter = painterResource(id = icon),
+            contentDescription = title,
+            modifier = Modifier.size(28.dp)
+        )
+        Spacer(modifier = Modifier.height(10.dp))
+        Text(
+            text = title,
+            style = TextStyle(
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+        )
+        Text(
+            text = subtitle,
+            style = TextStyle(
+                fontSize = 12.sp,
+                color = NexusTheme.colors.textSecondary
+            )
         )
     }
 }

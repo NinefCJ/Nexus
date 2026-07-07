@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -51,9 +52,9 @@ fun Header(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(50.dp)
+            .height(56.dp)
             .background(NexusTheme.colors.backgroundComponent)
-            .padding(horizontal = 10.dp),
+            .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (showBack) {
@@ -61,24 +62,24 @@ fun Header(
                 id = R.drawable.chevron_left,
                 modifier = Modifier
                     .clickable(onClick = {
-                        // 优先使用自定义 onBack（用于 tab 模式下显式返回上一级路由），
-                        // 否则走系统返回派发，行为和原来一致
                         if (onBack != null) onBack() else onBackPressedDispatcher?.onBackPressed()
                     })
-                    .padding(5.dp)
+                    .padding(4.dp)
                     .size(24.dp),
                 contentDescription = stringResource(R.string.common_icon_back_content_description)
             )
         } else {
-            Spacer(modifier = Modifier.size(5.dp))
+            Spacer(modifier = Modifier.size(4.dp))
         }
         Text(
             text = title,
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f),
+                .weight(1f)
+                .padding(horizontal = 8.dp),
             style = TextStyle(
-                fontSize = 18.sp,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.SemiBold
             ),
             maxLines = 1
         )

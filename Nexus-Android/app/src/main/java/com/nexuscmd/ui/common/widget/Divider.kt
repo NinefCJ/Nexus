@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.dp
 import com.nexuscmd.ui.common.NexusTheme
 
 @Composable
-fun Divider(padding: Dp = 5.dp) {
+fun Divider(padding: Dp = 16.dp) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
