@@ -30,3 +30,8 @@ build/
 # Misc
 *.log
 .DS_Store
+
+# Backup
+Nexus-Android.bak/
+Nexus-Core.bak/
+CHelper/
