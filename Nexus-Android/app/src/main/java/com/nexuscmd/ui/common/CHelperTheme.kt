@@ -37,80 +37,98 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 
-private val LightColorPalette = NexusColors(
-    mainColor = Color(0xFF6366F1),
-    mainColorSecondary = Color(0x406366F1),
-    background = Color(0xFFF8FAFC),
-    backgroundComponent = Color(0xFFFFFFFF),
-    backgroundComponentNoTranslate = Color(0xFFFFFFFF),
-    textMain = Color(0xFF1E293B),
-    textBond = Color(0xFF0F172A),
-    textSecondary = Color(0xFF64748B),
-    textHint = Color(0xFF94A3B8),
-    textErrorReason = Color(0xFFEF4444),
-    underlineErrorReason = Color(0xFFEF4444),
-    line = Color(0xFFE2E8F0),
-    iconMain = Color(0xFF64748B),
-    scrollBar = Color(0x8094A3B8),
-    overscrollGlowColor = Color(0xFFFFFFFF),
-//    syntaxHighlightBoolean = Color(0xFF4FAD63),
-//    syntaxHighlightFloat = Color(0xFF4FAD63),
-//    syntaxHighlightInteger = Color(0xFF4FAD63),
-//    syntaxHighlightSymbol = Color(0xFF4FAD63),
-//    syntaxHighlightId = Color(0xFFD4AC0D),
-//    syntaxHighlightTargetSelector = Color(0xFF07C160),
-//    syntaxHighlightCommand = Color(0xFF9F20A7),
-//    syntaxHighlightBrackets1 = Color(0xFF836C0A),
-//    syntaxHighlightBrackets2 = Color(0xFF9F20A7),
-//    syntaxHighlightBrackets3 = Color(0xFF4571E1),
-//    syntaxHighlightString = Color(0xFFD95A53),
-//    syntaxHighlightNull = Color(0xFF0FA0C8),
-//    syntaxHighlightRange = Color(0xFF0FA0C8),
-//    syntaxHighlightLiteral = Color(0xFF0FA0C8),
-)
+enum class AccentColor {
+    INDIGO,
+    BLUE,
+    PURPLE,
+    GREEN,
+    ORANGE,
+    PINK,
+    TEAL,
+    RED
+}
 
-private val DarkColorPalette = NexusColors(
-    mainColor = Color(0xFF818CF8),
-    mainColorSecondary = Color(0x40818CF8),
-    background = Color(0xFF0B0D10),
-    backgroundComponent = Color(0xFF16181D),
-    backgroundComponentNoTranslate = Color(0xFF1A1D22),
-    textMain = Color(0xFFE2E8F0),
-    textBond = Color(0xFFF8FAFC),
-    textSecondary = Color(0xFF94A3B8),
-    textHint = Color(0xFF64748B),
-    textErrorReason = Color(0xFFF87171),
-    underlineErrorReason = Color(0xFFF87171),
-    line = Color(0xFF262A31),
-    iconMain = Color(0xFF94A3B8),
-    scrollBar = Color(0x8064748B),
-    overscrollGlowColor = Color(0xFF000000),
-//    syntaxHighlightBoolean = Color(0xFFB5CEA8),
-//    syntaxHighlightFloat = Color(0xFFB5CEA8),
-//    syntaxHighlightInteger = Color(0xFFB5CEA8),
-//    syntaxHighlightSymbol = Color(0xFFB5CEA8),
-//    syntaxHighlightId = Color(0xFFDCDCAA),
-//    syntaxHighlightTargetSelector = Color(0xFF4EC9B0),
-//    syntaxHighlightCommand = Color(0xFFC586C0),
-//    syntaxHighlightBrackets1 = Color(0xFFFFD700),
-//    syntaxHighlightBrackets2 = Color(0xFFC586C0),
-//    syntaxHighlightBrackets3 = Color(0xFF179FFF),
-//    syntaxHighlightString = Color(0xFFCE9178),
-//    syntaxHighlightNull = Color(0xFF9CDCFE),
-//    syntaxHighlightRange = Color(0xFF9CDCFE),
-//    syntaxHighlightLiteral = Color(0xFF9CDCFE),
-)
+private fun getAccentColor(accent: AccentColor, isDark: Boolean): Pair<Color, Color> {
+    return when (accent) {
+        AccentColor.INDIGO -> if (isDark) Color(0xFF818CF8) to Color(0x40818CF8) else Color(0xFF6366F1) to Color(0x406366F1)
+        AccentColor.BLUE -> if (isDark) Color(0xFF60A5FA) to Color(0x4060A5FA) else Color(0xFF3B82F6) to Color(0x403B82F6)
+        AccentColor.PURPLE -> if (isDark) Color(0xFFA78BFA) to Color(0x40A78BFA) else Color(0xFF8B5CF6) to Color(0x408B5CF6)
+        AccentColor.GREEN -> if (isDark) Color(0xFF4ADE80) to Color(0x404ADE80) else Color(0xFF22C55E) to Color(0x4022C55E)
+        AccentColor.ORANGE -> if (isDark) Color(0xFFFB923C) to Color(0x40FB923C) else Color(0xFFF97316) to Color(0x40F97316)
+        AccentColor.PINK -> if (isDark) Color(0xFFF472B6) to Color(0x40F472B6) else Color(0xFFEC4899) to Color(0x40EC4899)
+        AccentColor.TEAL -> if (isDark) Color(0xFF2DD4BF) to Color(0x402DD4BF) else Color(0xFF14B8A6) to Color(0x4014B8A6)
+        AccentColor.RED -> if (isDark) Color(0xFFF87171) to Color(0x40F87171) else Color(0xFFEF4444) to Color(0x40EF4444)
+    }
+}
+
+private fun getLightColorPalette(accent: AccentColor): NexusColors {
+    val (mainColor, mainColorSecondary) = getAccentColor(accent, false)
+    return NexusColors(
+        mainColor = mainColor,
+        mainColorSecondary = mainColorSecondary,
+        background = Color(0xFFF8FAFC),
+        backgroundComponent = Color(0xFFFFFFFF),
+        backgroundComponentNoTranslate = Color(0xFFFFFFFF),
+        textMain = Color(0xFF1E293B),
+        textBond = Color(0xFF0F172A),
+        textSecondary = Color(0xFF64748B),
+        textHint = Color(0xFF94A3B8),
+        textErrorReason = Color(0xFFEF4444),
+        underlineErrorReason = Color(0xFFEF4444),
+        line = Color(0xFFE2E8F0),
+        iconMain = Color(0xFF64748B),
+        scrollBar = Color(0x8094A3B8),
+        overscrollGlowColor = Color(0xFFFFFFFF),
+    )
+}
+
+private fun getDarkColorPalette(accent: AccentColor): NexusColors {
+    val (mainColor, mainColorSecondary) = getAccentColor(accent, true)
+    return NexusColors(
+        mainColor = mainColor,
+        mainColorSecondary = mainColorSecondary,
+        background = Color(0xFF0B0D10),
+        backgroundComponent = Color(0xFF16181D),
+        backgroundComponentNoTranslate = Color(0xFF1A1D22),
+        textMain = Color(0xFFE2E8F0),
+        textBond = Color(0xFFF8FAFC),
+        textSecondary = Color(0xFF94A3B8),
+        textHint = Color(0xFF64748B),
+        textErrorReason = Color(0xFFF87171),
+        underlineErrorReason = Color(0xFFF87171),
+        line = Color(0xFF262A31),
+        iconMain = Color(0xFF94A3B8),
+        scrollBar = Color(0x8064748B),
+        overscrollGlowColor = Color(0xFF000000),
+    )
+}
 
 private val LocalTheme = compositionLocalOf {
     NexusTheme.Theme.Light
 }
 
 private val LocalNexusColors = compositionLocalOf {
-    LightColorPalette
+    getLightColorPalette(AccentColor.INDIGO)
 }
 
 private val LocalBackground = compositionLocalOf<ImageBitmap?> {
     null
+}
+
+private val LocalFontSizeScale = compositionLocalOf {
+    1.0f
+}
+
+private val LocalIsEnableAnimation = compositionLocalOf {
+    true
+}
+
+private val LocalIsEnableBlurBackground = compositionLocalOf {
+    false
+}
+
+private val LocalIsEnableRoundedCorners = compositionLocalOf {
+    true
 }
 
 object NexusTheme {
@@ -123,6 +141,18 @@ object NexusTheme {
     val backgroundBitmap: ImageBitmap?
         @Composable
         get() = LocalBackground.current
+    val fontSizeScale: Float
+        @Composable
+        get() = LocalFontSizeScale.current
+    val isEnableAnimation: Boolean
+        @Composable
+        get() = LocalIsEnableAnimation.current
+    val isEnableBlurBackground: Boolean
+        @Composable
+        get() = LocalIsEnableBlurBackground.current
+    val isEnableRoundedCorners: Boolean
+        @Composable
+        get() = LocalIsEnableRoundedCorners.current
 
     enum class Theme {
         Light, Dark
@@ -145,20 +175,6 @@ class NexusColors(
     iconMain: Color,
     scrollBar: Color,
     overscrollGlowColor: Color,
-//    syntaxHighlightBoolean: Color,
-//    syntaxHighlightFloat: Color,
-//    syntaxHighlightInteger: Color,
-//    syntaxHighlightSymbol: Color,
-//    syntaxHighlightId: Color,
-//    syntaxHighlightTargetSelector: Color,
-//    syntaxHighlightCommand: Color,
-//    syntaxHighlightBrackets1: Color,
-//    syntaxHighlightBrackets2: Color,
-//    syntaxHighlightBrackets3: Color,
-//    syntaxHighlightString: Color,
-//    syntaxHighlightNull: Color,
-//    syntaxHighlightRange: Color,
-//    syntaxHighlightLiteral: Color,
 ) {
     var mainColor: Color by mutableStateOf(mainColor)
         private set
@@ -190,34 +206,6 @@ class NexusColors(
         private set
     var overscrollGlowColor: Color by mutableStateOf(overscrollGlowColor)
         private set
-//    var syntaxHighlightBoolean: Color by mutableStateOf(syntaxHighlightBoolean)
-//        private set
-//    var syntaxHighlightFloat: Color by mutableStateOf(syntaxHighlightFloat)
-//        private set
-//    var syntaxHighlightInteger: Color by mutableStateOf(syntaxHighlightInteger)
-//        private set
-//    var syntaxHighlightSymbol: Color by mutableStateOf(syntaxHighlightSymbol)
-//        private set
-//    var syntaxHighlightId: Color by mutableStateOf(syntaxHighlightId)
-//        private set
-//    var syntaxHighlightTargetSelector: Color by mutableStateOf(syntaxHighlightTargetSelector)
-//        private set
-//    var syntaxHighlightCommand: Color by mutableStateOf(syntaxHighlightCommand)
-//        private set
-//    var syntaxHighlightBrackets1: Color by mutableStateOf(syntaxHighlightBrackets1)
-//        private set
-//    var syntaxHighlightBrackets2: Color by mutableStateOf(syntaxHighlightBrackets2)
-//        private set
-//    var syntaxHighlightBrackets3: Color by mutableStateOf(syntaxHighlightBrackets3)
-//        private set
-//    var syntaxHighlightString: Color by mutableStateOf(syntaxHighlightString)
-//        private set
-//    var syntaxHighlightNull: Color by mutableStateOf(syntaxHighlightNull)
-//        private set
-//    var syntaxHighlightRange: Color by mutableStateOf(syntaxHighlightRange)
-//        private set
-//    var syntaxHighlightLiteral: Color by mutableStateOf(syntaxHighlightLiteral)
-//        private set
 }
 
 private object NoIndication : IndicationNodeFactory {
@@ -234,16 +222,21 @@ private object NoIndication : IndicationNodeFactory {
 @Composable
 fun NexusTheme(
     theme: NexusTheme.Theme,
+    accentColor: AccentColor = AccentColor.INDIGO,
     backgroundBitmap: ImageBitmap?,
     screenAlphaOverride: Float = 1.0f,
+    fontSizeScale: Float = 1.0f,
+    isEnableAnimation: Boolean = true,
+    isEnableBlurBackground: Boolean = false,
+    isEnableRoundedCorners: Boolean = true,
     content: @Composable () -> Unit
 ) {
     val targetColor = when (theme) {
-        NexusTheme.Theme.Light -> LightColorPalette
-        NexusTheme.Theme.Dark -> DarkColorPalette
+        NexusTheme.Theme.Light -> getLightColorPalette(accentColor)
+        NexusTheme.Theme.Dark -> getDarkColorPalette(accentColor)
     }
 
-    val animationSpec = TweenSpec<Color>(600)
+    val animationSpec = if (isEnableAnimation) TweenSpec<Color>(600) else TweenSpec<Color>(0)
     val mainColor = animateColorAsState(targetColor.mainColor, animationSpec)
     val mainColorSecondary =
         animateColorAsState(targetColor.mainColorSecondary, animationSpec)
@@ -270,30 +263,6 @@ fun NexusTheme(
     val iconMain = animateColorAsState(targetColor.iconMain, animationSpec)
     val scrollBar = animateColorAsState(targetColor.scrollBar, animationSpec)
     val overscrollGlowColor = animateColorAsState(targetColor.overscrollGlowColor, animationSpec)
-//    val syntaxHighlightBoolean =
-//        animateColorAsState(targetColor.syntaxHighlightBoolean, animationSpec)
-//    val syntaxHighlightFloat = animateColorAsState(targetColor.syntaxHighlightFloat, animationSpec)
-//    val syntaxHighlightInteger =
-//        animateColorAsState(targetColor.syntaxHighlightInteger, animationSpec)
-//    val syntaxHighlightSymbol =
-//        animateColorAsState(targetColor.syntaxHighlightSymbol, animationSpec)
-//    val syntaxHighlightId = animateColorAsState(targetColor.syntaxHighlightId, animationSpec)
-//    val syntaxHighlightTargetSelector =
-//        animateColorAsState(targetColor.syntaxHighlightTargetSelector, animationSpec)
-//    val syntaxHighlightCommand =
-//        animateColorAsState(targetColor.syntaxHighlightCommand, animationSpec)
-//    val syntaxHighlightBrackets1 =
-//        animateColorAsState(targetColor.syntaxHighlightBrackets1, animationSpec)
-//    val syntaxHighlightBrackets2 =
-//        animateColorAsState(targetColor.syntaxHighlightBrackets2, animationSpec)
-//    val syntaxHighlightBrackets3 =
-//        animateColorAsState(targetColor.syntaxHighlightBrackets3, animationSpec)
-//    val syntaxHighlightString =
-//        animateColorAsState(targetColor.syntaxHighlightString, animationSpec)
-//    val syntaxHighlightNull = animateColorAsState(targetColor.syntaxHighlightNull, animationSpec)
-//    val syntaxHighlightRange = animateColorAsState(targetColor.syntaxHighlightRange, animationSpec)
-//    val syntaxHighlightLiteral =
-//        animateColorAsState(targetColor.syntaxHighlightLiteral, animationSpec)
 
     val colors = NexusColors(
         mainColor = mainColor.value,
@@ -311,20 +280,6 @@ fun NexusTheme(
         iconMain = iconMain.value,
         scrollBar = scrollBar.value,
         overscrollGlowColor = overscrollGlowColor.value,
-//        syntaxHighlightBoolean = syntaxHighlightBoolean.value,
-//        syntaxHighlightFloat = syntaxHighlightFloat.value,
-//        syntaxHighlightInteger = syntaxHighlightInteger.value,
-//        syntaxHighlightSymbol = syntaxHighlightSymbol.value,
-//        syntaxHighlightId = syntaxHighlightId.value,
-//        syntaxHighlightTargetSelector = syntaxHighlightTargetSelector.value,
-//        syntaxHighlightCommand = syntaxHighlightCommand.value,
-//        syntaxHighlightBrackets1 = syntaxHighlightBrackets1.value,
-//        syntaxHighlightBrackets2 = syntaxHighlightBrackets2.value,
-//        syntaxHighlightBrackets3 = syntaxHighlightBrackets3.value,
-//        syntaxHighlightString = syntaxHighlightString.value,
-//        syntaxHighlightNull = syntaxHighlightNull.value,
-//        syntaxHighlightRange = syntaxHighlightRange.value,
-//        syntaxHighlightLiteral = syntaxHighlightLiteral.value,
     )
     val textSelectionColors = TextSelectionColors(
         handleColor = mainColor.value,
@@ -335,6 +290,10 @@ fun NexusTheme(
         LocalTheme provides theme,
         LocalNexusColors provides colors,
         LocalBackground provides backgroundBitmap,
+        LocalFontSizeScale provides fontSizeScale,
+        LocalIsEnableAnimation provides isEnableAnimation,
+        LocalIsEnableBlurBackground provides isEnableBlurBackground,
+        LocalIsEnableRoundedCorners provides isEnableRoundedCorners,
         LocalTextSelectionColors provides textSelectionColors,
         LocalIndication provides NoIndication,
         LocalOverscrollFactory provides overscrollFactory,
@@ -342,7 +301,3 @@ fun NexusTheme(
         content()
     }
 }
-
-
-
-

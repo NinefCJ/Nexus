@@ -42,6 +42,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.nexuscmd.R
 import com.nexuscmd.data.SettingsDataStore
+import com.nexuscmd.ui.common.AccentColor
 import com.nexuscmd.ui.common.NexusTheme
 import com.nexuscmd.ui.common.dialog.ChoosingDialog
 import com.nexuscmd.ui.common.dialog.InputStringDialog
@@ -63,6 +64,8 @@ fun SettingsScreen(
     val settingsDataStore = remember(context) { SettingsDataStore(context) }
     var isShowResumeBackgroundDialog by remember { mutableStateOf(false) }
     var isShowChooseThemeDialog by remember { mutableStateOf(false) }
+    var isShowChooseAccentColorDialog by remember { mutableStateOf(false) }
+    var isShowInputFontSizeScaleDialog by remember { mutableStateOf(false) }
     var isShowInputFloatingWindowIconAlphaDialog by remember { mutableStateOf(false) }
     var isShowInputFloatingWindowScreenAlphaDialog by remember { mutableStateOf(false) }
     var isShowInputFloatingWindowIconSizeDialog by remember { mutableStateOf(false) }
@@ -73,6 +76,18 @@ fun SettingsScreen(
     var isShowInputSyntaxHighlightMaxLengthDialog by remember { mutableStateOf(false) }
     val isEnableUpdateNotifications by settingsDataStore.isEnableUpdateNotifications()
         .collectAsState(initial = null)
+    val accentColor by settingsDataStore.accentColor()
+        .collectAsState(initial = "indigo")
+    val fontSizeScale by settingsDataStore.fontSizeScale()
+        .collectAsState(initial = 1.0f)
+    val isEnableAnimation by settingsDataStore.isEnableAnimation()
+        .collectAsState(initial = true)
+    val isEnableBlurBackground by settingsDataStore.isEnableBlurBackground()
+        .collectAsState(initial = false)
+    val isEnableRoundedCorners by settingsDataStore.isEnableRoundedCorners()
+        .collectAsState(initial = true)
+    val isEnableSoundEffects by settingsDataStore.isEnableSoundEffects()
+        .collectAsState(initial = false)
     val cpackBranch by settingsDataStore.cpackBranch()
         .collectAsState(initial = null)
     val isCheckingBySelection by settingsDataStore.isCheckingBySelection()
@@ -163,6 +178,19 @@ fun SettingsScreen(
         }
         cpackBranchesWithTranslate = newCPackBranchesWithTranslate.toTypedArray()
     }
+    val accentColorName = remember(accentColor) {
+        when (accentColor) {
+            "indigo" -> "靛蓝色"
+            "blue" -> "蓝色"
+            "purple" -> "紫色"
+            "green" -> "绿色"
+            "orange" -> "橙色"
+            "pink" -> "粉色"
+            "teal" -> "青色"
+            "red" -> "红色"
+            else -> "靛蓝色"
+        }
+    }
     RootViewWithHeaderAndCopyright(stringResource(R.string.layout_settings_title)) {
         Column(
             modifier = Modifier
@@ -183,7 +211,81 @@ fun SettingsScreen(
                     },
                 )
             }
-            CollectionName(stringResource(R.string.layout_settings_theme_settings))
+            CollectionName("外观设置")
+            Collection {
+                NameAndAction(
+                    name = "主题配色",
+                    description = "当前: $accentColorName",
+                    leadingIcon = R.drawable.pencil,
+                ) {
+                    isShowChooseAccentColorDialog = true
+                }
+                Divider()
+                NameAndAction(
+                    name = stringResource(R.string.layout_settings_choose_theme),
+                    description = stringResource(R.string.layout_settings_choose_theme_description),
+                    leadingIcon = R.drawable.eye,
+                ) {
+                    isShowChooseThemeDialog = true
+                }
+                Divider()
+                NameAndAction(
+                    name = "字体大小",
+                    description = "当前: ${(fontSizeScale * 100).toInt()}%",
+                    leadingIcon = R.drawable.plus,
+                ) {
+                    isShowInputFontSizeScaleDialog = true
+                }
+                Divider()
+                SettingsItem(
+                    name = "启用动画效果",
+                    description = "开启后切换主题、页面时有平滑过渡动画",
+                    checked = isEnableAnimation,
+                    leadingIcon = R.drawable.pencil,
+                    onCheckedChange = {
+                        coroutineScope.launch {
+                            settingsDataStore.setIsEnableAnimation(it)
+                        }
+                    },
+                )
+                Divider()
+                SettingsItem(
+                    name = "启用毛玻璃背景",
+                    description = "为组件背景添加模糊效果（可能影响性能）",
+                    checked = isEnableBlurBackground,
+                    leadingIcon = R.drawable.eye,
+                    onCheckedChange = {
+                        coroutineScope.launch {
+                            settingsDataStore.setIsEnableBlurBackground(it)
+                        }
+                    },
+                )
+                Divider()
+                SettingsItem(
+                    name = "启用圆角设计",
+                    description = "为卡片、按钮等组件添加圆角效果",
+                    checked = isEnableRoundedCorners,
+                    leadingIcon = R.drawable.pencil,
+                    onCheckedChange = {
+                        coroutineScope.launch {
+                            settingsDataStore.setIsEnableRoundedCorners(it)
+                        }
+                    },
+                )
+                Divider()
+                SettingsItem(
+                    name = "启用音效",
+                    description = "操作时播放提示音效",
+                    checked = isEnableSoundEffects,
+                    leadingIcon = R.drawable.pencil,
+                    onCheckedChange = {
+                        coroutineScope.launch {
+                            settingsDataStore.setIsEnableSoundEffects(it)
+                        }
+                    },
+                )
+            }
+            CollectionName("自定义背景")
             Collection {
                 NameAndAction(
                     name = stringResource(R.string.layout_settings_choose_background),
@@ -200,15 +302,9 @@ fun SettingsScreen(
                 ) {
                     isShowResumeBackgroundDialog = true
                 }
-                Divider()
-                NameAndAction(
-                    name = stringResource(R.string.layout_settings_choose_theme),
-                    description = stringResource(R.string.layout_settings_choose_theme_description),
-                    leadingIcon = R.drawable.pencil,
-                ) {
-                    isShowChooseThemeDialog = true
-                }
-                Divider()
+            }
+            CollectionName("悬浮窗设置")
+            Collection {
                 NameAndAction(
                     name = stringResource(R.string.layout_settings_floating_window_icon_alpha),
                     description = stringResource(R.string.layout_settings_floating_window_icon_alpha_description),
@@ -417,12 +513,58 @@ fun SettingsScreen(
                 }
             })
     }
+    if (isShowChooseAccentColorDialog) {
+        val data = remember {
+            arrayOf(
+                "靛蓝色" to "indigo",
+                "蓝色" to "blue",
+                "紫色" to "purple",
+                "绿色" to "green",
+                "橙色" to "orange",
+                "粉色" to "pink",
+                "青色" to "teal",
+                "红色" to "red",
+            )
+        }
+        ChoosingDialog(
+            onDismissRequest = { isShowChooseAccentColorDialog = false },
+            data = data,
+            onChoose = {
+                coroutineScope.launch {
+                    settingsDataStore.setAccentColor(it)
+                }
+            })
+    }
     if (isShowResumeBackgroundDialog) {
         IsConfirmDialog(
             onDismissRequest = { isShowResumeBackgroundDialog = false },
             content = "是否恢复背景？",
             onConfirm = {
                 restoreBackground()
+            }
+        )
+    }
+    if (isShowInputFontSizeScaleDialog) {
+        val textFieldState = rememberTextFieldState(
+            initialText = (fontSizeScale * 100).toInt().toString()
+        )
+        InputStringDialog(
+            onDismissRequest = { isShowInputFontSizeScaleDialog = false },
+            title = "请输入字体大小百分比 (50-200)",
+            textFieldState = textFieldState,
+            onConfirm = {
+                try {
+                    var integer = textFieldState.text.toString().toInt()
+                    if (integer < 50) {
+                        integer = 50
+                    } else if (integer > 200) {
+                        integer = 200
+                    }
+                    coroutineScope.launch {
+                        settingsDataStore.setFontSizeScale(integer / 100f)
+                    }
+                } catch (_: NumberFormatException) {
+                }
             }
         )
     }
@@ -585,6 +727,7 @@ fun SettingsScreen(
 fun SettingsScreenLightThemePreview() {
     NexusTheme(
         theme = NexusTheme.Theme.Light,
+        accentColor = AccentColor.INDIGO,
         backgroundBitmap = null
     ) {
         SettingsScreen(
@@ -599,6 +742,7 @@ fun SettingsScreenLightThemePreview() {
 fun SettingsScreenDarkThemePreview() {
     NexusTheme(
         theme = NexusTheme.Theme.Dark,
+        accentColor = AccentColor.INDIGO,
         backgroundBitmap = null
     ) {
         SettingsScreen(

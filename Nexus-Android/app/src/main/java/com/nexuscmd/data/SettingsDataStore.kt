@@ -53,9 +53,17 @@ private val Context.settingsDataStore: DataStore<Settings> by dataStore(
 data class Settings(
     val isEnableUpdateNotifications: Boolean? = null,
     val themeId: String? = null,
+    val accentColor: String? = null,
+    val fontSizeScale: Float? = null,
+    val isEnableAnimation: Boolean? = null,
+    val isEnableBlurBackground: Boolean? = null,
+    val isEnableRoundedCorners: Boolean? = null,
     val floatingWindowAlpha: Float? = null,
     val floatingWindowScreenAlpha: Float? = null,
     val floatingWindowSize: Int? = null,
+    val floatingWindowPositionX: Int? = null,
+    val floatingWindowPositionY: Int? = null,
+    val isEnableSoundEffects: Boolean? = null,
     val isCheckingBySelection: Boolean? = null,
     val isHideWindowWhenCopying: Boolean? = null,
     val isSavingWhenPausing: Boolean? = null,
@@ -110,6 +118,30 @@ class SettingsDataStore(private val context: Context) {
 
     fun themeId(): Flow<String> =
         context.settingsDataStore.data.map { it.themeId ?: "MODE_NIGHT_FOLLOW_SYSTEM" }
+
+    fun accentColor(): Flow<String> =
+        context.settingsDataStore.data.map { it.accentColor ?: "indigo" }
+
+    fun fontSizeScale(): Flow<Float> =
+        context.settingsDataStore.data.map { it.fontSizeScale ?: 1.0f }
+
+    fun isEnableAnimation(): Flow<Boolean> =
+        context.settingsDataStore.data.map { it.isEnableAnimation ?: true }
+
+    fun isEnableBlurBackground(): Flow<Boolean> =
+        context.settingsDataStore.data.map { it.isEnableBlurBackground ?: false }
+
+    fun isEnableRoundedCorners(): Flow<Boolean> =
+        context.settingsDataStore.data.map { it.isEnableRoundedCorners ?: true }
+
+    fun floatingWindowPositionX(): Flow<Int> =
+        context.settingsDataStore.data.map { it.floatingWindowPositionX ?: 0 }
+
+    fun floatingWindowPositionY(): Flow<Int> =
+        context.settingsDataStore.data.map { it.floatingWindowPositionY ?: 0 }
+
+    fun isEnableSoundEffects(): Flow<Boolean> =
+        context.settingsDataStore.data.map { it.isEnableSoundEffects ?: false }
 
     fun floatingWindowIconAlpha(): Flow<Float> =
         context.settingsDataStore.data.map { it.floatingWindowAlpha ?: 1.0f }
@@ -166,6 +198,38 @@ class SettingsDataStore(private val context: Context) {
 
     suspend fun setThemeId(value: String) {
         context.settingsDataStore.updateData { it.copy(themeId = value) }
+    }
+
+    suspend fun setAccentColor(value: String) {
+        context.settingsDataStore.updateData { it.copy(accentColor = value) }
+    }
+
+    suspend fun setFontSizeScale(value: Float) {
+        context.settingsDataStore.updateData { it.copy(fontSizeScale = value) }
+    }
+
+    suspend fun setIsEnableAnimation(value: Boolean) {
+        context.settingsDataStore.updateData { it.copy(isEnableAnimation = value) }
+    }
+
+    suspend fun setIsEnableBlurBackground(value: Boolean) {
+        context.settingsDataStore.updateData { it.copy(isEnableBlurBackground = value) }
+    }
+
+    suspend fun setIsEnableRoundedCorners(value: Boolean) {
+        context.settingsDataStore.updateData { it.copy(isEnableRoundedCorners = value) }
+    }
+
+    suspend fun setFloatingWindowPositionX(value: Int) {
+        context.settingsDataStore.updateData { it.copy(floatingWindowPositionX = value) }
+    }
+
+    suspend fun setFloatingWindowPositionY(value: Int) {
+        context.settingsDataStore.updateData { it.copy(floatingWindowPositionY = value) }
+    }
+
+    suspend fun setIsEnableSoundEffects(value: Boolean) {
+        context.settingsDataStore.updateData { it.copy(isEnableSoundEffects = value) }
     }
 
     suspend fun setFloatingWindowIconAlpha(value: Float) {
